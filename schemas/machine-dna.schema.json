@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"ARX Machine DNA","type":"object","required":["generated_at","os","tools","evidence"],"properties":{"generated_at":{"type":"string","format":"date-time"},"os":{"type":"object"},"tools":{"type":"object"},"evidence":{"type":"array"}},"additionalProperties":true}

@@ -1,0 +1,1 @@
+$ErrorActionPreference='Stop';$ProjectRoot=Split-Path -Parent $PSScriptRoot;$Venv=Join-Path $ProjectRoot '.venv';if(-not(Test-Path $Venv)){python -m venv $Venv};& (Join-Path $Venv 'Scripts\python.exe') -m pip install -e "$ProjectRoot[dev]"
