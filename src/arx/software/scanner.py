@@ -74,13 +74,34 @@ def _directory_requirements(path,files):
             try:result.extend(_package_requirements(json.loads(item.read_text(encoding="utf-8"))))
             except (OSError,UnicodeDecodeError,json.JSONDecodeError):pass
     return result
+
+def _application_evidence(path):
+    """Inspect bounded neighboring artifacts without loading or executing the application."""
+    evidence=[];frameworks=[];stem=path.stem.lower()
+    try:siblings=[item for item in path.parent.iterdir() if item.is_file() and item.stem.lower().startswith(stem)]
+    except OSError:return {}
+    for item in siblings:
+        lower=item.name.lower()
+        if lower.endswith(".runtimeconfig.json") and item.stat().st_size<=1024*1024:
+            evidence.append(item.name)
+            try:
+                config=json.loads(item.read_text(encoding="utf-8"));runtime=config.get("runtimeOptions",{});declared=runtime.get("framework") or ((runtime.get("frameworks") or [None])[0])
+                if declared:frameworks.append({"name":declared.get("name"),"version":declared.get("version"),"status":"declared","source":item.name})
+            except (OSError,UnicodeDecodeError,json.JSONDecodeError,AttributeError):pass
+        elif lower.endswith(".deps.json") or (lower.endswith(".dll") and item.stem.lower()==stem):evidence.append(item.name)
+    if not evidence:return {}
+    return {"dotnet":"detected","classification":"inferred","confidence":.9 if frameworks else .75,"evidence":evidence[:50],"frameworks":frameworks}
 def scan_software(target):
     path=Path(target).expanduser().resolve(strict=True); kind=file_type(path); result={"generated_at":utc_now(),"filename":path.name,"absolute_path":str(path),"detected_file_type":kind,"evidence":[]}
     if path.is_dir():
         files=[p for p in path.rglob("*") if p.is_file()]; relative=[str(p.relative_to(path)) for p in files]; result.update(file_count=len(files),manifest_files=[n for n in relative if Path(n).name.lower() in MANIFEST_NAMES][:100],runtime_indicators=_indicators(relative),requirements=_directory_requirements(path,files));return result
     result.update(size=path.stat().st_size,sha256=sha256(path));result["evidence"].append(Evidence(EvidenceKind.OBSERVED,str(path),kind,"magic bytes and extension"))
     try:
-        if kind=="windows_pe":result["pe"]=inspect_pe(path);result["signature"]=signature(path)
+        if kind=="windows_pe":
+            result["pe"]=inspect_pe(path);result["signature"]=signature(path);application=_application_evidence(path)
+            if application:
+                result["application"]=application;result.setdefault("runtime_indicators",[]).append({"runtime":"dotnet","status":"inferred","confidence":application["confidence"],"evidence":application["evidence"]})
+                result.setdefault("requirements",[]).extend({"capability":"dotnet.runtime","framework":item.get("name"),"version":item.get("version"),"status":"declared","confidence":1.0,"source":item.get("source")} for item in application.get("frameworks",[]))
         elif kind in {"zip_archive","android_apk","java_archive"}:
             result["archive"],result["runtime_indicators"],result["requirements"]=_archive_metadata(path)
             if kind=="android_apk":result["requirements"]=[{"capability":"android.runtime","status":"inferred","confidence":.7,"source":"APK container"}]

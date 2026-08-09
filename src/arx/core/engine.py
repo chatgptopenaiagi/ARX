@@ -38,6 +38,11 @@ def compare(machine,software):
     aliases={"npm":"npm","android.runtime":None}
     for requirement in software.get("requirements",[]):
         name=requirement.get("capability");cap=capmap.get(name)
+        if name=="dotnet.runtime":
+            framework=requirement.get("framework");required=requirement.get("version");matching=[item for item in machine.get("dotnet_runtimes",[]) if not framework or item.get("name")==framework];ready=any(version_satisfies(item.get("version"),f">={required}") for item in matching) if required else bool(matching)
+            observed=", ".join(f"{item.get('name')} {item.get('version')}" for item in matching) or "not detected";check={"name":name,"status":"ready" if ready else "blocked","required":f"{framework or ''} {required or ''}".strip(),"observed":observed,"reason":"Required .NET runtime detected" if ready else "Required .NET runtime not detected","evidence_status":requirement.get("status","unknown")};checks.append(check)
+            if not ready:blockers.append(check["reason"])
+            continue
         if cap is None and name in aliases and aliases[name]:
             tool=machine.get("tools",{}).get(aliases[name]);ready=bool(tool and tool.detected)
         elif cap is None:

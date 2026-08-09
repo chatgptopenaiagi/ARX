@@ -74,6 +74,17 @@ def discover_python_installations(timeout=8):
             records.append({"path":path,"version":None,"architecture":None,"healthy":False,"health_probe":"import ssl, ctypes","ssl":None,"exit_code":None,"error":type(exc).__name__,"evidence":[Evidence(EvidenceKind.UNKNOWN,path,type(exc).__name__,"fixed Python core import probe",.5)]})
     return records
 
+def discover_dotnet_runtimes(timeout=8):
+    path=shutil.which("dotnet")
+    if not path:return []
+    try:
+        p=subprocess.run([path,"--list-runtimes"],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0));records=[]
+        for line in p.stdout.splitlines():
+            match=re.match(r"(\S+)\s+(\S+)\s+\[(.+)\]",line.strip())
+            if match:records.append({"name":match.group(1),"version":match.group(2),"path":match.group(3),"evidence":[Evidence(EvidenceKind.OBSERVED,path,line.strip(),"dotnet --list-runtimes")]})
+        return records
+    except (OSError,subprocess.TimeoutExpired):return []
+
 def _ps(script,timeout=15):
     exe=shutil.which("pwsh") or shutil.which("powershell")
     if not exe:return None
@@ -91,5 +102,5 @@ def scan_machine(deep=True):
       "cpu":_ps("Get-CimInstance Win32_Processor|Select -First 1 Name,Manufacturer,NumberOfCores,NumberOfLogicalProcessors,Architecture,VirtualizationFirmwareEnabled|ConvertTo-Json -Compress") or {"model":platform.processor(),"logical_processors":os.cpu_count()},"memory":memory,
       "gpu":_ps("Get-CimInstance Win32_VideoController|Select Name,AdapterRAM,DriverVersion,VideoProcessor|ConvertTo-Json -Compress") if deep else None,
       "storage":_ps("Get-Volume|Where DriveLetter|Select DriveLetter,FileSystem,Size,SizeRemaining,DriveType|ConvertTo-Json -Compress") if deep else None,
-      "tools":{name:probe(name,spec) for name,spec in PROBES.items()},"python_installations":discover_python_installations(),"sdk_hints":{k.lower():{"detected":bool(os.environ.get(k)),"path":os.environ.get(k)} for k in keys},
+      "tools":{name:probe(name,spec) for name,spec in PROBES.items()},"python_installations":discover_python_installations(),"dotnet_runtimes":discover_dotnet_runtimes(),"sdk_hints":{k.lower():{"detected":bool(os.environ.get(k)),"path":os.environ.get(k)} for k in keys},
       "environment":safe_environment() if deep else {},"evidence":[Evidence(EvidenceKind.OBSERVED,"local Windows host","read-only scan","Python APIs and CIM")]}

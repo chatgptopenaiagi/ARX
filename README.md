@@ -23,6 +23,19 @@ It inspects the development machine, statically inspects a package without execu
 
 ARX is not a malware scanner and compatibility does not imply trust.
 
+## Windows desktop
+
+ARX Desktop provides a dark, capability-oriented interface for users who do not want to work in a terminal. It calls the same Machine DNA, Software DNA, compatibility, evidence, and exporter APIs as the CLI and performs scans on a background worker so the interface stays responsive.
+
+From source:
+
+```powershell
+$env:PYTHONPATH = 'src'
+python -m arx.desktop
+```
+
+Standalone experimental Windows builds are produced under `release/` and are intended for distribution through GitHub Releases rather than source control.
+
 ## Install and run
 
 ```powershell
