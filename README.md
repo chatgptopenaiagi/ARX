@@ -16,6 +16,8 @@ It inspects the development machine, statically inspects a package without execu
 - Static PE architecture, subsystem, CLR, manifest-level, and DLL indicators
 - Authenticode status through Windows PowerShell
 - Explainable build capability graph and architecture/.NET compatibility rules
+- Declared Node engine requirements from directory and ZIP `package.json` manifests
+- Visual Studio/MSBuild discovery through `vswhere` even when it is absent from `PATH`
 - Quick text, full JSON, agent-oriented JSON, inspect, and compare commands
 - User-profile redaction and environment allowlisting
 
@@ -39,13 +41,27 @@ From a source checkout, set `$env:PYTHONPATH = 'src'` and use `python -m arx`.
 
 Structured output can be written with the global option, for example `arx --output machine.json deep`.
 
+Example from the development workstation (2026-08-09):
+
+```text
+[READY]   Git
+[READY]   Python
+[READY]   Node.js
+[MISSING] Java JDK
+[MISSING] Android SDK
+[PARTIAL] Visual C++ Build     Missing: cmake
+[READY]   CUDA Compute
+```
+
+These statuses are observations of one machine, not project prerequisites or promises about another host.
+
 ## Safety and privacy
 
 Unknown targets are never executed, loaded as libraries, or extracted. Reports replace the current profile path with `%USERPROFILE%`, export only an environment allowlist, and exclude credentials, tokens, browser state, Wi-Fi secrets, and private keys. See [the security model](docs/security-model.md).
 
 ## Architecture and development
 
-Machine scanners and static software scanners produce normalized evidence. A capability graph derives reusable abilities, compatibility rules compare requirements, and exporters create reports. See [architecture](docs/architecture.md), [schemas](schemas), and [roadmap](docs/roadmap.md).
+Machine scanners and static software scanners produce normalized evidence. A capability graph derives reusable abilities, compatibility rules compare requirements, and exporters create reports. Lightweight `Protocol` contracts define the extension seams without requiring a plugin framework dependency. See [architecture](docs/architecture.md), [schemas](schemas), and [roadmap](docs/roadmap.md).
 
 ```powershell
 python -m pip install -e .[dev]

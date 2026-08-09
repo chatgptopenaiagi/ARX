@@ -1,4 +1,4 @@
-import hashlib, json, os, re, shutil, struct, subprocess, zipfile
+import hashlib, json, re, shutil, struct, subprocess, zipfile
 from pathlib import Path
 from arx.core.models import Evidence,EvidenceKind,utc_now
 
@@ -40,15 +40,49 @@ def signature(path):
         p=subprocess.run([pwsh,"-NoProfile","-NonInteractive","-CommandWithArgs",script,str(path)],capture_output=True,text=True,timeout=10,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
         return json.loads(p.stdout) if p.returncode==0 and p.stdout.strip() else {"status":"unknown","reason":p.stderr.strip()[:300]}
     except (OSError,subprocess.TimeoutExpired,json.JSONDecodeError) as exc:return {"status":"unknown","reason":type(exc).__name__}
+
+MANIFEST_NAMES={"package.json","pyproject.toml","requirements.txt","pom.xml","build.gradle","build.gradle.kts","androidmanifest.xml","manifest.mf","runtimeconfig.json"}
+def _indicators(names):
+    lowered=[n.lower().replace("\\","/") for n in names]; result=[]
+    tests=[("dotnet",lambda n:n.endswith(".runtimeconfig.json") or n.endswith(".deps.json")),("java",lambda n:n.endswith(".jar") or n.endswith("pom.xml")),("node",lambda n:n.endswith("package.json")),("python",lambda n:n.endswith("pyproject.toml") or n.endswith("requirements.txt")),("android",lambda n:n.endswith("androidmanifest.xml"))]
+    for runtime,test in tests:
+        matches=[n for n in lowered if test(n)]
+        if matches:result.append({"runtime":runtime,"status":"inferred","confidence":0.75,"evidence":matches[:10]})
+    return result
+
+def _archive_metadata(path):
+    with zipfile.ZipFile(path) as archive:
+        names=archive.namelist(); manifests=[n for n in names if Path(n).name.lower() in MANIFEST_NAMES or n.lower().endswith(".runtimeconfig.json")]
+        requirements=[]
+        for name in manifests[:20]:
+            if name.lower().endswith("package.json") and archive.getinfo(name).file_size<=1024*1024:
+                try:requirements.extend(_package_requirements(json.loads(archive.read(name))))
+                except (UnicodeDecodeError,json.JSONDecodeError,KeyError):pass
+        return {"entries":len(names),"sample_entries":names[:100],"manifest_files":manifests[:100]},_indicators(names),requirements
+
+def _package_requirements(data):
+    result=[]
+    for runtime,spec in data.get("engines",{}).items():
+        capability={"node":"node.available","npm":"npm"}.get(runtime,runtime)
+        result.append({"capability":capability,"version":str(spec),"status":"declared","confidence":1.0,"source":"package.json engines"})
+    return result
+
+def _directory_requirements(path,files):
+    result=[]
+    for item in files:
+        if item.name.lower()=="package.json" and item.stat().st_size<=1024*1024:
+            try:result.extend(_package_requirements(json.loads(item.read_text(encoding="utf-8"))))
+            except (OSError,UnicodeDecodeError,json.JSONDecodeError):pass
+    return result
 def scan_software(target):
     path=Path(target).expanduser().resolve(strict=True); kind=file_type(path); result={"generated_at":utc_now(),"filename":path.name,"absolute_path":str(path),"detected_file_type":kind,"evidence":[]}
     if path.is_dir():
-        files=[p for p in path.rglob("*") if p.is_file()]; result.update(file_count=len(files),manifest_files=[str(p.relative_to(path)) for p in files if p.name.lower() in {"package.json","pyproject.toml","requirements.txt","pom.xml","build.gradle","androidmanifest.xml"}][:100]);return result
+        files=[p for p in path.rglob("*") if p.is_file()]; relative=[str(p.relative_to(path)) for p in files]; result.update(file_count=len(files),manifest_files=[n for n in relative if Path(n).name.lower() in MANIFEST_NAMES][:100],runtime_indicators=_indicators(relative),requirements=_directory_requirements(path,files));return result
     result.update(size=path.stat().st_size,sha256=sha256(path));result["evidence"].append(Evidence(EvidenceKind.OBSERVED,str(path),kind,"magic bytes and extension"))
     try:
         if kind=="windows_pe":result["pe"]=inspect_pe(path);result["signature"]=signature(path)
         elif kind in {"zip_archive","android_apk","java_archive"}:
-            with zipfile.ZipFile(path) as z: result["archive"]={"entries":len(z.namelist()),"sample_entries":z.namelist()[:100]}
+            result["archive"],result["runtime_indicators"],result["requirements"]=_archive_metadata(path)
+            if kind=="android_apk":result["requirements"]=[{"capability":"android.runtime","status":"inferred","confidence":.7,"source":"APK container"}]
     except (OSError,PEError,zipfile.BadZipFile) as exc:result["inspection_error"]=str(exc);result["evidence"].append(Evidence(EvidenceKind.UNKNOWN,str(path),str(exc),"static parser",.3))
     return result
-
