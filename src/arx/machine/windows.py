@@ -34,11 +34,45 @@ def _known_tool_path(name):
     roots={
         "adb":[os.environ.get("ANDROID_SDK_ROOT"),os.environ.get("ANDROID_HOME")],
         "cuda":[os.environ.get("CUDA_PATH")],
+        "java":[os.environ.get("JAVA_HOME"),os.environ.get("ANDROID_STUDIO_JDK"),os.environ.get("STUDIO_JDK")],
+        "javac":[os.environ.get("JAVA_HOME"),os.environ.get("ANDROID_STUDIO_JDK"),os.environ.get("STUDIO_JDK")],
     }
-    suffix={"adb":r"platform-tools\adb.exe","cuda":r"bin\nvcc.exe"}
+    suffix={"adb":r"platform-tools\adb.exe","cuda":r"bin\nvcc.exe","java":r"bin\java.exe","javac":r"bin\javac.exe"}
     for root in roots.get(name,[]):
         if root:candidates.append(str(Path(root)/suffix[name]))
+    if name in {"java","javac"}:
+        program_files=Path(os.environ.get("ProgramFiles",r"C:\Program Files"))
+        candidates.extend((str(program_files/"Android"/"Android Studio"/folder/"bin"/f"{name}.exe") for folder in ("jbr","jre")))
     return next((p for p in candidates if p and Path(p).is_file()),None)
+
+def _python_candidates():
+    candidates=[];launcher=shutil.which("py")
+    if launcher:
+        try:
+            p=subprocess.run([launcher,"-0p"],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
+            candidates.extend(re.findall(r"([A-Za-z]:\\[^\r\n]*?python\.exe)",p.stdout+p.stderr,re.I))
+        except (OSError,subprocess.TimeoutExpired):pass
+    where=shutil.which("where.exe")
+    if where:
+        try:
+            p=subprocess.run([where,"python"],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0));candidates.extend(line.strip() for line in p.stdout.splitlines())
+        except (OSError,subprocess.TimeoutExpired):pass
+    default=shutil.which("python")
+    if default:candidates.append(default)
+    unique={str(Path(item).resolve()).lower():str(Path(item).resolve()) for item in candidates if item and Path(item).is_file()}
+    return list(unique.values())
+
+def discover_python_installations(timeout=8):
+    """Inventory each registered/command-visible Python and test core runtime imports."""
+    script="import ctypes,json,platform,ssl,sys;print(json.dumps({'version':platform.python_version(),'architecture':platform.machine(),'ssl':ssl.OPENSSL_VERSION,'executable':sys.executable}))"
+    records=[]
+    for path in _python_candidates():
+        try:
+            p=subprocess.run([path,"-c",script],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0));details=json.loads(p.stdout) if p.returncode==0 and p.stdout.strip() else {}
+            records.append({"path":path,"version":details.get("version"),"architecture":details.get("architecture"),"healthy":p.returncode==0,"health_probe":"import ssl, ctypes","ssl":details.get("ssl"),"exit_code":p.returncode,"error":None if p.returncode==0 else (p.stderr or p.stdout).strip()[:500],"evidence":[Evidence(EvidenceKind.OBSERVED,path,"healthy" if p.returncode==0 else "unhealthy","fixed Python core import probe",1.0 if p.returncode==0 else .9)]})
+        except (OSError,subprocess.TimeoutExpired,json.JSONDecodeError) as exc:
+            records.append({"path":path,"version":None,"architecture":None,"healthy":False,"health_probe":"import ssl, ctypes","ssl":None,"exit_code":None,"error":type(exc).__name__,"evidence":[Evidence(EvidenceKind.UNKNOWN,path,type(exc).__name__,"fixed Python core import probe",.5)]})
+    return records
 
 def _ps(script,timeout=15):
     exe=shutil.which("pwsh") or shutil.which("powershell")
@@ -57,5 +91,5 @@ def scan_machine(deep=True):
       "cpu":_ps("Get-CimInstance Win32_Processor|Select -First 1 Name,Manufacturer,NumberOfCores,NumberOfLogicalProcessors,Architecture,VirtualizationFirmwareEnabled|ConvertTo-Json -Compress") or {"model":platform.processor(),"logical_processors":os.cpu_count()},"memory":memory,
       "gpu":_ps("Get-CimInstance Win32_VideoController|Select Name,AdapterRAM,DriverVersion,VideoProcessor|ConvertTo-Json -Compress") if deep else None,
       "storage":_ps("Get-Volume|Where DriveLetter|Select DriveLetter,FileSystem,Size,SizeRemaining,DriveType|ConvertTo-Json -Compress") if deep else None,
-      "tools":{name:probe(name,spec) for name,spec in PROBES.items()},"sdk_hints":{k.lower():{"detected":bool(os.environ.get(k)),"path":os.environ.get(k)} for k in keys},
+      "tools":{name:probe(name,spec) for name,spec in PROBES.items()},"python_installations":discover_python_installations(),"sdk_hints":{k.lower():{"detected":bool(os.environ.get(k)),"path":os.environ.get(k)} for k in keys},
       "environment":safe_environment() if deep else {},"evidence":[Evidence(EvidenceKind.OBSERVED,"local Windows host","read-only scan","Python APIs and CIM")]}

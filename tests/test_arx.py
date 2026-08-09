@@ -1,10 +1,11 @@
-import hashlib,struct,zipfile
+import hashlib,json,struct,zipfile
+from types import SimpleNamespace
 from arx.core.engine import capabilities,compare,version_satisfies
 from arx.core.evidence import redact_path,safe_environment
 from arx.core.models import Evidence,EvidenceKind,ToolRecord,serialize
 from arx.software import PEError,file_type,inspect_pe,sha256
 from arx.software import scan_software
-from arx.machine.windows import probe
+from arx.machine.windows import _known_tool_path,discover_python_installations,probe
 
 def toolset(**present):
     names={"git","github_cli","python","node","javac","dotnet","cmake","ninja","adb","flutter","cuda","msbuild","rust","go","docker"}
@@ -35,3 +36,21 @@ def test_declared_requirement_blocks_when_tool_missing():
     assert report["status"]=="blocked";assert "node.available not detected or version requirement not met" in report["blockers"]
 def test_version_comparison_is_conservative():
     assert version_satisfies("20.11.1",">=20") is True;assert version_satisfies("17.0.2",">=20") is False;assert version_satisfies("20.0","^20") is None
+def test_android_studio_jbr_jdk_is_found_outside_path(tmp_path,monkeypatch):
+    javac=tmp_path/"Android"/"Android Studio"/"jbr"/"bin"/"javac.exe";javac.parent.mkdir(parents=True);javac.write_bytes(b"")
+    monkeypatch.setenv("ProgramFiles",str(tmp_path));monkeypatch.delenv("JAVA_HOME",raising=False);monkeypatch.delenv("ANDROID_STUDIO_JDK",raising=False);monkeypatch.delenv("STUDIO_JDK",raising=False)
+    assert _known_tool_path("javac")==str(javac)
+def test_msbuild_is_found_with_vswhere(tmp_path,monkeypatch):
+    installer=tmp_path/"Microsoft Visual Studio"/"Installer"/"vswhere.exe";installer.parent.mkdir(parents=True);installer.write_bytes(b"")
+    msbuild=tmp_path/"Microsoft Visual Studio"/"18"/"MSBuild.exe";msbuild.parent.mkdir(parents=True);msbuild.write_bytes(b"")
+    monkeypatch.setenv("ProgramFiles(x86)",str(tmp_path));monkeypatch.setattr("arx.machine.windows.subprocess.run",lambda *a,**k:SimpleNamespace(stdout=str(msbuild)+"\n"))
+    assert _known_tool_path("msbuild")==str(msbuild)
+def test_python_installations_keep_health_separate(monkeypatch):
+    paths=[r"C:\PythonHealthy\python.exe",r"C:\PythonBroken\python.exe"]
+    monkeypatch.setattr("arx.machine.windows._python_candidates",lambda:paths)
+    def run(args,**kwargs):
+        if args[0]==paths[0]:return SimpleNamespace(returncode=0,stdout=json.dumps({"version":"3.12.1","architecture":"AMD64","ssl":"OpenSSL test"}),stderr="")
+        return SimpleNamespace(returncode=1,stdout="",stderr="ImportError: DLL load failed")
+    monkeypatch.setattr("arx.machine.windows.subprocess.run",run)
+    records=discover_python_installations();assert [r["healthy"] for r in records]==[True,False];assert records[1]["error"].startswith("ImportError")
+    caps=capabilities({"tools":toolset(python=True),"python_installations":[records[1]]});assert caps["python.available"].status.value=="missing";assert caps["python.available"].reason=="healthy Python runtime not detected"
