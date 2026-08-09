@@ -6,6 +6,7 @@ from arx.core.evidence import redact
 from arx.core.models import serialize,utc_now
 from arx.machine import scan_machine
 from arx.software import scan_software
+from arx.exporters import codex_report
 
 def envelope(machine=None,software=None,compatibility=None):return redact(serialize({"schema_version":"0.1","scanner":{"name":"ARX","version":__version__},"machine":machine,"software":software,"compatibility":compatibility,"generated_at":utc_now()}))
 def parser():
@@ -27,7 +28,7 @@ def main(argv=None):
         if args.command=="quick":machine=scan_machine(False);caps=capabilities(machine);data=envelope(machine=machine);text=quick(caps)
         elif args.command=="deep":data=envelope(machine=scan_machine(True));text=json.dumps(data,indent=2)
         elif args.command=="codex":
-            machine=scan_machine(True);caps=capabilities(machine);data=redact(serialize({"schema_version":"0.1","scanner":{"name":"ARX","version":__version__},"generated_at":utc_now(),"host":{"os":machine["os"],"cpu":machine.get("cpu"),"memory":machine.get("memory")},"capabilities":{k:{"status":v.status.value,"reason":v.reason,"requires":v.dependencies} for k,v in caps.items()},"tools":{k:{"detected":v.detected,"version":v.version,"path":v.path} for k,v in machine["tools"].items()},"important_gaps":[k for k,v in caps.items() if v.status in {__import__('arx.core.models',fromlist=['Status']).Status.MISSING,__import__('arx.core.models',fromlist=['Status']).Status.PARTIAL,__import__('arx.core.models',fromlist=['Status']).Status.BLOCKED}]}));text=json.dumps(data,indent=2)
+            machine=scan_machine(True);caps=capabilities(machine);data=codex_report(machine,caps,__version__);text=json.dumps(data,indent=2)
         elif args.command=="inspect":software=scan_software(args.target);data=envelope(software=software);text=inspect_text(software)
         else:machine=scan_machine(True);software=scan_software(args.target);compat=compare(machine,software);data=envelope(machine,software,compat);text=inspect_text(software,compat)
         if args.output:args.output.write_text(json.dumps(data,indent=2)+"\n",encoding="utf-8");print(f"Report written to {args.output}",file=sys.stderr)
