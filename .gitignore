@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Builds
+build/
+dist/
+out/
+bin/
+obj/
+
+# IDE
+.vscode/
+.idea/
+.vs/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# ARX generated reports
+reports/
+*.arx-report.json
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+secrets.json
