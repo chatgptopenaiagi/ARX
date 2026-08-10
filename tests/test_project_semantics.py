@@ -125,6 +125,22 @@ def test_case_f_windowsapps_alias_is_not_a_healthy_interpreter():
     assert providers[0].version is None
 
 
+def test_unused_windowsapps_alias_does_not_downgrade_a_satisfied_project():
+    project = inspect_project(FIXTURES / "case_a")
+    current = provider(project.root / ".venv" / "Scripts" / "python.exe", "3.12.13")
+    alias = provider(
+        r"C:\Users\Alice\AppData\Local\Microsoft\WindowsApps\python.exe",
+        None,
+        healthy=False,
+        kind=ProviderKind.WINDOWSAPPS_ALIAS,
+    )
+    providers = [current, alias]
+    report = preflight(project, providers, resolution(project, providers, current))
+
+    assert "ARX-PYTHON-WINDOWSAPPS-ALIAS" in {item.id for item in report.findings}
+    assert report.severity.severity is Severity.GREEN
+
+
 def test_case_g_python_version_conflict_is_explicit():
     project = inspect_project(FIXTURES / "case_g")
     selected = provider(r"C:\Python314\python.exe", "3.14.6")
@@ -136,6 +152,10 @@ def test_case_g_python_version_conflict_is_explicit():
     assert len(conflict.participant_ids) >= 2
     assert conflict.evidence_refs
     assert report.severity.severity is Severity.RED
+    assert [item.id for item in report.plan.steps] == [
+        "ARX-PLAN-ALIGN-PYTHON-CONSTRAINTS",
+        "ARX-PLAN-REEVALUATE-CONTEXT",
+    ]
 
 
 def test_case_h_optional_python_capability_unavailable_is_not_red(tmp_path):
@@ -234,12 +254,29 @@ def test_malicious_requirement_filename_is_only_parsed_as_data(tmp_path, monkeyp
 
 
 def test_resolution_is_context_scoped_and_path_is_not_exported():
-    first = ExecutionContext.capture(r"C:\Project", environment={"PATH": r"C:\One"})
+    first = ExecutionContext.capture(
+        r"C:\Project",
+        environment={"PATH": r"C:\One", "VIRTUAL_ENV": r"C:\Secret\venv", "CONDA_DEFAULT_ENV": "private-name"},
+    )
     second = ExecutionContext.capture(r"C:\Project", environment={"PATH": r"C:\Two"})
 
     assert first.id != second.id
     assert first.path_fingerprint != second.path_fingerprint
     assert not hasattr(first, "effective_path")
+    assert first.virtual_environment is True
+    assert first.conda_environment is True
+    assert "Secret" not in json.dumps(serialize(first))
+    assert "private-name" not in json.dumps(serialize(first))
+
+
+def test_empty_project_is_unknown_yellow_not_green(tmp_path):
+    project = inspect_project(tmp_path)
+    context = ExecutionContext.capture(tmp_path, environment={"PATH": ""})
+    report = preflight(project, [], ExecutionResolution.create(command="python", context=context))
+
+    assert report.severity.severity is Severity.YELLOW
+    assert "ARX-RESOLUTION-UNKNOWN" in report.severity.warning_ids
+    assert project.unknowns
 
 
 def test_policy_forbids_host_mutation_by_default():

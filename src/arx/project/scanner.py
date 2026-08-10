@@ -328,6 +328,12 @@ def inspect_project(
             evidence.extend(item.evidence)
 
     python_detected = bool(manifests)
+    if not python_detected:
+        reason = "No supported Python project manifests were found"
+        evidence.append(
+            Evidence(EvidenceKind.UNKNOWN, "project root", reason, "project manifest discovery", 1.0)
+        )
+        unknowns.append(reason)
     confidence = 1.0 if not unknowns else max(0.2, 1.0 - 0.15 * len(unknowns))
     return ProjectDNA.create(
         root=root,

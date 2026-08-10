@@ -67,8 +67,8 @@
         "path_fingerprint": {"type": "string"},
         "process_environment_fingerprint": {"type": "string"},
         "command": {"type": "string"},
-        "virtual_environment": {"type": ["string", "null"]},
-        "conda_environment": {"type": ["string", "null"]},
+        "virtual_environment": {"type": "boolean"},
+        "conda_environment": {"type": "boolean"},
         "uv_indicators": {"type": "array", "items": {"type": "string"}}
       },
       "additionalProperties": false
@@ -121,11 +121,12 @@
     },
     "finding": {
       "type": "object",
-      "required": ["id", "message", "evidence_refs"],
+      "required": ["id", "message", "evidence_refs", "matters"],
       "properties": {
         "id": {"type": "string", "pattern": "^ARX-"},
         "message": {"type": "string"},
-        "evidence_refs": {"type": "array", "items": {"type": "string"}}
+        "evidence_refs": {"type": "array", "items": {"type": "string"}},
+        "matters": {"type": "boolean"}
       },
       "additionalProperties": false
     },

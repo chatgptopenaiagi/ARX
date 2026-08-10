@@ -218,7 +218,9 @@ def _resolution_conflicts(
 
 
 def _findings(
+    project: ProjectDNA,
     providers: list[Provider],
+    resolution: ExecutionResolution,
     evaluations: list[RequirementEvaluation],
     conflicts: list[Conflict],
 ) -> list[Finding]:
@@ -233,6 +235,7 @@ def _findings(
                     "ARX-PYTHON-WINDOWSAPPS-ALIAS",
                     "A WindowsApps Python execution alias was observed and is not treated as a healthy interpreter unless independently verified.",
                     [evidence_id(item) for item in provider.evidence],
+                    provider.id == resolution.resolved_provider_id,
                 )
             )
     if any(len(items) > 1 for items in versions.values()):
@@ -240,6 +243,15 @@ def _findings(
             Finding(
                 "ARX-PYTHON-MULTIPLE-PROVIDERS",
                 "Multiple distinct Python providers report an identical version; path-based identities are preserved.",
+                matters=False,
+            )
+        )
+    if not evaluations:
+        findings.append(
+            Finding(
+                "ARX-RESOLUTION-UNKNOWN",
+                "No supported project requirement was available for semantic evaluation.",
+                [evidence_id(item) for item in project.evidence],
             )
         )
     for evaluation in evaluations:
@@ -290,9 +302,9 @@ def severity_for(
         }:
             warning_ids.append("ARX-RESOLUTION-UNKNOWN")
     warning_ids.extend(
-        item_id
-        for item_id in finding_by_id
-        if item_id in {"ARX-PYTHON-MULTIPLE-PROVIDERS", "ARX-PYTHON-WINDOWSAPPS-ALIAS"}
+        item.id
+        for item in findings
+        if item.matters and item.id != "ARX-PYTHON-NO-COMPATIBLE-PROVIDER"
     )
     blocker_ids = list(dict.fromkeys(blocker_ids))
     warning_ids = [item for item in dict.fromkeys(warning_ids) if item not in blocker_ids]
@@ -325,7 +337,8 @@ def plan_resolution(
 ) -> ResolutionPlan:
     steps: list[ResolutionStep] = []
     provider_by_id = _provider_map(providers)
-    if any(item.id == "ARX-PROJECT-REQUIREMENT-CONFLICT" for item in conflicts):
+    source_conflict = any(item.id == "ARX-PROJECT-REQUIREMENT-CONFLICT" for item in conflicts)
+    if source_conflict:
         steps.append(
             ResolutionStep(
                 "ARX-PLAN-ALIGN-PYTHON-CONSTRAINTS",
@@ -339,7 +352,9 @@ def plan_resolution(
         if primary
         else None
     )
-    if primary_evaluation and primary_evaluation.satisfaction is Satisfaction.SATISFIED and not steps:
+    if source_conflict:
+        pass
+    elif primary_evaluation and primary_evaluation.satisfaction is Satisfaction.SATISFIED and not steps:
         steps.append(
             ResolutionStep(
                 "ARX-PLAN-NO-ACTION",
@@ -486,7 +501,7 @@ def preflight(
         *_source_conflicts(project),
         *_resolution_conflicts(project, providers, resolution, evaluations),
     ]
-    findings = _findings(providers, evaluations, conflicts)
+    findings = _findings(project, providers, resolution, evaluations, conflicts)
     severity = severity_for(evaluations, conflicts, findings)
     plan = plan_resolution(project, providers, evaluations, conflicts, severity, active_policy)
     explanation = build_explanation(

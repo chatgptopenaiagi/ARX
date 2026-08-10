@@ -55,6 +55,10 @@ def test_desktop_controller_runs_project_preflight_with_reused_machine(monkeypat
     assert captured["machine"] is machine
     assert controller.project_preflight.severity.severity.value=="green"
 
+    monkeypatch.setattr("arx.desktop.controllers.scan_machine",lambda deep:machine)
+    controller.scan(False)
+    assert controller.project_preflight is None
+
 
 def test_desktop_project_readiness_uses_text_and_color(tmp_path):
     controller=DesktopController();controller.project_preflight=_project_report(tmp_path)

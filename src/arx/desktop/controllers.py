@@ -17,7 +17,7 @@ class DesktopController:
         self.machine=None;self.software=None;self.compatibility=None;self.capabilities={};self.project_preflight=None
 
     def scan(self,deep=False):
-        self.machine=scan_machine(deep);self.capabilities=capabilities(self.machine);self.compatibility=None
+        self.machine=scan_machine(deep);self.capabilities=capabilities(self.machine);self.compatibility=None;self.project_preflight=None
         return self.machine
 
     def inspect(self,target):

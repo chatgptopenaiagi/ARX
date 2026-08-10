@@ -222,8 +222,8 @@ class ExecutionContext:
     path_fingerprint: str
     process_environment_fingerprint: str
     command: str = "python"
-    virtual_environment: str | None = None
-    conda_environment: str | None = None
+    virtual_environment: bool = False
+    conda_environment: bool = False
     uv_indicators: list[str] = field(default_factory=list)
 
     @classmethod
@@ -253,8 +253,8 @@ class ExecutionContext:
         environment_fingerprint = hashlib.sha256(
             json.dumps(relevant, sort_keys=True).encode("utf-8")
         ).hexdigest()
-        virtual_environment = env.get("VIRTUAL_ENV")
-        conda_environment = env.get("CONDA_PREFIX") or env.get("CONDA_DEFAULT_ENV")
+        virtual_environment = bool(env.get("VIRTUAL_ENV"))
+        conda_environment = bool(env.get("CONDA_PREFIX") or env.get("CONDA_DEFAULT_ENV"))
         uv_indicators = [
             key for key in ("UV_PROJECT_ENVIRONMENT",) if env.get(key)
         ]
@@ -343,6 +343,7 @@ class Finding:
     id: str
     message: str
     evidence_refs: list[str] = field(default_factory=list)
+    matters: bool = True
 
 
 @dataclass
