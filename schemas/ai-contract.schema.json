@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arx.local/schemas/ai-contract.schema.json",
+  "title": "ARX AI Contract 0.2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "producer",
+    "generated_at",
+    "decision",
+    "facts",
+    "decisions",
+    "selected_providers",
+    "blockers",
+    "warnings",
+    "recommendations",
+    "constraints",
+    "unknowns",
+    "evidence_references"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.2"},
+    "producer": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "ARX"},
+        "version": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "generated_at": {"type": "string", "format": "date-time"},
+    "decision": {"enum": ["GREEN", "YELLOW", "RED"]},
+    "facts": {"type": "object"},
+    "decisions": {
+      "type": "object",
+      "required": ["relevance", "satisfaction", "severity"],
+      "properties": {
+        "relevance": {"enum": ["REQUIRED", "OPTIONAL", "CONDITIONALLY_REQUIRED", "NOT_REQUIRED", "UNKNOWN_RELEVANCE"]},
+        "satisfaction": {"enum": ["SATISFIED", "UNSATISFIED", "PARTIAL", "CONFLICT", "AMBIGUOUS", "UNKNOWN", "OPTIONAL_UNAVAILABLE", "NOT_APPLICABLE"]},
+        "satisfaction_reason": {"type": "string"},
+        "severity": {"enum": ["GREEN", "YELLOW", "RED"]},
+        "severity_reason": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "selected_providers": {
+      "type": "object",
+      "required": ["resolved", "compatible", "preferred"],
+      "properties": {
+        "resolved": {"type": ["object", "null"]},
+        "compatible": {"type": "array", "items": {"type": "object"}},
+        "preferred": {"type": ["object", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "blockers": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+    "warnings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "action", "reason", "automatic"],
+        "properties": {
+          "id": {"type": "string"},
+          "action": {"type": "string"},
+          "reason": {"type": "string"},
+          "provider_id": {"type": ["string", "null"]},
+          "automatic": {"const": false},
+          "reversible": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "constraints": {"type": "array", "items": {"type": "string"}},
+    "unknowns": {"type": "array", "items": {"type": "string"}},
+    "evidence_references": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["classification", "source", "value", "method", "confidence"],
+        "properties": {
+          "classification": {"enum": ["declared", "observed", "inferred", "unknown"]},
+          "source": {"type": "string"},
+          "value": {},
+          "method": {"type": "string"},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "note": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["id", "message", "evidence_refs"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^ARX-"},
+        "message": {"type": "string"},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

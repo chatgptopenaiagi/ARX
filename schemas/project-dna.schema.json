@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arx.local/schemas/project-dna.schema.json",
+  "title": "ARX Project DNA",
+  "type": "object",
+  "required": [
+    "generated_at",
+    "id",
+    "identity",
+    "root",
+    "languages",
+    "ecosystems",
+    "manifests",
+    "requirements",
+    "optional_requirements",
+    "requirement_edges",
+    "evidence",
+    "confidence",
+    "unknowns"
+  ],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "id": {"type": "string", "pattern": "^project:"},
+    "identity": {"type": "string"},
+    "root": {"type": "string"},
+    "languages": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "ecosystems": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "build_systems": {"type": "array", "items": {"type": "string"}},
+    "manifests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "kind", "size", "evidence"],
+        "properties": {
+          "path": {"type": "string"},
+          "kind": {"type": "string"},
+          "size": {"type": "integer", "minimum": 0},
+          "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "requirements": {"type": "array", "items": {"$ref": "#/$defs/requirement"}},
+    "optional_requirements": {"type": "array", "items": {"$ref": "#/$defs/requirement"}},
+    "requirement_edges": {"type": "array", "items": {"$ref": "#/$defs/requirementEdge"}},
+    "entrypoint_hints": {"type": "array", "items": {"type": "string"}},
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "unknowns": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "required": ["kind", "source", "value", "method", "confidence"],
+      "properties": {
+        "kind": {"enum": ["declared", "observed", "inferred", "unknown"]},
+        "source": {"type": "string"},
+        "value": {},
+        "method": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "note": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "requirement": {
+      "type": "object",
+      "required": ["id", "capability", "constraint", "source", "field", "relevance", "relation", "confidence", "evidence", "parent_ids"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^requirement:"},
+        "capability": {"type": "string"},
+        "constraint": {"type": ["string", "null"]},
+        "source": {"type": "string"},
+        "field": {"type": "string"},
+        "relevance": {"enum": ["required", "optional", "conditionally_required", "not_required", "unknown_relevance"]},
+        "relation": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "parent_ids": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "requirementEdge": {
+      "type": "object",
+      "required": ["source_id", "target_id", "relation"],
+      "properties": {
+        "source_id": {"type": "string"},
+        "target_id": {"type": "string"},
+        "relation": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
