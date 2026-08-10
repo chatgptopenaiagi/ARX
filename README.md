@@ -29,13 +29,13 @@ relevance != satisfaction != severity != remediation
 - Visual Studio/MSBuild discovery through `vswhere` even when it is absent from `PATH`
 - Quick text, full JSON, agent-oriented JSON, inspect, and compare commands
 - User-profile redaction and environment allowlisting
-- Bounded static Python Project DNA from `pyproject.toml`, `.python-version`, `uv.lock`, and supported requirements files
+- Bounded static Python Project DNA from `pyproject.toml`, `.python-version`, `uv.lock`, `setup.cfg`, static `setup.py` AST, and supported requirements files
 - Sourced requirement graph with explicit relevance and unknown handling
 - Stable, path-based identities for CPython, Conda, uv-managed, virtual-environment, and WindowsApps providers
 - Context-scoped Python command resolution with PATH/environment fingerprints
-- Separate resolved, compatible, and preferred provider roles
+- Separate resolved, healthy-compatible, project-pinned, and ARX-preferred provider roles
 - Satisfaction, conflict, severity, policy, recommendation-only planning, and explanation models
-- GREEN/YELLOW/RED project preflight in CLI and desktop, always accompanied by text
+- GREEN/YELLOW/RED Python interpreter/toolchain preflight in CLI and desktop, always accompanied by text and an explicit scope disclaimer
 - Redacted project-aware AI contract schema 0.2
 
 ARX is not a malware scanner and compatibility does not imply trust.
@@ -87,7 +87,7 @@ Example from the development workstation (2026-08-09):
 [READY]   CUDA Compute
 ```
 
-Machine scan statuses are observations, not project prerequisites. Project preflight determines whether an observation matters to the selected project.
+Machine scan statuses are observations, not project prerequisites. Project preflight determines whether an observation matters to the selected project. A GREEN project preflight in ARX 0.3 is limited to evaluated Python interpreter/toolchain requirements; it does not verify dependency installation, lock synchronization, project imports, or application execution.
 
 ## Safety and privacy
 
@@ -95,7 +95,7 @@ Unknown targets and project scripts are never executed, loaded as libraries, or 
 
 ## Architecture and development
 
-Machine, software, and project scanners produce normalized evidence. Typed semantic models preserve provider identity, execution context, resolution, compatibility, relevance, satisfaction, conflict, severity, policy, plans, and explanations independently. See [architecture](docs/architecture.md), [project semantic engine](docs/project-semantic-engine.md), [AI contract 0.2](docs/ai-contract-0.2.md), [schemas](schemas), and [roadmap](docs/roadmap.md).
+Machine, software, and project scanners produce normalized evidence. The locked project domain preserves typed requirement provenance, the capability-grouped requirement graph, provider identity, execution context, resolved/compatible/pinned/preferred roles, current-context satisfaction, recoverability, conflict, severity, policy, plans, and explanations independently. See [architecture](docs/architecture.md), [project semantic engine](docs/project-semantic-engine.md), [AI contract 0.2](docs/ai-contract-0.2.md), [schemas](schemas), and [roadmap](docs/roadmap.md).
 
 ```powershell
 python -m pip install -e .[dev]

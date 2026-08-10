@@ -1,6 +1,8 @@
 # Changelog
+
 ## 0.3.0 - 2026-08-10
-- Add bounded static Python Project DNA for `pyproject.toml`, `.python-version`, `uv.lock`, and supported requirements files.
+- Lock the project semantic domain with typed requirement evidence, a capability-grouped requirement graph, explicit current-context satisfaction/recoverability, account-scoped context fingerprinting, and construction/AI-contract contradiction guards.
+- Add bounded static Python Project DNA for `pyproject.toml`, `.python-version`, `uv.lock`, `setup.cfg`, static `setup.py` metadata, and supported requirements files.
 - Add typed requirement/provider graphs, execution contexts, and context-scoped Python resolution.
 - Keep availability, resolution, compatibility, relevance, satisfaction, severity, and remediation separate.
 - Add explicit conflicts, unknown handling, stable finding IDs, GREEN/YELLOW/RED severity, safe policy defaults, recommendation-only planning, and explanation graphs.
@@ -8,6 +10,7 @@
 - Add `project`, `resolve`, and `preflight` commands plus `codex --project` without removing ARX 0.2 commands.
 - Add desktop Project Preflight and Project Readiness views with textual status and Evidence Inspector integration.
 - Cover Python semantic cases A-H, manifest security boundaries, privacy, schemas, CLI, and desktop behavior.
+- Harden resolved/compatible/pinned/preferred roles, provider health/architecture/scope, Windows command/context divergence, recoverable provider-state changes, semantic aggregation, freshness metadata, and cross-surface consistency.
 
 ## 0.2.0 - 2026-08-10
 - Add a responsive, dark-themed Windows desktop interface for Machine DNA, capabilities, Software DNA, compatibility, evidence, and redacted exports.

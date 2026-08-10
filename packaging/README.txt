@@ -23,7 +23,10 @@ commands are used to identify developer tools.
 PROJECT PREFLIGHT
 Select a Python project directory to inspect supported manifests without
 executing project scripts. ARX distinguishes the currently resolved Python,
-compatible existing providers, and the policy-preferred provider.
+healthy compatible existing providers, project-pinned runtime intent, and the
+policy-preferred provider. GREEN is limited to evaluated Python interpreter and
+toolchain requirements. It does not verify installed dependencies, lockfile and
+site-packages synchronization, project imports, or complete application startup.
 
 SUPPORTED INSPECTION TARGETS
 EXE, DLL, MSI identification, ZIP, JAR, APK, scripts, and application
