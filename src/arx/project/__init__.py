@@ -13,6 +13,8 @@ from .models import (
     ProjectDNA,
     ProjectPreflight,
     Provider,
+    ProviderEdge,
+    ProviderGraph,
     ProviderKind,
     Relevance,
     Requirement,
@@ -24,7 +26,15 @@ from .models import (
     Severity,
     SeverityDecision,
 )
+from .resolver import (
+    infer_provider_kind,
+    make_provider,
+    provider_graph_from_machine,
+    providers_from_machine,
+    resolve_python,
+)
 from .scanner import MAX_MANIFEST_BYTES, inspect_project
+from .versions import parse_python_version, python_version_satisfies
 
 __all__ = [
     "Conflict",
@@ -40,6 +50,8 @@ __all__ = [
     "ProjectDNA",
     "ProjectPreflight",
     "Provider",
+    "ProviderEdge",
+    "ProviderGraph",
     "ProviderKind",
     "Relevance",
     "Requirement",
@@ -51,4 +63,11 @@ __all__ = [
     "Severity",
     "SeverityDecision",
     "inspect_project",
+    "infer_provider_kind",
+    "make_provider",
+    "parse_python_version",
+    "provider_graph_from_machine",
+    "providers_from_machine",
+    "python_version_satisfies",
+    "resolve_python",
 ]

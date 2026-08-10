@@ -192,6 +192,29 @@ class Provider:
 
 
 @dataclass
+class ProviderEdge:
+    source_id: str
+    target_id: str
+    relation: str = "provides"
+
+
+@dataclass
+class ProviderGraph:
+    capability_ids: list[str]
+    providers: list[Provider]
+    edges: list[ProviderEdge]
+
+    @classmethod
+    def create(cls, providers: list[Provider]) -> ProviderGraph:
+        capabilities = sorted({item.capability for item in providers})
+        return cls(
+            capability_ids=capabilities,
+            providers=list(providers),
+            edges=[ProviderEdge(item.id, item.capability) for item in providers],
+        )
+
+
+@dataclass
 class ExecutionContext:
     id: str
     shell: str
@@ -261,6 +284,7 @@ class ExecutionResolution:
     id: str
     command: str
     context_id: str
+    context: ExecutionContext
     resolved_provider_id: str | None = None
     candidate_provider_ids: list[str] = field(default_factory=list)
     method: str = "unresolved"
@@ -283,6 +307,7 @@ class ExecutionResolution:
             id=stable_id("resolution", context.id, command, resolved_provider_id),
             command=command,
             context_id=context.id,
+            context=context,
             resolved_provider_id=resolved_provider_id,
             candidate_provider_ids=list(candidate_provider_ids or []),
             method=method,
