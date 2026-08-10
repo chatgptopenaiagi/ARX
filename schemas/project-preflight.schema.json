@@ -3,13 +3,15 @@
   "$id": "https://arx.local/schemas/project-preflight.schema.json",
   "title": "ARX Project Preflight",
   "type": "object",
-  "required": ["generated_at", "project", "providers", "context", "resolution", "evaluations", "conflicts", "findings", "severity", "policy", "plan", "explanation"],
+  "required": ["generated_at", "provider_inventory_generated_at", "project", "providers", "context", "resolution", "provider_roles", "evaluations", "conflicts", "findings", "severity", "policy", "plan", "explanation"],
   "properties": {
     "generated_at": {"type": "string", "format": "date-time"},
+    "provider_inventory_generated_at": {"type": ["string", "null"], "format": "date-time"},
     "project": {"$ref": "project-dna.schema.json"},
     "providers": {"type": "array", "items": {"$ref": "#/$defs/provider"}},
     "context": {"$ref": "#/$defs/executionContext"},
     "resolution": {"$ref": "#/$defs/resolution"},
+    "provider_roles": {"$ref": "#/$defs/providerRoles"},
     "evaluations": {"type": "array", "items": {"$ref": "#/$defs/satisfactionEvaluation"}},
     "conflicts": {"type": "array", "items": {"$ref": "#/$defs/conflict"}},
     "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
@@ -33,7 +35,7 @@
     },
     "provider": {
       "type": "object",
-      "required": ["id", "capability", "path", "executable_identity", "version", "kind", "discovery_method", "healthy", "confidence", "evidence"],
+      "required": ["id", "capability", "path", "executable_identity", "version", "kind", "discovery_method", "healthy", "confidence", "evidence", "exists", "health_status", "health_reason", "architecture", "scope"],
       "properties": {
         "id": {"type": "string", "pattern": "^provider:"},
         "capability": {"type": "string"},
@@ -43,6 +45,11 @@
         "kind": {"enum": ["cpython", "conda", "uv_managed", "virtual_environment", "windowsapps_alias", "unknown"]},
         "discovery_method": {"type": "string"},
         "healthy": {"type": ["boolean", "null"]},
+        "exists": {"type": "boolean"},
+        "health_status": {"enum": ["healthy", "degraded", "unhealthy", "unknown"]},
+        "health_reason": {"type": ["string", "null"]},
+        "architecture": {"type": ["string", "null"]},
+        "scope": {"enum": ["user", "machine", "unknown"]},
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
         "evidence": {"type": "array", "items": {"type": "object"}}
       },
@@ -57,15 +64,29 @@
         "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}}
       }
     },
+    "providerRoles": {
+      "type": "object",
+      "required": ["capability", "resolved_provider_id", "compatible_provider_ids", "preferred_provider_id", "pinned_constraints", "pinned_provider_ids"],
+      "properties": {
+        "capability": {"type": "string"},
+        "resolved_provider_id": {"type": ["string", "null"]},
+        "compatible_provider_ids": {"type": "array", "items": {"type": "string"}},
+        "preferred_provider_id": {"type": ["string", "null"]},
+        "pinned_constraints": {"type": "array", "items": {"type": "string"}},
+        "pinned_provider_ids": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
     "executionContext": {
       "type": "object",
-      "required": ["id", "shell", "working_directory", "path_fingerprint", "process_environment_fingerprint", "command", "uv_indicators"],
+      "required": ["id", "shell", "working_directory", "path_fingerprint", "process_environment_fingerprint", "account_fingerprint", "command", "uv_indicators"],
       "properties": {
         "id": {"type": "string", "pattern": "^execution-context:"},
         "shell": {"type": "string"},
         "working_directory": {"type": "string"},
         "path_fingerprint": {"type": "string"},
         "process_environment_fingerprint": {"type": "string"},
+        "account_fingerprint": {"type": ["string", "null"]},
         "command": {"type": "string"},
         "virtual_environment": {"type": "boolean"},
         "conda_environment": {"type": "boolean"},
@@ -75,12 +96,13 @@
     },
     "resolution": {
       "type": "object",
-      "required": ["id", "command", "context_id", "context", "resolved_provider_id", "candidate_provider_ids", "method", "confidence", "evidence"],
+      "required": ["id", "command", "context_id", "context", "resolved_path", "resolved_provider_id", "candidate_provider_ids", "method", "confidence", "evidence"],
       "properties": {
         "id": {"type": "string", "pattern": "^resolution:"},
         "command": {"type": "string"},
         "context_id": {"type": "string"},
         "context": {"$ref": "#/$defs/executionContext"},
+        "resolved_path": {"type": ["string", "null"]},
         "resolved_provider_id": {"type": ["string", "null"]},
         "candidate_provider_ids": {"type": "array", "items": {"type": "string"}},
         "method": {"type": "string"},
@@ -93,13 +115,14 @@
     "satisfaction": {"enum": ["satisfied", "unsatisfied", "partial", "conflict", "ambiguous", "unknown", "optional_unavailable", "not_applicable"]},
     "satisfactionEvaluation": {
       "type": "object",
-      "required": ["requirement_id", "relevance", "satisfaction", "resolved_provider_id", "compatible_provider_ids", "preferred_provider_id", "reason", "evidence_refs"],
+      "required": ["requirement_id", "relevance", "satisfaction", "resolved_provider_id", "compatible_provider_ids", "unverified_provider_ids", "preferred_provider_id", "reason", "evidence_refs"],
       "properties": {
         "requirement_id": {"type": "string"},
         "relevance": {"$ref": "#/$defs/relevance"},
         "satisfaction": {"$ref": "#/$defs/satisfaction"},
         "resolved_provider_id": {"type": ["string", "null"]},
         "compatible_provider_ids": {"type": "array", "items": {"type": "string"}},
+        "unverified_provider_ids": {"type": "array", "items": {"type": "string"}},
         "preferred_provider_id": {"type": ["string", "null"]},
         "reason": {"type": "string"},
         "evidence_refs": {"type": "array", "items": {"type": "string"}}
@@ -132,10 +155,12 @@
     },
     "severity": {
       "type": "object",
-      "required": ["severity", "reason", "blocker_ids", "warning_ids", "satisfied_count", "warning_count", "blocker_count"],
+      "required": ["severity", "reason", "current_context_satisfaction", "recoverability", "blocker_ids", "warning_ids", "satisfied_count", "warning_count", "blocker_count"],
       "properties": {
         "severity": {"enum": ["green", "yellow", "red"]},
         "reason": {"type": "string"},
+        "current_context_satisfaction": {"$ref": "#/$defs/satisfaction"},
+        "recoverability": {"enum": ["ready", "recoverable", "blocked", "unknown"]},
         "blocker_ids": {"type": "array", "items": {"type": "string"}},
         "warning_ids": {"type": "array", "items": {"type": "string"}},
         "satisfied_count": {"type": "integer", "minimum": 0},
@@ -196,7 +221,7 @@
             "required": ["id", "type", "label", "evidence_refs"],
             "properties": {
               "id": {"type": "string"},
-              "type": {"enum": ["evidence", "requirement", "provider", "resolution", "capability", "conflict", "consequence", "satisfaction", "severity", "recommendation"]},
+              "type": {"enum": ["evidence", "requirement", "provider", "resolution", "capability", "conflict", "finding", "consequence", "satisfaction", "severity", "recommendation"]},
               "label": {"type": "string"},
               "evidence_refs": {"type": "array", "items": {"type": "string"}}
             },

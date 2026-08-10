@@ -31,14 +31,50 @@
     },
     "generated_at": {"type": "string", "format": "date-time"},
     "decision": {"enum": ["GREEN", "YELLOW", "RED"]},
-    "facts": {"type": "object"},
+    "facts": {
+      "type": "object",
+      "required": ["project", "project_python_constraint", "requirements", "requirement_graph", "evaluated_requirement", "python_resolution", "freshness", "provider_count"],
+      "properties": {
+        "project": {"type": "object"},
+        "project_python_constraint": {"type": ["string", "null"]},
+        "requirements": {"type": "array", "items": {"$ref": "#/$defs/requirementFact"}},
+        "requirement_graph": {"type": "object"},
+        "evaluated_requirement": {"type": ["object", "null"]},
+        "python_resolution": {"type": "object"},
+        "freshness": {"$ref": "#/$defs/freshness"},
+        "provider_count": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
     "decisions": {
       "type": "object",
-      "required": ["relevance", "satisfaction", "severity"],
+      "required": ["scope", "relevance", "satisfaction", "satisfaction_reason", "current_context", "recoverability", "severity", "severity_reason"],
       "properties": {
+        "scope": {"const": "python_interpreter_and_toolchain_requirements"},
         "relevance": {"enum": ["REQUIRED", "OPTIONAL", "CONDITIONALLY_REQUIRED", "NOT_REQUIRED", "UNKNOWN_RELEVANCE"]},
         "satisfaction": {"enum": ["SATISFIED", "UNSATISFIED", "PARTIAL", "CONFLICT", "AMBIGUOUS", "UNKNOWN", "OPTIONAL_UNAVAILABLE", "NOT_APPLICABLE"]},
         "satisfaction_reason": {"type": "string"},
+        "current_context": {
+          "type": "object",
+          "required": ["requirement_id", "satisfaction", "satisfied", "reason"],
+          "properties": {
+            "requirement_id": {"type": ["string", "null"]},
+            "satisfaction": {"enum": ["SATISFIED", "UNSATISFIED", "PARTIAL", "CONFLICT", "AMBIGUOUS", "UNKNOWN", "OPTIONAL_UNAVAILABLE", "NOT_APPLICABLE"]},
+            "satisfied": {"type": "boolean"},
+            "reason": {"type": "string"}
+          },
+          "additionalProperties": false
+        },
+        "recoverability": {
+          "type": "object",
+          "required": ["status", "compatible_provider_ids", "preferred_provider_id"],
+          "properties": {
+            "status": {"enum": ["READY", "RECOVERABLE", "BLOCKED", "UNKNOWN"]},
+            "compatible_provider_ids": {"type": "array", "items": {"type": "string"}},
+            "preferred_provider_id": {"type": ["string", "null"]}
+          },
+          "additionalProperties": false
+        },
         "severity": {"enum": ["GREEN", "YELLOW", "RED"]},
         "severity_reason": {"type": "string"}
       },
@@ -46,11 +82,13 @@
     },
     "selected_providers": {
       "type": "object",
-      "required": ["resolved", "compatible", "preferred"],
+      "required": ["resolved", "compatible", "preferred", "pinned", "pinned_constraints"],
       "properties": {
-        "resolved": {"type": ["object", "null"]},
-        "compatible": {"type": "array", "items": {"type": "object"}},
-        "preferred": {"type": ["object", "null"]}
+        "resolved": {"oneOf": [{"$ref": "#/$defs/provider"}, {"type": "null"}]},
+        "compatible": {"type": "array", "items": {"$ref": "#/$defs/provider"}},
+        "preferred": {"oneOf": [{"$ref": "#/$defs/provider"}, {"type": "null"}]},
+        "pinned": {"type": "array", "items": {"$ref": "#/$defs/provider"}},
+        "pinned_constraints": {"type": "array", "items": {"type": "string"}}
       },
       "additionalProperties": false
     },
@@ -85,18 +123,99 @@
           "value": {},
           "method": {"type": "string"},
           "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-          "note": {"type": ["string", "null"]}
+          "note": {"type": ["string", "null"]},
+          "capability": {"type": "string"},
+          "evidence_type": {"enum": ["requirement", "selection", "dependency_environment", "dependency_requirement", "ci_tested", "inferred"]},
+          "source_kind": {"type": "string"},
+          "source_path": {"type": "string"},
+          "source_key": {"type": "string"},
+          "raw": {"type": ["string", "null"], "maxLength": 512},
+          "provenance": {"type": "string"}
         },
         "additionalProperties": false
       }
     }
   },
   "$defs": {
+    "provider": {
+      "type": "object",
+      "required": ["id", "path", "version", "kind", "healthy", "health_status", "health_reason", "architecture", "scope", "exists", "confidence", "discovery_method"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^provider:"},
+        "path": {"type": "string"},
+        "version": {"type": ["string", "null"]},
+        "kind": {"type": "string"},
+        "healthy": {"type": ["boolean", "null"]},
+        "health_status": {"enum": ["healthy", "degraded", "unhealthy", "unknown"]},
+        "health_reason": {"type": ["string", "null"]},
+        "architecture": {"type": ["string", "null"]},
+        "scope": {"enum": ["user", "machine", "unknown"]},
+        "exists": {"type": "boolean"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "discovery_method": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "requirementFact": {
+      "type": "object",
+      "required": ["id", "capability", "constraint", "effective_specifier", "is_effective", "source", "field", "relevance", "relation", "evidence_purpose", "interpretation_state", "conflict_ids", "unknowns", "evidence"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^requirement:"},
+        "capability": {"type": "string"},
+        "constraint": {"type": ["string", "null"]},
+        "effective_specifier": {"type": ["string", "null"]},
+        "is_effective": {"type": "boolean"},
+        "source": {"type": "string"},
+        "field": {"type": "string"},
+        "relevance": {"type": "string"},
+        "relation": {"type": "string"},
+        "evidence_purpose": {"type": "string"},
+        "interpretation_state": {"enum": ["interpreted", "unknown", "conflict"]},
+        "conflict_ids": {"type": "array", "items": {"type": "string"}},
+        "unknowns": {"type": "array", "items": {"type": "string"}},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/requirementEvidenceFact"}}
+      },
+      "additionalProperties": false
+    },
+    "requirementEvidenceFact": {
+      "type": "object",
+      "required": ["evidence_ref", "evidence_type", "source_kind", "source_path", "source_key", "value", "confidence", "provenance"],
+      "properties": {
+        "evidence_ref": {"type": "string"},
+        "evidence_type": {"enum": ["requirement", "selection", "dependency_environment", "dependency_requirement", "ci_tested", "inferred"]},
+        "source_kind": {"type": "string"},
+        "source_path": {"type": "string"},
+        "source_key": {"type": "string"},
+        "value": {},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "provenance": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "freshness": {
+      "type": "object",
+      "required": ["report_generated_at", "project_observed_at", "project_evidence_fingerprint", "provider_inventory_fingerprint", "provider_inventory_observed_at", "execution_context_id", "path_fingerprint", "process_environment_fingerprint", "account_fingerprint"],
+      "properties": {
+        "report_generated_at": {"type": "string", "format": "date-time"},
+        "project_observed_at": {"type": "string", "format": "date-time"},
+        "project_evidence_fingerprint": {"type": "string"},
+        "provider_inventory_fingerprint": {"type": "string"},
+        "provider_inventory_observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "execution_context_id": {"type": "string"},
+        "path_fingerprint": {"type": "string"},
+        "process_environment_fingerprint": {"type": "string"},
+        "account_fingerprint": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
     "finding": {
       "type": "object",
-      "required": ["id", "message", "evidence_refs"],
+      "required": ["id", "finding_id", "severity", "category", "message", "evidence_refs"],
       "properties": {
         "id": {"type": "string", "pattern": "^ARX-"},
+        "finding_id": {"type": "string", "pattern": "^ARX-"},
+        "severity": {"enum": ["BLOCKER", "WARNING"]},
+        "category": {"type": "string"},
         "message": {"type": "string"},
         "evidence_refs": {"type": "array", "items": {"type": "string"}},
         "confidence": {"type": "number", "minimum": 0, "maximum": 1}

@@ -54,6 +54,10 @@ def test_case_a_matching_resolution_is_green():
     assert project.primary_python_requirement.constraint == ">=3.12,<3.13"
     assert report.evaluation.satisfaction is Satisfaction.SATISFIED
     assert report.severity.severity is Severity.GREEN
+    assert report.severity.blocker_count == 0
+    assert "ARX-PYTHON-NO-COMPATIBLE-PROVIDER" not in {
+        item.id for item in report.findings
+    }
     assert report.resolution.resolved_provider_id == current.id
     assert report.evaluation.preferred_provider_id == current.id
 
@@ -65,12 +69,47 @@ def test_case_b_mismatch_with_existing_compatible_provider_is_yellow():
     providers = [current, compatible]
     report = preflight(project, providers, resolution(project, providers, current))
 
+    selector = next(item for item in project.requirements if item.relation == "selects")
+    selector_evaluation = next(
+        item for item in report.evaluations if item.requirement_id == selector.id
+    )
+    assert selector.constraint == "==3.12"
+    assert selector_evaluation.compatible_provider_ids == [compatible.id]
     assert report.evaluation.satisfaction is Satisfaction.UNSATISFIED
     assert report.evaluation.compatible_provider_ids == [compatible.id]
     assert report.evaluation.preferred_provider_id == compatible.id
     assert report.severity.severity is Severity.YELLOW
+    assert report.severity.blocker_count == 0
+    assert report.severity.warning_count >= 1
     assert "ARX-PYTHON-DEFAULT-MISMATCH" in {item.id for item in report.conflicts}
+    assert "ARX-PYTHON-DEFAULT-MISMATCH" in report.severity.warning_ids
+    assert "ARX-PYTHON-NO-COMPATIBLE-PROVIDER" not in report.severity.blocker_ids
+    assert "ARX-PYTHON-NO-COMPATIBLE-PROVIDER" not in {
+        item.id for item in report.findings
+    }
+    assert "ARX-PYTHON-NO-COMPATIBLE-PROVIDER" not in {
+        item.id for item in report.explanation.nodes
+    }
+    severity_node = next(
+        item for item in report.explanation.nodes if item.type == "severity"
+    )
+    mismatch_node = next(
+        item
+        for item in report.explanation.nodes
+        if item.id == "ARX-PYTHON-DEFAULT-MISMATCH"
+    )
+    assert severity_node.label.startswith("yellow:")
+    assert any(
+        edge.source_id == mismatch_node.id
+        and edge.target_id == severity_node.id
+        and edge.relation == "causes"
+        for edge in report.explanation.edges
+    )
     assert any(step.id == "ARX-PLAN-USE-EXISTING-PYTHON" for step in report.plan.steps)
+    assert [step.id for step in report.plan.steps] == [
+        "ARX-PLAN-USE-EXISTING-PYTHON",
+        "ARX-PLAN-REEVALUATE-CONTEXT",
+    ]
     assert all(step.automatic is False for step in report.plan.steps)
 
 
@@ -82,7 +121,26 @@ def test_case_c_mismatch_without_compatible_provider_is_red():
     assert report.evaluation.satisfaction is Satisfaction.UNSATISFIED
     assert report.evaluation.compatible_provider_ids == []
     assert report.severity.severity is Severity.RED
+    assert report.severity.blocker_count >= 1
     assert "ARX-PYTHON-NO-COMPATIBLE-PROVIDER" in report.severity.blocker_ids
+    assert "ARX-PYTHON-NO-COMPATIBLE-PROVIDER" in {
+        item.id for item in report.findings
+    }
+    blocker_node = next(
+        item
+        for item in report.explanation.nodes
+        if item.id == "ARX-PYTHON-NO-COMPATIBLE-PROVIDER"
+    )
+    severity_node = next(
+        item for item in report.explanation.nodes if item.type == "severity"
+    )
+    assert blocker_node.type == "finding"
+    assert any(
+        edge.source_id == blocker_node.id
+        and edge.target_id == severity_node.id
+        and edge.relation == "causes"
+        for edge in report.explanation.edges
+    )
     assert all(step.automatic is False for step in report.plan.steps)
 
 
@@ -305,6 +363,18 @@ def test_ai_contract_uses_schema_02_and_separates_semantics(monkeypatch):
     assert contract["schema_version"] == "0.2"
     assert contract["producer"] == {"name": "ARX", "version": "0.3.0"}
     assert contract["decision"] == "YELLOW"
+    assert contract["blockers"] == []
+    assert "ARX-PYTHON-DEFAULT-MISMATCH" in {
+        item["id"] for item in contract["warnings"]
+    }
+    assert "ARX-PYTHON-NO-COMPATIBLE-PROVIDER" not in {
+        item["id"] for item in contract["warnings"]
+    }
+    assert contract["selected_providers"]["resolved"]["version"] == "3.14.6"
+    assert [
+        item["version"] for item in contract["selected_providers"]["compatible"]
+    ] == ["3.12.13"]
+    assert contract["selected_providers"]["preferred"]["version"] == "3.12.13"
     assert set(contract) >= {
         "facts",
         "decisions",

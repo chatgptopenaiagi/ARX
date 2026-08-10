@@ -148,28 +148,35 @@ def preflight_text(report, *, resolution_only=False):
             (item for item in report.evaluations if item.requirement_id == primary.id), None
         )
     resolved = provider_by_id.get(report.resolution.resolved_provider_id or "")
-    compatible = (
-        [provider_by_id[item] for item in evaluation.compatible_provider_ids]
-        if evaluation
-        else []
-    )
-    preferred = (
-        provider_by_id.get(evaluation.preferred_provider_id or "") if evaluation else None
-    )
+    compatible = [
+        provider_by_id[item]
+        for item in report.provider_roles.compatible_provider_ids
+        if item in provider_by_id
+    ]
+    preferred = provider_by_id.get(report.provider_roles.preferred_provider_id or "")
     lines = [
         "ARX - PYTHON RESOLUTION" if resolution_only else "ARX - PROJECT PREFLIGHT",
         "",
         f"PROJECT READINESS: {report.severity.severity.value.upper()}",
         f"Project: {report.project.identity}",
         f"Requirement: {primary.constraint if primary and primary.constraint else 'UNKNOWN'}",
-        f"Resolved: {resolved.version if resolved else 'UNRESOLVED'}"
-        + (f" ({resolved.path})" if resolved else ""),
+        f"Resolved: {resolved.version if resolved else 'UNMAPPED' if report.resolution.resolved_path else 'UNRESOLVED'}"
+        + (
+            f" ({resolved.path})"
+            if resolved
+            else f" ({report.resolution.resolved_path})"
+            if report.resolution.resolved_path
+            else ""
+        ),
         "Compatible: "
         + (", ".join(f"{item.version} ({item.path})" for item in compatible) or "none"),
         "Preferred: "
         + (f"{preferred.version} ({preferred.path})" if preferred else "none"),
         f"Relevance: {evaluation.relevance.value.upper() if evaluation else 'UNKNOWN_RELEVANCE'}",
         f"Satisfaction: {evaluation.satisfaction.value.upper() if evaluation else 'UNKNOWN'}",
+        f"Current-context satisfaction: {report.severity.current_context_satisfaction.value.upper()}",
+        f"Recoverability: {report.severity.recoverability.value.upper()}",
+        "Scope: Python interpreter/toolchain requirements only; dependencies and application execution are not verified.",
         "",
         "What is wrong?",
     ]

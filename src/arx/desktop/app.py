@@ -5,7 +5,7 @@ from tkinter import filedialog,messagebox,ttk
 
 from arx import __version__
 from arx.core.models import serialize
-from .controllers import DesktopController
+from .controllers import DesktopController,project_readiness_view_model
 from .theme import COLORS,apply_theme
 from .widgets import StatusBadge,set_text,text_panel,tree
 
@@ -124,7 +124,7 @@ class ARXDesktopApp(tk.Tk):
             record=tools.get(key);status="ready" if record and record.detected else "missing";evidence=(record.evidence[0].method if record and record.evidence else "PATH / known locations")
             self.machine_tree.insert("","end",iid=f"tool:{key}",values=(label,status.upper(),record.version if record else "",record.path if record else "",("Healthy" if record and record.detected else "Unavailable"),evidence),tags=(status,))
         for index,item in enumerate(machine.get("python_installations",[])):
-            status="ready" if item.get("healthy") else "blocked";name=f"Python {item.get('version') or 'unknown'}";self.machine_tree.insert("","end",iid=f"python:{index}",values=(name,status.upper(),item.get("version"),item.get("path"),"Healthy" if item.get("healthy") else "Installed but unhealthy",item.get("health_probe")),tags=(status,))
+            health=item.get("health_status") or ("healthy" if item.get("healthy") else "unhealthy" if item.get("healthy") is False else "unknown");status="ready" if health=="healthy" else "blocked" if health=="unhealthy" else "unknown";name=f"Python {item.get('version') or 'unknown'}";self.machine_tree.insert("","end",iid=f"python:{index}",values=(name,status.upper(),item.get("version"),item.get("path"),str(health).upper(),item.get("health_reason") or item.get("health_probe")),tags=(status,))
         self._render_capabilities();self._render_evidence()
     def _render_capabilities(self):
         self._clear(self.cap_tree)
@@ -146,16 +146,18 @@ class ARXDesktopApp(tk.Tk):
     def _render_project(self):
         report=getattr(self.controller,"project_preflight",None)
         if report is None:return
+        view_model=project_readiness_view_model(report)
         project=report.project;providers={item.id:item for item in report.providers};requirements={item.id:item for item in [*project.requirements,*project.optional_requirements]}
-        self.project_heading.configure(text=f"{project.identity}  •  Python project readiness");self.project_badge.set(report.severity.severity);self._clear(self.project_tree)
+        self.project_heading.configure(text=f"{project.identity}  •  Python interpreter readiness");self.project_badge.set(view_model["decision"].lower());self._clear(self.project_tree)
         tags={"satisfied":"ready","unsatisfied":"blocked","partial":"partial","conflict":"blocked","ambiguous":"unknown","unknown":"unknown","optional_unavailable":"not_applicable","not_applicable":"not_applicable"}
+        primary_requirement=project.primary_python_requirement
         for evaluation in report.evaluations:
-            requirement=requirements[evaluation.requirement_id];resolved=providers.get(evaluation.resolved_provider_id or "");preferred=providers.get(evaluation.preferred_provider_id or "")
+            requirement=requirements[evaluation.requirement_id];resolved=providers.get(report.provider_roles.resolved_provider_id or "");preferred=providers.get((report.provider_roles.preferred_provider_id if primary_requirement and evaluation.requirement_id==primary_requirement.id else evaluation.preferred_provider_id) or "")
             self.project_tree.insert("","end",values=(requirement.capability,evaluation.relevance.value.upper(),evaluation.satisfaction.value.upper(),resolved.version if resolved else "",preferred.version if preferred else "",evaluation.reason),tags=(tags[evaluation.satisfaction.value],))
-        issues=[*(f"BLOCKER  {item}" for item in report.severity.blocker_ids),*(f"WARNING  {item}" for item in report.severity.warning_ids)]
+        issues=[*(f"BLOCKER  {item}" for item in view_model["blocker_ids"]),*(f"WARNING  {item}" for item in view_model["warning_ids"])]
         steps=[f"{index}. {step.action}" for index,step in enumerate(report.plan.steps,1)]
         primary=report.evaluation if report.evaluations else None
-        detail=[f"PROJECT READINESS: {report.severity.severity.value.upper()}",f"Satisfaction: {primary.satisfaction.value.upper() if primary else 'UNKNOWN'}",f"Satisfied: {report.severity.satisfied_count}",f"Warnings: {report.severity.warning_count}",f"Blockers: {report.severity.blocker_count}","","What is wrong?",*(issues or ["Nothing blocking was found."]),"","Why?",report.severity.reason,"","Shortest trusted path to GREEN:",*(steps or ["0 actions — current evaluated state is GREEN."])]
+        detail=[f"PYTHON INTERPRETER READINESS: {view_model['decision']}",f"Satisfaction: {view_model['satisfaction']}",f"Current-context satisfaction: {view_model['current_context_satisfaction']}",f"Recoverability: {view_model['recoverability']}",f"Satisfied: {report.severity.satisfied_count}",f"Warnings: {report.severity.warning_count}",f"Blockers: {report.severity.blocker_count}","","Scope: Python interpreter/toolchain requirements only; dependency installation and application execution are not verified.","","What is wrong?",*(issues or ["Nothing blocking was found."]),"","Why?",report.severity.reason,"","Shortest trusted path to GREEN:",*(steps or ["0 actions — current evaluated state is GREEN."])]
         set_text(self.project_detail,"\n".join(map(str,detail)));self._render_evidence();self.tabs.select(5)
     def _render_evidence(self):
         self._clear(self.evidence_tree);self._evidence_items=[]
@@ -232,11 +234,12 @@ def project_ui_smoke_test(target,output,timeout=180):
     try:
         app._run("project preflight",lambda:app.controller.preflight(target),lambda _:app._render_project());wait()
         report=app.controller.project_preflight
+        view_model=project_readiness_view_model(report)
         providers={item.id:item for item in report.providers}
         evaluation=report.evaluation
-        resolved=providers.get(evaluation.resolved_provider_id or "")
-        preferred=providers.get(evaluation.preferred_provider_id or "")
-        compatible=[providers[item].version for item in evaluation.compatible_provider_ids]
+        resolved=providers.get(report.provider_roles.resolved_provider_id or "")
+        preferred=providers.get(report.provider_roles.preferred_provider_id or "")
+        compatible=[providers[item].version for item in report.provider_roles.compatible_provider_ids]
         app.controller.export(output,"codex")
         contract=json.loads(Path(output).read_text(encoding="utf-8"))
         project_tab_selected=app.tabs.tab(app.tabs.select(),"text")=="Project Readiness"
@@ -254,6 +257,8 @@ def project_ui_smoke_test(target,output,timeout=180):
             "decision":app.project_badge.cget("text"),
             "relevance":evaluation.relevance.value.upper(),
             "satisfaction":evaluation.satisfaction.value.upper(),
+            "current_context_satisfaction":report.severity.current_context_satisfaction.value.upper(),
+            "recoverability":report.severity.recoverability.value.upper(),
             "resolved_version":resolved.version if resolved else None,
             "compatible_versions":compatible,
             "preferred_version":preferred.version if preferred else None,
@@ -266,6 +271,7 @@ def project_ui_smoke_test(target,output,timeout=180):
             "project_tab_selected":project_tab_selected,
             "ai_schema_version":contract.get("schema_version"),
             "ai_decision":contract.get("decision"),
+            "view_model":view_model,
             "export_exists":Path(output).is_file(),
         }
     finally:

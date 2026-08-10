@@ -11,6 +11,32 @@ from arx.machine import scan_machine
 from arx.project import project_preflight
 from arx.software import scan_software
 
+
+def project_readiness_view_model(report):
+    """Project-readiness projection that consumes, but never recomputes, semantics."""
+    providers={item.id:item for item in report.providers}
+    primary=report.evaluation if report.project.primary_python_requirement else None
+    def provider(identifier):
+        item=providers.get(identifier or "")
+        if item is None:return None
+        return {"id":item.id,"version":item.version,"path":item.path,"health_status":item.health_status.value,"architecture":item.architecture,"scope":item.scope.value}
+    return {
+        "decision":report.severity.severity.value.upper(),
+        "satisfaction":primary.satisfaction.value.upper() if primary else "UNKNOWN",
+        "current_context_satisfaction":report.severity.current_context_satisfaction.value.upper(),
+        "recoverability":report.severity.recoverability.value.upper(),
+        "blocker_ids":list(report.severity.blocker_ids),
+        "warning_ids":list(report.severity.warning_ids),
+        "resolved":provider(report.provider_roles.resolved_provider_id),
+        "resolved_path":report.resolution.resolved_path,
+        "compatible":[provider(item) for item in report.provider_roles.compatible_provider_ids],
+        "preferred":provider(report.provider_roles.preferred_provider_id),
+        "pinned":[provider(item) for item in report.provider_roles.pinned_provider_ids],
+        "pinned_constraints":list(report.provider_roles.pinned_constraints),
+        "plan_step_ids":[item.id for item in report.plan.steps],
+        "plan_provider_ids":[item.provider_id for item in report.plan.steps if item.provider_id],
+    }
+
 class DesktopController:
     """UI-neutral orchestration; all scanner logic remains in the ARX engine."""
     def __init__(self):

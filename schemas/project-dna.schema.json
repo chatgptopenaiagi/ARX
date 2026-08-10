@@ -14,6 +14,7 @@
     "requirements",
     "optional_requirements",
     "requirement_edges",
+    "requirement_graph",
     "evidence",
     "confidence",
     "unknowns"
@@ -43,6 +44,7 @@
     "requirements": {"type": "array", "items": {"$ref": "#/$defs/requirement"}},
     "optional_requirements": {"type": "array", "items": {"$ref": "#/$defs/requirement"}},
     "requirement_edges": {"type": "array", "items": {"$ref": "#/$defs/requirementEdge"}},
+    "requirement_graph": {"$ref": "#/$defs/requirementGraph"},
     "entrypoint_hints": {"type": "array", "items": {"type": "string"}},
     "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
     "confidence": {"type": "number", "minimum": 0, "maximum": 1},
@@ -58,13 +60,29 @@
         "value": {},
         "method": {"type": "string"},
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-        "note": {"type": ["string", "null"]}
+        "note": {"type": ["string", "null"]},
+        "capability": {"type": "string"},
+        "evidence_type": {"enum": ["requirement", "selection", "dependency_environment", "dependency_requirement", "ci_tested", "inferred"]},
+        "source_kind": {"type": "string"},
+        "source_path": {"type": "string"},
+        "source_key": {"type": "string"},
+        "raw": {"type": ["string", "null"], "maxLength": 512},
+        "provenance": {"type": "string"}
       },
       "additionalProperties": false
     },
+    "requirementEvidence": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {
+          "type": "object",
+          "required": ["capability", "evidence_type", "source_kind", "source_path", "source_key", "raw", "provenance"]
+        }
+      ]
+    },
     "requirement": {
       "type": "object",
-      "required": ["id", "capability", "constraint", "source", "field", "relevance", "relation", "confidence", "evidence", "parent_ids"],
+      "required": ["id", "capability", "constraint", "source", "field", "relevance", "relation", "evidence_purpose", "confidence", "evidence", "parent_ids", "effective_specifier", "is_effective", "interpretation_state", "conflict_ids", "unknowns"],
       "properties": {
         "id": {"type": "string", "pattern": "^requirement:"},
         "capability": {"type": "string"},
@@ -73,9 +91,28 @@
         "field": {"type": "string"},
         "relevance": {"enum": ["required", "optional", "conditionally_required", "not_required", "unknown_relevance"]},
         "relation": {"type": "string"},
+        "evidence_purpose": {"enum": ["requirement", "selection", "dependency_resolution", "dependency_requirement", "ci", "inferred_environment"]},
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
-        "parent_ids": {"type": "array", "items": {"type": "string"}}
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/requirementEvidence"}},
+        "parent_ids": {"type": "array", "items": {"type": "string"}},
+        "effective_specifier": {"type": ["string", "null"]},
+        "is_effective": {"type": "boolean"},
+        "interpretation_state": {"enum": ["interpreted", "unknown", "conflict"]},
+        "conflict_ids": {"type": "array", "items": {"type": "string"}},
+        "unknowns": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "requirementGraph": {
+      "type": "object",
+      "required": ["project_root", "requirements_by_capability", "effective_requirement_ids", "provenance_by_requirement", "conflict_ids", "unknowns"],
+      "properties": {
+        "project_root": {"type": "string"},
+        "requirements_by_capability": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+        "effective_requirement_ids": {"type": "object", "additionalProperties": {"type": "string"}},
+        "provenance_by_requirement": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+        "conflict_ids": {"type": "array", "items": {"type": "string"}},
+        "unknowns": {"type": "array", "items": {"type": "string"}}
       },
       "additionalProperties": false
     },

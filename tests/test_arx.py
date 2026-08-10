@@ -49,7 +49,7 @@ def test_python_installations_keep_health_separate(monkeypatch):
     paths=[r"C:\PythonHealthy\python.exe",r"C:\PythonBroken\python.exe"]
     monkeypatch.setattr("arx.machine.windows._python_candidates",lambda:paths)
     def run(args,**kwargs):
-        if args[0]==paths[0]:return SimpleNamespace(returncode=0,stdout=json.dumps({"version":"3.12.1","architecture":"AMD64","ssl":"OpenSSL test"}),stderr="")
+        if args[0]==paths[0]:return SimpleNamespace(returncode=0,stdout=json.dumps({"version":"3.12.1","architecture":"AMD64","architecture_bits":"64-bit","ssl":"OpenSSL test"}),stderr="")
         return SimpleNamespace(returncode=1,stdout="",stderr="ImportError: DLL load failed")
     monkeypatch.setattr("arx.machine.windows.subprocess.run",run)
     records=discover_python_installations();assert [r["healthy"] for r in records]==[True,False];assert records[1]["error"].startswith("ImportError")

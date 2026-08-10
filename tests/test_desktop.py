@@ -45,6 +45,18 @@ def _project_report(tmp_path):
     return preflight(project,[provider],resolution)
 
 
+def _project_mismatch_report(tmp_path):
+    (tmp_path/"pyproject.toml").write_text('[project]\nname="desktop-project"\nrequires-python=">=3.12,<3.13"',encoding="utf-8")
+    (tmp_path/".python-version").write_text("3.12",encoding="utf-8")
+    project=inspect_project(tmp_path)
+    current=make_provider(path=r"C:\Python314\python.exe",version="3.14.6",kind=ProviderKind.CPYTHON,discovery_method="fixture",healthy=True)
+    compatible=make_provider(path=tmp_path/".venv"/"Scripts"/"python.exe",version="3.12.13",kind=ProviderKind.VIRTUAL_ENVIRONMENT,discovery_method="fixture",healthy=True)
+    providers=[current,compatible]
+    context=ExecutionContext.capture(tmp_path,environment={"PATH":current.path})
+    resolution=resolve_python(providers,context,command_paths=[current.path])
+    return preflight(project,providers,resolution)
+
+
 def test_desktop_controller_runs_project_preflight_with_reused_machine(monkeypatch,tmp_path):
     report=_project_report(tmp_path);machine={"os":{},"tools":{},"python_installations":[]}
     captured={}
@@ -69,7 +81,22 @@ def test_desktop_project_readiness_uses_text_and_color(tmp_path):
     detail=app.project_detail.get("1.0","end")
     assert "Shortest trusted path to GREEN" in detail
     assert "SATISFIED" in detail
+    assert "dependency installation and application execution are not verified" in detail
     assert len(app.project_tree.get_children())>=1
+    app.destroy()
+
+
+def test_desktop_project_readiness_renders_compatible_mismatch_as_yellow(tmp_path):
+    controller=DesktopController();controller.project_preflight=_project_mismatch_report(tmp_path)
+    app=ARXDesktopApp(controller);app.withdraw();app._render_project()
+
+    assert app.project_badge.cget("text")=="YELLOW"
+    detail=app.project_detail.get("1.0","end")
+    assert "Satisfaction: UNSATISFIED" in detail
+    assert "Blockers: 0" in detail
+    assert "WARNING  ARX-PYTHON-DEFAULT-MISMATCH" in detail
+    assert "ARX-PYTHON-NO-COMPATIBLE-PROVIDER" not in detail
+    assert "Use the existing Python 3.12.13" in detail
     app.destroy()
 
 
