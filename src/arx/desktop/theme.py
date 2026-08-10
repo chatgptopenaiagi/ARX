@@ -4,6 +4,7 @@ COLORS={
     "bg":"#11141b","panel":"#1b202b","panel_alt":"#242b38","text":"#f5f7fb","muted":"#b8c0cc",
     "accent":"#4cc9f0","ready":"#4ade80","partial":"#f59e0b","missing":"#ff3d8d","blocked":"#ff5252",
     "unknown":"#facc15","not_applicable":"#94a3b8","external":"#a78bfa","selected":"#334155",
+    "green":"#4ade80","yellow":"#facc15","red":"#ff5252",
 }
 
 def status_color(status):

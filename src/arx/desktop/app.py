@@ -12,20 +12,20 @@ from .widgets import StatusBadge,set_text,text_panel,tree
 class ARXDesktopApp(tk.Tk):
     def __init__(self,controller=None):
         super().__init__();self.controller=controller or DesktopController();self._events=queue.Queue();self._started=None;self._selected_target=None
-        self.title(f"ARX {__version__} — Pre-Installation Compatibility Intelligence");self.geometry("1280x820");self.minsize(1000,680);self._last_error_details=None;apply_theme(self)
+        self.title(f"ARX {__version__} — Project-Aware Compatibility Intelligence");self.geometry("1280x820");self.minsize(1000,680);self._last_error_details=None;apply_theme(self)
         self._build();self.after(100,self._poll)
 
     def _build(self):
         header=ttk.Frame(self,padding=(22,16));header.pack(fill="x")
-        title=ttk.Frame(header);title.pack(side="left");ttk.Label(title,text="ARX",style="Title.TLabel").pack(anchor="w");ttk.Label(title,text="Pre-Installation Compatibility Intelligence",style="Subtitle.TLabel").pack(anchor="w")
+        title=ttk.Frame(header);title.pack(side="left");ttk.Label(title,text="ARX",style="Title.TLabel").pack(anchor="w");ttk.Label(title,text="Project-Aware Compatibility Intelligence",style="Subtitle.TLabel").pack(anchor="w")
         self.details_button=ttk.Button(header,text="Technical details…",command=self._show_last_error,state="disabled");self.details_button.pack(side="right",padx=(10,0));self.activity=ttk.Label(header,text="Ready — read-only scanning",style="Muted.TLabel");self.activity.pack(side="right",anchor="e")
         actions=ttk.Frame(self,padding=(22,0,22,14));actions.pack(fill="x")
-        buttons=(("QUICK MACHINE SCAN",lambda:self._scan(False),"Accent.TButton"),("DEEP MACHINE SCAN",lambda:self._scan(True),"TButton"),("INSPECT SOFTWARE",self._inspect_file,"TButton"),("COMPARE SOFTWARE WITH THIS PC",self._compare,"TButton"),("EXPORT REPORT",self._export,"TButton"),("CODEX / AI REPORT",self._show_codex,"TButton"))
+        buttons=(("PROJECT PREFLIGHT",self._project_preflight,"Accent.TButton"),("QUICK MACHINE SCAN",lambda:self._scan(False),"TButton"),("DEEP MACHINE SCAN",lambda:self._scan(True),"TButton"),("INSPECT SOFTWARE",self._inspect_file,"TButton"),("COMPARE SOFTWARE",self._compare,"TButton"),("EXPORT REPORT",self._export,"TButton"),("AI REPORT",self._show_codex,"TButton"))
         for text,command,style in buttons:ttk.Button(actions,text=text,command=command,style=style).pack(side="left",padx=(0,8))
         ttk.Button(actions,text="Select directory…",command=self._inspect_directory).pack(side="right")
         self.progress=ttk.Progressbar(self,mode="indeterminate");self.progress.pack(fill="x",padx=22)
         self.tabs=ttk.Notebook(self);self.tabs.pack(fill="both",expand=True,padx=22,pady=(12,18))
-        self._dashboard_tab();self._capability_tab();self._software_tab();self._compatibility_tab();self._evidence_tab()
+        self._dashboard_tab();self._capability_tab();self._software_tab();self._compatibility_tab();self._evidence_tab();self._project_tab()
 
     def _dashboard_tab(self):
         tab=ttk.Frame(self.tabs,padding=12);self.tabs.add(tab,text="Machine DNA")
@@ -63,6 +63,14 @@ class ARXDesktopApp(tk.Tk):
         self.evidence_tree=tree(left,("classification","source","value","confidence"),{"classification":120,"source":300,"value":330,"confidence":100});self.evidence_tree.bind("<<TreeviewSelect>>",self._evidence_selected)
         self.evidence_detail=text_panel(right);self.evidence_detail.pack(fill="both",expand=True,padx=(12,0));self._evidence_items=[]
 
+    def _project_tab(self):
+        tab=ttk.Frame(self.tabs,padding=12);self.tabs.add(tab,text="Project Readiness")
+        banner=ttk.Frame(tab);banner.pack(fill="x",pady=(0,10));self.project_heading=ttk.Label(banner,text="Choose a project directory",font=("Segoe UI Semibold",13));self.project_heading.pack(side="left");self.project_badge=StatusBadge(banner,"unknown");self.project_badge.pack(side="right")
+        split=ttk.Panedwindow(tab,orient="vertical");split.pack(fill="both",expand=True)
+        upper=ttk.Frame(split);lower=ttk.Frame(split);split.add(upper,weight=3);split.add(lower,weight=2)
+        self.project_tree=tree(upper,("capability","relevance","satisfaction","resolved","preferred","reason"),{"capability":190,"relevance":110,"satisfaction":120,"resolved":130,"preferred":130,"reason":380})
+        self.project_detail=text_panel(lower);self.project_detail.pack(fill="both",expand=True,pady=(10,0))
+
     def _run(self,label,work,complete):
         if self._started is not None:return
         self._started=time.monotonic();self.activity.configure(text=f"Scanning… {label}");self.progress.start(12)
@@ -82,6 +90,9 @@ class ARXDesktopApp(tk.Tk):
         self.after(100,self._poll)
 
     def _scan(self,deep):self._run("deep machine scan" if deep else "quick machine scan",lambda:self.controller.scan(deep),lambda _:self._render_machine())
+    def _project_preflight(self):
+        target=filedialog.askdirectory(title="Choose a project for read-only preflight")
+        if target:self._run("project preflight",lambda:self.controller.preflight(target),lambda _:self._render_project())
     def _inspect_file(self):
         target=filedialog.askopenfilename(title="Inspect software without running it",filetypes=(("Supported software","*.exe *.dll *.msi *.zip *.jar *.apk *.ps1 *.bat *.cmd *.py *.js"),("All files","*.*")))
         if target:self._start_inspect(target)
@@ -132,6 +143,20 @@ class ARXDesktopApp(tk.Tk):
         for check in report.get("checks",[]):self.check_tree.insert("","end",values=(check.get("name"),str(check.get("status","unknown")).upper(),check.get("required",""),check.get("observed",""),check.get("reason","")),tags=(check.get("status","unknown"),))
         lines=[f"Confidence: {report.get('confidence','unknown')}",f"Score: {report.get('score','unknown')}","","PRIMARY BLOCKERS",*(report.get("blockers") or ["None"]),"","WARNINGS",*(report.get("warnings") or ["None"])]
         set_text(self.compat_detail,"\n".join(map(str,lines)))
+    def _render_project(self):
+        report=getattr(self.controller,"project_preflight",None)
+        if report is None:return
+        project=report.project;providers={item.id:item for item in report.providers};requirements={item.id:item for item in [*project.requirements,*project.optional_requirements]}
+        self.project_heading.configure(text=f"{project.identity}  •  Python project readiness");self.project_badge.set(report.severity.severity);self._clear(self.project_tree)
+        tags={"satisfied":"ready","unsatisfied":"blocked","partial":"partial","conflict":"blocked","ambiguous":"unknown","unknown":"unknown","optional_unavailable":"not_applicable","not_applicable":"not_applicable"}
+        for evaluation in report.evaluations:
+            requirement=requirements[evaluation.requirement_id];resolved=providers.get(evaluation.resolved_provider_id or "");preferred=providers.get(evaluation.preferred_provider_id or "")
+            self.project_tree.insert("","end",values=(requirement.capability,evaluation.relevance.value.upper(),evaluation.satisfaction.value.upper(),resolved.version if resolved else "",preferred.version if preferred else "",evaluation.reason),tags=(tags[evaluation.satisfaction.value],))
+        issues=[*(f"BLOCKER  {item}" for item in report.severity.blocker_ids),*(f"WARNING  {item}" for item in report.severity.warning_ids)]
+        steps=[f"{index}. {step.action}" for index,step in enumerate(report.plan.steps,1)]
+        primary=report.evaluation if report.evaluations else None
+        detail=[f"PROJECT READINESS: {report.severity.severity.value.upper()}",f"Satisfaction: {primary.satisfaction.value.upper() if primary else 'UNKNOWN'}",f"Satisfied: {report.severity.satisfied_count}",f"Warnings: {report.severity.warning_count}",f"Blockers: {report.severity.blocker_count}","","What is wrong?",*(issues or ["Nothing blocking was found."]),"","Why?",report.severity.reason,"","Shortest trusted path to GREEN:",*(steps or ["0 actions — current evaluated state is GREEN."])]
+        set_text(self.project_detail,"\n".join(map(str,detail)));self._render_evidence();self.tabs.select(5)
     def _render_evidence(self):
         self._clear(self.evidence_tree);self._evidence_items=[]
         def add(evidence,context):
@@ -143,6 +168,12 @@ class ARXDesktopApp(tk.Tk):
         for runtime in (self.controller.machine or {}).get("python_installations",[]):
             for item in runtime.get("evidence",[]):add(item,f"Python: {runtime.get('path')}")
         for item in (self.controller.software or {}).get("evidence",[]):add(item,"Software DNA")
+        project_report=getattr(self.controller,"project_preflight",None)
+        if project_report:
+            for item in project_report.project.evidence:add(item,"Project DNA")
+            for provider in project_report.providers:
+                for item in provider.evidence:add(item,f"Provider: {provider.id}")
+            for item in project_report.resolution.evidence:add(item,"Execution resolution")
     def _machine_selected(self,event):
         selection=self.machine_tree.selection()
         if selection and selection[0].startswith("tool:"):

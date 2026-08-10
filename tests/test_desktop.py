@@ -5,6 +5,7 @@ from arx.core.models import ToolRecord
 from arx.desktop.controllers import DesktopController
 from arx.desktop.app import ARXDesktopApp
 from arx.software.scanner import _application_evidence
+from arx.project import ExecutionContext, ProviderKind, inspect_project, make_provider, preflight, resolve_python
 
 def test_desktop_controller_reuses_engine_apis(monkeypatch,tmp_path):
     machine={"os":{"architecture":"AMD64"},"tools":{"python":ToolRecord("python",True)},"python_installations":[{"healthy":True}]}
@@ -34,3 +35,34 @@ def test_desktop_file_picker_inspects_without_blocking(monkeypatch):
     while controller.software is None and time.monotonic()<deadline:app.update();time.sleep(.01)
     for _ in range(10):app.update();time.sleep(.01)
     assert controller.software["filename"]=="Chosen.exe";assert app._started is None;app.destroy()
+
+
+def _project_report(tmp_path):
+    (tmp_path/"pyproject.toml").write_text('[project]\nname="desktop-project"\nrequires-python=">=3.12,<3.13"',encoding="utf-8")
+    project=inspect_project(tmp_path);provider=make_provider(path=tmp_path/".venv"/"Scripts"/"python.exe",version="3.12.13",kind=ProviderKind.VIRTUAL_ENVIRONMENT,discovery_method="fixture",healthy=True)
+    context=ExecutionContext.capture(tmp_path,environment={"PATH":provider.path});resolution=resolve_python([provider],context,command_paths=[provider.path])
+    return preflight(project,[provider],resolution)
+
+
+def test_desktop_controller_runs_project_preflight_with_reused_machine(monkeypatch,tmp_path):
+    report=_project_report(tmp_path);machine={"os":{},"tools":{},"python_installations":[]}
+    captured={}
+    def analyze(target,**kwargs):captured.update(target=target,**kwargs);return report
+    monkeypatch.setattr("arx.desktop.controllers.project_preflight",analyze)
+    controller=DesktopController();controller.machine=machine
+
+    assert controller.preflight(tmp_path) is report
+    assert captured["machine"] is machine
+    assert controller.project_preflight.severity.severity.value=="green"
+
+
+def test_desktop_project_readiness_uses_text_and_color(tmp_path):
+    controller=DesktopController();controller.project_preflight=_project_report(tmp_path)
+    app=ARXDesktopApp(controller);app.withdraw();app._render_project()
+
+    assert app.project_badge.cget("text")=="GREEN"
+    detail=app.project_detail.get("1.0","end")
+    assert "Shortest trusted path to GREEN" in detail
+    assert "SATISFIED" in detail
+    assert len(app.project_tree.get_children())>=1
+    app.destroy()
