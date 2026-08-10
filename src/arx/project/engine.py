@@ -391,6 +391,14 @@ def plan_resolution(
                 "ARX does not invent an unreadable, missing, or unsupported constraint.",
             )
         )
+    elif primary_evaluation is None and severity.severity is not Severity.GREEN:
+        steps.append(
+            ResolutionStep(
+                "ARX-PLAN-VERIFY-PYTHON-REQUIREMENT",
+                "Add, correct, or identify supported Python project requirement evidence, then run preflight again.",
+                "ARX cannot produce a trustworthy GREEN decision without an evaluable project requirement.",
+            )
+        )
     if severity.severity is not Severity.GREEN and steps:
         steps.append(
             ResolutionStep(

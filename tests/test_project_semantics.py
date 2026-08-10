@@ -277,6 +277,10 @@ def test_empty_project_is_unknown_yellow_not_green(tmp_path):
     assert report.severity.severity is Severity.YELLOW
     assert "ARX-RESOLUTION-UNKNOWN" in report.severity.warning_ids
     assert project.unknowns
+    assert [item.id for item in report.plan.steps] == [
+        "ARX-PLAN-VERIFY-PYTHON-REQUIREMENT",
+        "ARX-PLAN-REEVALUATE-CONTEXT",
+    ]
 
 
 def test_policy_forbids_host_mutation_by_default():
