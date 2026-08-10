@@ -239,6 +239,12 @@ def project_ui_smoke_test(target,output,timeout=180):
         compatible=[providers[item].version for item in evaluation.compatible_provider_ids]
         app.controller.export(output,"codex")
         contract=json.loads(Path(output).read_text(encoding="utf-8"))
+        project_tab_selected=app.tabs.tab(app.tabs.select(),"text")=="Project Readiness"
+        evidence_items=app.evidence_tree.get_children()
+        if evidence_items:
+            app.evidence_tree.selection_set(evidence_items[0]);app._evidence_selected(None)
+        evidence_detail=app.evidence_detail.get("1.0","end")
+        app.tabs.select(4)
         return {
             "app_version":__version__,
             "window_title":app.title(),
@@ -254,8 +260,10 @@ def project_ui_smoke_test(target,output,timeout=180):
             "finding_ids":[*report.severity.blocker_ids,*report.severity.warning_ids],
             "plan_step_ids":[item.id for item in report.plan.steps],
             "project_rows":len(app.project_tree.get_children()),
-            "evidence_rows":len(app.evidence_tree.get_children()),
-            "project_tab_selected":app.tabs.tab(app.tabs.select(),"text")=="Project Readiness",
+            "evidence_rows":len(evidence_items),
+            "evidence_detail_populated":"Classification:" in evidence_detail and "Source:" in evidence_detail,
+            "evidence_tab_accessible":app.tabs.tab(app.tabs.select(),"text")=="Evidence Inspector",
+            "project_tab_selected":project_tab_selected,
             "ai_schema_version":contract.get("schema_version"),
             "ai_decision":contract.get("decision"),
             "export_exists":Path(output).is_file(),
