@@ -13,9 +13,14 @@ from .models import (
     ExecutionResolution,
     Provider,
     ProviderGraph,
+    ProviderHealth,
     ProviderKind,
+    ProviderScope,
     stable_id,
 )
+
+
+SUPPORTED_PYTHON_COMMANDS = {"python", "python3", "py"}
 
 
 def _normalized_path(value: str) -> str:
@@ -37,6 +42,22 @@ def infer_provider_kind(path: str) -> ProviderKind:
     return ProviderKind.UNKNOWN
 
 
+def infer_provider_scope(path: str) -> ProviderScope:
+    normalized = _normalized_path(path)
+    user_profile = os.environ.get("USERPROFILE")
+    if user_profile:
+        profile = _normalized_path(user_profile)
+        try:
+            if Path(normalized).is_relative_to(profile):
+                return ProviderScope.USER
+        except (OSError, ValueError):
+            pass
+    lowered = normalized.replace("/", "\\").lower()
+    if lowered.startswith(("c:\\program files\\", "c:\\windows\\")):
+        return ProviderScope.MACHINE
+    return ProviderScope.UNKNOWN
+
+
 def make_provider(
     *,
     path: str,
@@ -44,11 +65,34 @@ def make_provider(
     kind: ProviderKind | None = None,
     discovery_method: str,
     healthy: bool | None,
+    architecture: str | None = None,
+    exists: bool = True,
+    health_status: ProviderHealth | str | None = None,
+    health_reason: str | None = None,
+    scope: ProviderScope | str | None = None,
     confidence: float = 1.0,
     evidence: list[Evidence] | None = None,
 ) -> Provider:
     normalized = _normalized_path(path)
     provider_kind = kind or infer_provider_kind(normalized)
+    provider_scope = ProviderScope(scope) if scope is not None else infer_provider_scope(normalized)
+    if health_status is None:
+        status = (
+            ProviderHealth.HEALTHY
+            if healthy is True
+            else ProviderHealth.UNHEALTHY
+            if healthy is False
+            else ProviderHealth.UNKNOWN
+        )
+    else:
+        status = ProviderHealth(health_status)
+    usable = (
+        True
+        if status is ProviderHealth.HEALTHY
+        else False
+        if status in {ProviderHealth.DEGRADED, ProviderHealth.UNHEALTHY}
+        else None
+    )
     identity = stable_id("executable", normalized)
     provider_id = stable_id(
         "provider",
@@ -56,6 +100,8 @@ def make_provider(
         identity,
         version,
         provider_kind.value,
+        architecture,
+        provider_scope.value,
         discovery_method,
     )
     return Provider(
@@ -66,9 +112,14 @@ def make_provider(
         version=version,
         kind=provider_kind,
         discovery_method=discovery_method,
-        healthy=healthy,
+        healthy=usable,
         confidence=confidence,
         evidence=list(evidence or []),
+        exists=exists,
+        health_status=status,
+        health_reason=health_reason,
+        architecture=architecture,
+        scope=provider_scope,
     )
 
 
@@ -94,6 +145,23 @@ def providers_from_machine(machine: Mapping[str, object]) -> list[Provider]:
             make_provider(
                 path=path,
                 version=str(item["version"]) if item.get("version") is not None else None,
+                architecture=(
+                    str(item.get("architecture_bits") or item.get("architecture"))
+                    if item.get("architecture_bits") or item.get("architecture")
+                    else None
+                ),
+                exists=item.get("exists") is not False,
+                health_status=(
+                    str(item["health_status"])
+                    if item.get("health_status") is not None
+                    else None
+                ),
+                health_reason=(
+                    str(item.get("health_reason") or item.get("error"))
+                    if item.get("health_reason") or item.get("error")
+                    else None
+                ),
+                scope=str(item["scope"]) if item.get("scope") is not None else None,
                 discovery_method="machine_dna.python_installations",
                 healthy=item.get("healthy") if isinstance(item.get("healthy"), bool) else None,
                 confidence=1.0 if item.get("healthy") else 0.7,
@@ -110,6 +178,7 @@ def provider_graph_from_machine(machine: Mapping[str, object]) -> ProviderGraph:
 def _powershell_paths(
     context: ExecutionContext,
     environment: Mapping[str, str],
+    command: str,
     timeout: float,
 ) -> list[str]:
     executable = shutil.which("pwsh", path=environment.get("PATH")) or shutil.which(
@@ -118,7 +187,7 @@ def _powershell_paths(
     if not executable:
         return []
     script = (
-        "Get-Command -Name python -All -ErrorAction SilentlyContinue | "
+        f"Get-Command -Name {command} -All -ErrorAction SilentlyContinue | "
         "Where-Object CommandType -eq Application | Select-Object -ExpandProperty Source"
     )
     try:
@@ -142,6 +211,7 @@ def _powershell_paths(
 def _where_paths(
     context: ExecutionContext,
     environment: Mapping[str, str],
+    command: str,
     timeout: float,
 ) -> list[str]:
     executable = shutil.which("where.exe", path=environment.get("PATH"))
@@ -149,7 +219,7 @@ def _where_paths(
         return []
     try:
         completed = subprocess.run(
-            [executable, "python"],
+            [executable, command],
             cwd=context.working_directory,
             env=dict(environment),
             capture_output=True,
@@ -186,21 +256,24 @@ def resolve_python(
     environment: Mapping[str, str] | None = None,
     timeout: float = 5.0,
 ) -> ExecutionResolution:
-    """Resolve fixed command ``python`` without invoking a discovered interpreter."""
+    """Resolve a supported Python command without invoking a discovered interpreter."""
     env = dict(os.environ if environment is None else environment)
+    command = context.command.lower()
+    if command not in SUPPORTED_PYTHON_COMMANDS:
+        raise ValueError(f"Unsupported Python command: {context.command}")
     methods: list[str] = []
     if command_paths is None:
         paths: list[str] = []
         if os.name == "nt" and context.shell.lower() in {"powershell", "pwsh"}:
-            powershell = _powershell_paths(context, env, timeout)
+            powershell = _powershell_paths(context, env, command, timeout)
             paths.extend(powershell)
             if powershell:
                 methods.append("PowerShell Get-Command -All")
-            where = _where_paths(context, env, timeout)
+            where = _where_paths(context, env, command, timeout)
             paths.extend(where)
             if where:
                 methods.append("where.exe")
-        first = shutil.which("python", path=env.get("PATH"))
+        first = shutil.which(command, path=env.get("PATH"))
         if first:
             paths.append(first)
             methods.append("shutil.which")
@@ -216,15 +289,16 @@ def resolve_python(
         Evidence(
             EvidenceKind.OBSERVED if paths else EvidenceKind.UNKNOWN,
             "execution context",
-            paths[0] if paths else "python command did not resolve",
+            paths[0] if paths else f"{command} command did not resolve",
             ", ".join(methods) if methods else "fixed command resolution",
             1.0 if resolved else 0.5,
             None if resolved else "Resolved path was absent or not mapped to a discovered provider",
         )
     ]
     return ExecutionResolution.create(
-        command="python",
+        command=command,
         context=context,
+        resolved_path=paths[0] if paths else None,
         resolved_provider_id=resolved.id if resolved else None,
         candidate_provider_ids=[item.id for item in candidates],
         method=", ".join(methods) if methods else "unresolved",

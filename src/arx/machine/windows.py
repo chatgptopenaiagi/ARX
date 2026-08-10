@@ -54,24 +54,47 @@ def _python_candidates():
         except (OSError,subprocess.TimeoutExpired):pass
     where=shutil.which("where.exe")
     if where:
-        try:
-            p=subprocess.run([where,"python"],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0));candidates.extend(line.strip() for line in p.stdout.splitlines())
-        except (OSError,subprocess.TimeoutExpired):pass
+        for command in ("python", "python3"):
+            try:
+                p=subprocess.run([where,command],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0));candidates.extend(line.strip() for line in p.stdout.splitlines())
+            except (OSError,subprocess.TimeoutExpired):pass
     default=shutil.which("python")
     if default:candidates.append(default)
-    unique={str(Path(item).resolve()).lower():str(Path(item).resolve()) for item in candidates if item and Path(item).is_file()}
+    unique={str(Path(item).resolve(strict=False)).lower():str(Path(item).resolve(strict=False)) for item in candidates if item}
     return list(unique.values())
 
 def discover_python_installations(timeout=8):
     """Inventory each registered/command-visible Python and test core runtime imports."""
-    script="import ctypes,json,platform,ssl,sys;print(json.dumps({'version':platform.python_version(),'architecture':platform.machine(),'ssl':ssl.OPENSSL_VERSION,'executable':sys.executable}))"
+    script="import ctypes,json,platform,ssl,struct,sys;print(json.dumps({'version':platform.python_version(),'architecture':platform.machine(),'architecture_bits':str(struct.calcsize('P')*8)+'-bit','ssl':ssl.OPENSSL_VERSION,'executable':sys.executable}))"
     records=[]
     for path in _python_candidates():
+        try:exists=Path(path).exists()
+        except OSError:exists=True
         try:
-            p=subprocess.run([path,"-c",script],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0));details=json.loads(p.stdout) if p.returncode==0 and p.stdout.strip() else {}
-            records.append({"path":path,"version":details.get("version"),"architecture":details.get("architecture"),"healthy":p.returncode==0,"health_probe":"import ssl, ctypes","ssl":details.get("ssl"),"exit_code":p.returncode,"error":None if p.returncode==0 else (p.stderr or p.stdout).strip()[:500],"evidence":[Evidence(EvidenceKind.OBSERVED,path,"healthy" if p.returncode==0 else "unhealthy","fixed Python core import probe",1.0 if p.returncode==0 else .9)]})
-        except (OSError,subprocess.TimeoutExpired,json.JSONDecodeError) as exc:
-            records.append({"path":path,"version":None,"architecture":None,"healthy":False,"health_probe":"import ssl, ctypes","ssl":None,"exit_code":None,"error":type(exc).__name__,"evidence":[Evidence(EvidenceKind.UNKNOWN,path,type(exc).__name__,"fixed Python core import probe",.5)]})
+            p=subprocess.run([path,"-c",script],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
+            if p.returncode != 0:
+                reason=(p.stderr or p.stdout).strip()[:500] or f"probe exited {p.returncode}"
+                records.append({"path":path,"exists":exists,"version":None,"architecture":None,"architecture_bits":None,"healthy":False,"health_status":"unhealthy","health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":None,"exit_code":p.returncode,"error":reason,"evidence":[Evidence(EvidenceKind.OBSERVED,path,"unhealthy","fixed Python core import probe",.9,reason)]})
+                continue
+            try:
+                details=json.loads(p.stdout) if p.stdout.strip() else {}
+            except json.JSONDecodeError as exc:
+                reason="provider started but did not return valid fixed-probe output"
+                records.append({"path":path,"exists":exists,"version":None,"architecture":None,"architecture_bits":None,"healthy":False,"health_status":"degraded","health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":None,"exit_code":p.returncode,"error":type(exc).__name__,"evidence":[Evidence(EvidenceKind.UNKNOWN,path,"degraded", "fixed Python core import probe",.6,reason)]})
+                continue
+            healthy=bool(details.get("version") and details.get("architecture_bits") and details.get("ssl"))
+            reason=None if healthy else "fixed probe returned incomplete runtime details"
+            status="healthy" if healthy else "degraded"
+            records.append({"path":path,"exists":exists,"version":details.get("version"),"architecture":details.get("architecture"),"architecture_bits":details.get("architecture_bits"),"healthy":healthy,"health_status":status,"health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":details.get("ssl"),"exit_code":p.returncode,"error":reason,"evidence":[Evidence(EvidenceKind.OBSERVED if healthy else EvidenceKind.UNKNOWN,path,status,"fixed Python core import probe",1.0 if healthy else .6,reason)]})
+        except PermissionError as exc:
+            reason=f"permission/access failure: {type(exc).__name__}"
+            records.append({"path":path,"exists":exists,"version":None,"architecture":None,"architecture_bits":None,"healthy":None,"health_status":"unknown","health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":None,"exit_code":None,"error":reason,"evidence":[Evidence(EvidenceKind.UNKNOWN,path,"unknown","fixed Python core import probe",.5,reason)]})
+        except subprocess.TimeoutExpired as exc:
+            reason=f"fixed probe timed out after {timeout} seconds"
+            records.append({"path":path,"exists":exists,"version":None,"architecture":None,"architecture_bits":None,"healthy":None,"health_status":"unknown","health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":None,"exit_code":None,"error":type(exc).__name__,"evidence":[Evidence(EvidenceKind.UNKNOWN,path,"unknown","fixed Python core import probe",.5,reason)]})
+        except OSError as exc:
+            reason=f"provider invocation failed and may be transient: {type(exc).__name__}"
+            records.append({"path":path,"exists":exists,"version":None,"architecture":None,"architecture_bits":None,"healthy":None,"health_status":"unknown","health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":None,"exit_code":None,"error":type(exc).__name__,"evidence":[Evidence(EvidenceKind.UNKNOWN,path,"unknown","fixed Python core import probe",.5,reason)]})
     return records
 
 def discover_dotnet_runtimes(timeout=8):

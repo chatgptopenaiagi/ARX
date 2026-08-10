@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ast
+import configparser
 import re
 from pathlib import Path
 from typing import Any
@@ -11,7 +13,19 @@ except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.10
 
 from arx.core.models import Evidence, EvidenceKind
 
-from .models import ManifestRecord, ProjectDNA, Relevance, Requirement
+from .models import (
+    InterpretationState,
+    ManifestRecord,
+    ProjectDNA,
+    Relevance,
+    Requirement,
+    evidence_id,
+)
+from .versions import (
+    exact_version_from_constraint,
+    python_constraints_overlap,
+    python_version_satisfies,
+)
 
 
 MAX_MANIFEST_BYTES = 1024 * 1024
@@ -104,6 +118,8 @@ def _runtime_requirement(
     relation: str,
     confidence: float,
     kind: EvidenceKind = EvidenceKind.DECLARED,
+    relevance: Relevance = Relevance.REQUIRED,
+    evidence_purpose: str = "requirement",
 ) -> Requirement:
     value = constraint if constraint is not None else "not declared or unavailable"
     item = Evidence(kind, source, value, f"static field {field}", confidence)
@@ -112,8 +128,9 @@ def _runtime_requirement(
         constraint=constraint,
         source=source,
         field=field,
-        relevance=Relevance.REQUIRED,
+        relevance=relevance,
         relation=relation,
+        evidence_purpose=evidence_purpose,
         confidence=confidence,
         evidence=[item],
     )
@@ -190,6 +207,8 @@ def _parse_python_version(text: str | None) -> Requirement | None:
             relation="selects",
             confidence=0.5,
             kind=EvidenceKind.UNKNOWN,
+            relevance=Relevance.UNKNOWN_RELEVANCE,
+            evidence_purpose="selection",
         )
     return _runtime_requirement(
         constraint=f"=={selected}",
@@ -197,6 +216,8 @@ def _parse_python_version(text: str | None) -> Requirement | None:
         field="selected-version",
         relation="selects",
         confidence=1.0,
+        relevance=Relevance.UNKNOWN_RELEVANCE,
+        evidence_purpose="selection",
     )
 
 
@@ -216,6 +237,7 @@ def _parse_uv_lock(
             relation="requires",
             confidence=0.3,
             kind=EvidenceKind.UNKNOWN,
+            evidence_purpose="dependency_resolution",
         )
     constraint = data.get("requires-python")
     return _runtime_requirement(
@@ -225,6 +247,96 @@ def _parse_uv_lock(
         relation="requires",
         confidence=1.0 if constraint is not None else 0.5,
         kind=EvidenceKind.DECLARED if constraint is not None else EvidenceKind.UNKNOWN,
+        evidence_purpose="dependency_resolution",
+    )
+
+
+def _parse_setup_cfg(
+    text: str | None,
+    evidence: list[Evidence],
+    unknowns: list[str],
+) -> tuple[str | None, Requirement | None]:
+    if text is None:
+        return None, None
+    parser = configparser.ConfigParser(interpolation=None)
+    try:
+        parser.read_string(text)
+    except configparser.Error as exc:
+        reason = f"setup.cfg is malformed configuration: {type(exc).__name__}"
+        evidence.append(Evidence(EvidenceKind.UNKNOWN, "setup.cfg", reason, "static INI parser"))
+        unknowns.append(reason)
+        return None, _runtime_requirement(
+            constraint=None,
+            source="setup.cfg",
+            field="options.python_requires",
+            relation="requires",
+            confidence=0.3,
+            kind=EvidenceKind.UNKNOWN,
+        )
+    identity = parser.get("metadata", "name", fallback=None)
+    constraint = parser.get("options", "python_requires", fallback=None)
+    if constraint is None:
+        return identity, None
+    return identity, _runtime_requirement(
+        constraint=constraint.strip() or None,
+        source="setup.cfg",
+        field="options.python_requires",
+        relation="requires",
+        confidence=0.9,
+        kind=EvidenceKind.DECLARED if constraint.strip() else EvidenceKind.UNKNOWN,
+    )
+
+
+def _parse_setup_py(
+    text: str | None,
+    evidence: list[Evidence],
+    unknowns: list[str],
+) -> tuple[str | None, Requirement | None]:
+    if text is None:
+        return None, None
+    try:
+        tree = ast.parse(text, filename="setup.py", mode="exec")
+    except SyntaxError:
+        reason = "setup.py could not be interpreted by the static AST parser"
+        evidence.append(Evidence(EvidenceKind.UNKNOWN, "setup.py", reason, "static Python AST parser"))
+        unknowns.append(reason)
+        return None, None
+    identity: str | None = None
+    constraint: str | None = None
+    python_requires_seen = False
+    for statement in tree.body:
+        if not isinstance(statement, ast.Expr) or not isinstance(statement.value, ast.Call):
+            continue
+        node = statement.value
+        is_setup = (
+            isinstance(node.func, ast.Name)
+            and node.func.id == "setup"
+            or isinstance(node.func, ast.Attribute)
+            and node.func.attr == "setup"
+        )
+        if not is_setup:
+            continue
+        for keyword in node.keywords:
+            if keyword.arg == "name" and isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                identity = keyword.value.value
+            if keyword.arg == "python_requires":
+                python_requires_seen = True
+                if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                    constraint = keyword.value.value
+        break
+    if not python_requires_seen:
+        return identity, None
+    if constraint is None:
+        reason = "setup.py python_requires is not a literal string and was not executed"
+        evidence.append(Evidence(EvidenceKind.UNKNOWN, "setup.py", reason, "static Python AST parser"))
+        unknowns.append(reason)
+    return identity, _runtime_requirement(
+        constraint=constraint,
+        source="setup.py",
+        field="setup.python_requires",
+        relation="requires",
+        confidence=0.8 if constraint else 0.3,
+        kind=EvidenceKind.DECLARED if constraint else EvidenceKind.UNKNOWN,
     )
 
 
@@ -253,6 +365,7 @@ def _package_requirements(text: str, source: str, optional: bool) -> list[Requir
                 source=source,
                 field=f"line:{number}",
                 relevance=relevance,
+                evidence_purpose="dependency_requirement",
                 confidence=1.0,
                 evidence=[item_evidence],
             )
@@ -278,7 +391,13 @@ def inspect_project(
     entrypoints: list[str] = []
     build_systems: list[str] = []
 
-    fixed = [root / "pyproject.toml", root / ".python-version", root / "uv.lock"]
+    fixed = [
+        root / "pyproject.toml",
+        root / ".python-version",
+        root / "uv.lock",
+        root / "setup.cfg",
+        root / "setup.py",
+    ]
     requirement_files = sorted(root.glob("requirements*.txt"), key=lambda item: item.name.lower())
     requirements_directory = root / "requirements"
     if requirements_directory.is_symlink():
@@ -316,6 +435,26 @@ def inspect_project(
         if locked:
             required.append(locked)
             evidence.extend(locked.evidence)
+    if "setup.cfg" in texts:
+        setup_identity, configured = _parse_setup_cfg(
+            texts["setup.cfg"], evidence, unknowns
+        )
+        identity = identity or setup_identity
+        if configured:
+            required.append(configured)
+            evidence.extend(configured.evidence)
+            if "setuptools" not in build_systems:
+                build_systems.append("setuptools")
+    if "setup.py" in texts:
+        setup_identity, scripted = _parse_setup_py(
+            texts["setup.py"], evidence, unknowns
+        )
+        identity = identity or setup_identity
+        if scripted:
+            required.append(scripted)
+            evidence.extend(scripted.evidence)
+            if "setuptools" not in build_systems:
+                build_systems.append("setuptools")
 
     for source in sorted(key for key in texts if key.lower().endswith(".txt")):
         text = texts[source]
@@ -326,6 +465,73 @@ def inspect_project(
         (optional if is_optional else required).extend(parsed)
         for item in parsed:
             evidence.extend(item.evidence)
+
+    authority = {
+        ("pyproject.toml", "project.requires-python"): 0,
+        ("uv.lock", "requires-python"): 1,
+        ("setup.cfg", "options.python_requires"): 2,
+        ("setup.py", "setup.python_requires"): 3,
+    }
+    runtime_requirements = [
+        item
+        for item in required
+        if item.capability == "python.runtime" and item.relation == "requires"
+    ]
+    if runtime_requirements:
+        primary_runtime = min(
+            runtime_requirements,
+            key=lambda item: authority.get((item.source, item.field), 99),
+        )
+        for item in runtime_requirements:
+            item.relevance = (
+                Relevance.REQUIRED
+                if item.id == primary_runtime.id
+                else Relevance.UNKNOWN_RELEVANCE
+            )
+            item.is_effective = item.id == primary_runtime.id
+        primary_runtime.effective_specifier = primary_runtime.constraint
+        for item in required:
+            if item.capability != "python.runtime" or item.id == primary_runtime.id:
+                continue
+            if item.relation == "selects":
+                version = exact_version_from_constraint(item.constraint)
+                comparison = (
+                    python_version_satisfies(version, primary_runtime.constraint)
+                    if version
+                    else None
+                )
+            elif item.relation == "requires":
+                comparison = python_constraints_overlap(
+                    primary_runtime.constraint, item.constraint
+                )
+            else:
+                comparison = None
+            if comparison is False:
+                primary_runtime.conflict_ids.append(
+                    "ARX-PROJECT-REQUIREMENT-CONFLICT"
+                )
+                primary_runtime.interpretation_state = InterpretationState.CONFLICT
+            elif comparison is None:
+                reason = (
+                    f"{item.source} {item.field} could not be safely compared with "
+                    f"{primary_runtime.source} {primary_runtime.field}."
+                )
+                item.interpretation_state = InterpretationState.UNKNOWN
+                item.unknowns.append(reason)
+        # The authoritative Requirement is the capability-level conclusion. It
+        # retains typed provenance from every Python runtime declaration without
+        # erasing the individual source claims used for conflict analysis.
+        semantic_evidence = []
+        seen_evidence: set[str] = set()
+        for item in required:
+            if item.capability != "python.runtime":
+                continue
+            for item_evidence in item.evidence:
+                identifier = evidence_id(item_evidence)
+                if identifier not in seen_evidence:
+                    semantic_evidence.append(item_evidence)
+                    seen_evidence.add(identifier)
+        primary_runtime.evidence = semantic_evidence
 
     python_detected = bool(manifests)
     if not python_detected:
