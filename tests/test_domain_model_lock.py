@@ -161,7 +161,7 @@ def test_ai_contract_semantic_guard_rejects_cross_field_contradiction(tmp_path):
     current = _provider(r"C:\Current\python.exe", "3.14.6")
     compatible = _provider(r"C:\Compatible\python.exe", "3.12.13")
     contract = project_codex_report(
-        _report(project, [current, compatible], current), "0.3.0"
+        _report(project, [current, compatible], current), "2.0.0"
     )
     contract["blockers"].append(
         {
@@ -191,7 +191,7 @@ def test_green_readiness_guard_rejects_unsatisfied_required_context(tmp_path):
 def test_green_ai_contract_guard_rejects_unsatisfied_required_context(tmp_path):
     project = _project(tmp_path)
     current = _provider(r"C:\Current\python.exe", "3.12.13")
-    contract = project_codex_report(_report(project, [current], current), "0.3.0")
+    contract = project_codex_report(_report(project, [current], current), "2.0.0")
     contract["decisions"]["current_context"]["satisfaction"] = "UNSATISFIED"
     contract["decisions"]["current_context"]["satisfied"] = False
 

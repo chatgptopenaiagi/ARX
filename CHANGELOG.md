@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0 - 2026-08-10
+- Promote ARX to Project-Aware Semantic Compatibility Intelligence with a locked canonical project-readiness domain.
+- Implement Python project semantic intelligence across CLI, desktop, Evidence Inspector, and AI Contract 0.2 output.
+- Harden typed requirement provenance, provider roles and health, execution-context satisfaction, recoverability, invariant checks, schemas, and cross-surface consistency.
+- Add Phase II matched-arm benchmark infrastructure with empty evidence containers and an explicit no-claims gate; no efficiency savings are claimed.
+- Preserve AI Contract schema 0.2 and the legacy machine/software schema 0.1.
+- Publish a Windows x64 portable desktop build and checksums.
+
 ## 0.3.0 - 2026-08-10
 - Lock the project semantic domain with typed requirement evidence, a capability-grouped requirement graph, explicit current-context satisfaction/recoverability, account-scoped context fingerprinting, and construction/AI-contract contradiction guards.
 - Add bounded static Python Project DNA for `pyproject.toml`, `.python-version`, `uv.lock`, `setup.cfg`, static `setup.py` metadata, and supported requirements files.

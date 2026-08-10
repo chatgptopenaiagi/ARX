@@ -1,5 +1,5 @@
 ARX
-Experimental Desktop Release 0.3.0
+Portable Desktop Release 2.0.0
 
 PURPOSE
 ARX is a read-only project-aware compatibility and resolution engine. It scans

@@ -1,4 +1,4 @@
-# ARX
+# ARX 2.0.0
 
 ARX is an evidence-based, Windows-first project-aware semantic compatibility and resolution engine:
 
@@ -17,7 +17,7 @@ availability != resolution != compatibility != relevance
 relevance != satisfaction != severity != remediation
 ```
 
-## ARX 0.3 features
+## ARX 2.0.0 capabilities
 
 - Windows OS, CPU, memory, GPU, storage, environment, SDK hints, and developer-tool discovery
 - Fixed, timeout-bound tool version probes with no shell interpretation
@@ -51,7 +51,7 @@ $env:PYTHONPATH = 'src'
 python -m arx.desktop
 ```
 
-Standalone experimental Windows builds are produced under `release/` and are intended for distribution through GitHub Releases rather than source control.
+Portable Windows builds are produced under `release/` and are distributed through GitHub Releases rather than source control.
 
 ## Install and run
 
@@ -87,7 +87,7 @@ Example from the development workstation (2026-08-09):
 [READY]   CUDA Compute
 ```
 
-Machine scan statuses are observations, not project prerequisites. Project preflight determines whether an observation matters to the selected project. A GREEN project preflight in ARX 0.3 is limited to evaluated Python interpreter/toolchain requirements; it does not verify dependency installation, lock synchronization, project imports, or application execution.
+Machine scan statuses are observations, not project prerequisites. Project preflight determines whether an observation matters to the selected project. A GREEN project preflight in ARX 2.0.0 is limited to evaluated Python interpreter/toolchain requirements; it does not verify dependency installation, lock synchronization, project imports, or application execution.
 
 ## Safety and privacy
 
@@ -95,7 +95,7 @@ Unknown targets and project scripts are never executed, loaded as libraries, or 
 
 ## Architecture and development
 
-Machine, software, and project scanners produce normalized evidence. The locked project domain preserves typed requirement provenance, the capability-grouped requirement graph, provider identity, execution context, resolved/compatible/pinned/preferred roles, current-context satisfaction, recoverability, conflict, severity, policy, plans, and explanations independently. See [architecture](docs/architecture.md), [project semantic engine](docs/project-semantic-engine.md), [AI contract 0.2](docs/ai-contract-0.2.md), [schemas](schemas), and [roadmap](docs/roadmap.md).
+Machine, software, and project scanners produce normalized evidence. The locked project domain preserves typed requirement provenance, the capability-grouped requirement graph, provider identity, execution context, resolved/compatible/pinned/preferred roles, current-context satisfaction, recoverability, conflict, severity, policy, plans, and explanations independently. See [ARX 2.0.0 release notes](docs/release-notes-2.0.0.md), [architecture](docs/architecture.md), [project semantic engine](docs/project-semantic-engine.md), [AI contract 0.2](docs/ai-contract-0.2.md), [schemas](schemas), and [roadmap](docs/roadmap.md).
 
 ```powershell
 python -m pip install -e .[dev]

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arx-prescanner"
-version = "0.3.0"
-description = "ARX Windows pre-installation compatibility intelligence"
+version = "2.0.0"
+description = "ARX project-aware semantic compatibility intelligence"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

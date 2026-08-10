@@ -1,6 +1,6 @@
 # ARX AI contract 0.2
 
-Schema `0.2` is semantic compression for project preflight, not a dump of process state. It is independent from application version `0.3.0`.
+Schema `0.2` is semantic compression for project preflight, not a dump of process state. It is independent from application version `2.0.0`.
 
 Top-level sections are:
 

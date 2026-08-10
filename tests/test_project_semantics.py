@@ -358,10 +358,10 @@ def test_ai_contract_uses_schema_02_and_separates_semantics(monkeypatch):
     compatible = provider(project.root / ".venv" / "Scripts" / "python.exe", "3.12.13")
     providers = [current, compatible]
     report = preflight(project, providers, resolution(project, providers, current))
-    contract = project_codex_report(report, "0.3.0")
+    contract = project_codex_report(report, "2.0.0")
 
     assert contract["schema_version"] == "0.2"
-    assert contract["producer"] == {"name": "ARX", "version": "0.3.0"}
+    assert contract["producer"] == {"name": "ARX", "version": "2.0.0"}
     assert contract["decision"] == "YELLOW"
     assert contract["blockers"] == []
     assert "ARX-PYTHON-DEFAULT-MISMATCH" in {
