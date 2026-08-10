@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 class EvidenceKind(str, Enum):
@@ -22,6 +23,7 @@ def utc_now(): return datetime.now(timezone.utc).isoformat()
 def serialize(value):
     if hasattr(value,"__dataclass_fields__"): value=asdict(value)
     if isinstance(value,Enum): return value.value
+    if isinstance(value,Path): return str(value)
     if isinstance(value,dict): return {k:serialize(v) for k,v in value.items()}
     if isinstance(value,(list,tuple)): return [serialize(v) for v in value]
     return value
