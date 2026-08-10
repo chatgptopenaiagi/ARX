@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "ARX-BENCH-PY-001",
+  "result_kind": "SEMANTIC_FIXTURE_EXPECTATION",
+  "values": {
+    "current_context_satisfaction": {
+      "value": "UNSATISFIED",
+      "classification": "DERIVED"
+    },
+    "recoverability": {
+      "value": "RECOVERABLE",
+      "classification": "DERIVED"
+    },
+    "verdict": {
+      "value": "YELLOW",
+      "classification": "DERIVED"
+    },
+    "resolved_provider_id": {
+      "value": "python-current-3.14.6-x64",
+      "classification": "DERIVED"
+    },
+    "compatible_provider_ids": {
+      "value": ["python-existing-3.12.13-x64"],
+      "classification": "DERIVED"
+    },
+    "preferred_provider_id": {
+      "value": "python-existing-3.12.13-x64",
+      "classification": "DERIVED"
+    },
+    "blocker_ids": {
+      "value": [],
+      "classification": "DERIVED"
+    },
+    "warning_ids": {
+      "value": ["ARX-PYTHON-DEFAULT-MISMATCH"],
+      "classification": "DERIVED"
+    },
+    "resolution_plan_ids": {
+      "value": [
+        "ARX-PLAN-USE-EXISTING-PYTHON",
+        "ARX-PLAN-REEVALUATE-CONTEXT"
+      ],
+      "classification": "DERIVED"
+    }
+  },
+  "performance_evidence": {
+    "value": "NONE",
+    "classification": "UNKNOWN"
+  }
+}

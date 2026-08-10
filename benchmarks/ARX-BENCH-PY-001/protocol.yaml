@@ -1,0 +1,152 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "ARX-BENCH-PY-001",
+  "title": "Canonical recoverable Python default mismatch",
+  "phase": "ARX Phase II benchmark infrastructure",
+  "status": "DEFINED_NOT_EXECUTED",
+  "objective": "Collect matched-arm evidence without presuming a performance direction.",
+  "scenario": {
+    "fixture": "fixture/scenario.yaml",
+    "task": "fixture/task.md",
+    "expected_semantics": "fixture/expected-result.yaml"
+  },
+  "unit_of_observation": "one independently executed task trial",
+  "experimental_design": {
+    "design": "matched-pair",
+    "pairing_key": "pair_id",
+    "order_policy": "Arm order must be recorded and should be counterbalanced before execution.",
+    "sample_size": {
+      "value": null,
+      "classification": "UNKNOWN",
+      "reason": "No sample size has been registered; claim verification is prohibited."
+    },
+    "common_controls": [
+      "identical canonical scenario",
+      "identical participant task",
+      "identical allowed tools except for the registered ARX treatment",
+      "identical start and stop rules",
+      "fresh execution context per trial",
+      "no host remediation performed by ARX"
+    ],
+    "sole_treatment_difference": "Availability of the registered ARX semantic preflight output."
+  },
+  "arms": [
+    {
+      "arm_id": "baseline",
+      "definition": "baseline/arm.yaml",
+      "results": "baseline/results.json"
+    },
+    {
+      "arm_id": "arx-assisted",
+      "definition": "arx-assisted/arm.yaml",
+      "results": "arx-assisted/results.json"
+    }
+  ],
+  "start_rule": "Start the timer immediately before the participant receives the task and canonical scenario.",
+  "stop_rule": "Stop the timer when the participant submits a verdict, blocker set, compatible/preferred provider selection, and recommended next action.",
+  "measurement_rules": {
+    "elapsed_ms": "Read directly from one monotonic clock spanning the registered start and stop events.",
+    "human_action_count": "Increment once for each discrete participant command, query, file inspection, or final submission action recorded by the observer.",
+    "tool_invocation_count": "Increment once whenever an allowed external tool or command is invoked, including failed invocations.",
+    "correction_count": "Increment once when the participant explicitly replaces a previously recorded candidate verdict, provider choice, finding set, or plan before final submission.",
+    "rounding": "Store elapsed milliseconds at the clock's reported precision; store counts as integers. Do not impute missing values."
+  },
+  "direct_metrics": [
+    {
+      "metric_id": "elapsed_ms",
+      "description": "Monotonic elapsed time between the registered start and stop events.",
+      "unit": "milliseconds",
+      "value_type": "number",
+      "minimum": 0,
+      "observation_classification": "MEASURED",
+      "comparison_classification": "DERIVED"
+    },
+    {
+      "metric_id": "human_action_count",
+      "description": "Count of participant actions recorded by the benchmark observer under the registered action rubric.",
+      "unit": "actions",
+      "value_type": "integer",
+      "minimum": 0,
+      "observation_classification": "MEASURED",
+      "comparison_classification": "DERIVED"
+    },
+    {
+      "metric_id": "tool_invocation_count",
+      "description": "Count of tool invocations recorded during the task trial.",
+      "unit": "invocations",
+      "value_type": "integer",
+      "minimum": 0,
+      "observation_classification": "MEASURED",
+      "comparison_classification": "DERIVED"
+    },
+    {
+      "metric_id": "correction_count",
+      "description": "Count of participant corrections recorded before final submission.",
+      "unit": "corrections",
+      "value_type": "integer",
+      "minimum": 0,
+      "observation_classification": "MEASURED",
+      "comparison_classification": "DERIVED"
+    }
+  ],
+  "direct_results": [
+    {
+      "result_id": "reported_verdict",
+      "allowed_values": ["GREEN", "YELLOW", "RED", "UNKNOWN"],
+      "observation_classification": "MEASURED"
+    },
+    {
+      "result_id": "reported_blocker_ids",
+      "value_type": "array",
+      "observation_classification": "MEASURED"
+    },
+    {
+      "result_id": "reported_warning_ids",
+      "value_type": "array",
+      "observation_classification": "MEASURED"
+    },
+    {
+      "result_id": "reported_preferred_provider_id",
+      "value_type": "string_or_null",
+      "observation_classification": "MEASURED"
+    },
+    {
+      "result_id": "reported_plan_ids",
+      "value_type": "array",
+      "observation_classification": "MEASURED"
+    }
+  ],
+  "observation_record_requirements": {
+    "required_fields": [
+      "trial_id",
+      "pair_id",
+      "arm_id",
+      "order_index",
+      "recorded_at",
+      "metrics",
+      "results",
+      "protocol_deviations"
+    ],
+    "classification_vocabulary": [
+      "MEASURED",
+      "DERIVED",
+      "ESTIMATED",
+      "INFERRED",
+      "UNKNOWN"
+    ],
+    "raw_observation_rule": "Raw arm metrics and results must be MEASURED. Estimates and inferences are not accepted as trial observations.",
+    "empty_evidence_rule": "An empty records array means no benchmark evidence exists. It must not be imputed."
+  },
+  "comparison": {
+    "generator": "../generate_comparison.py",
+    "paired_trials_only": true,
+    "numeric_operation": "arx-assisted mean minus baseline mean",
+    "classification": "DERIVED",
+    "direction_interpretation": "None. The generator reports signed values without directional labels."
+  },
+  "claim_gate": {
+    "initial_state": "UNVERIFIED",
+    "automatic_promotion": false,
+    "reason": "Benchmark execution, sample-size registration, protocol-deviation review, and human claim review are not complete."
+  }
+}

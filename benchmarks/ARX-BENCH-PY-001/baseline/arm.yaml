@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "ARX-BENCH-PY-001",
+  "arm_id": "baseline",
+  "scenario": "../fixture/scenario.yaml",
+  "task": "../fixture/task.md",
+  "start_rule": "protocol.start_rule",
+  "stop_rule": "protocol.stop_rule",
+  "allowed_inputs": [
+    "canonical scenario",
+    "fixture pyproject.toml",
+    "participant task"
+  ],
+  "allowed_tools": [
+    "read-only file inspection",
+    "read-only version-constraint reasoning"
+  ],
+  "arx_semantic_assistance": false,
+  "result_schema": "protocol.observation_record_requirements",
+  "results": "results.json"
+}

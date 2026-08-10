@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "ARX-PHASE-II-CLAIMS",
+  "classification_vocabulary": [
+    "MEASURED",
+    "DERIVED",
+    "ESTIMATED",
+    "INFERRED",
+    "UNKNOWN"
+  ],
+  "claim_status_vocabulary": [
+    "HYPOTHESIS",
+    "UNVERIFIED",
+    "SUPPORTED",
+    "NOT_SUPPORTED",
+    "REJECTED"
+  ],
+  "policy": {
+    "default_status": "UNVERIFIED",
+    "publication_allowed_without_evidence": false,
+    "automatic_claim_promotion": false,
+    "required_evidence": [
+      "completed registered protocol",
+      "reviewable raw arm observations",
+      "generated comparison with classification labels",
+      "human review of protocol deviations and limitations"
+    ],
+    "prohibited_reports_at_this_phase": [
+      "ENERGY",
+      "TOKEN_SAVINGS",
+      "TIME_SAVINGS",
+      "ECONOMIC"
+    ]
+  },
+  "claims": [
+    {
+      "claim_id": "ARX-CLAIM-PY-001-ELAPSED",
+      "benchmark_id": "ARX-BENCH-PY-001",
+      "claim_type": "PERFORMANCE_HYPOTHESIS",
+      "statement": "The ARX-assisted and baseline arms may differ in measured task elapsed milliseconds.",
+      "status": "HYPOTHESIS",
+      "evidence_classification": "UNKNOWN",
+      "evidence_refs": [],
+      "publishable": false
+    },
+    {
+      "claim_id": "ARX-CLAIM-PY-001-ACTIONS",
+      "benchmark_id": "ARX-BENCH-PY-001",
+      "claim_type": "PERFORMANCE_HYPOTHESIS",
+      "statement": "The ARX-assisted and baseline arms may differ in measured human action count.",
+      "status": "HYPOTHESIS",
+      "evidence_classification": "UNKNOWN",
+      "evidence_refs": [],
+      "publishable": false
+    },
+    {
+      "claim_id": "ARX-CLAIM-PY-001-CORRECTIONS",
+      "benchmark_id": "ARX-BENCH-PY-001",
+      "claim_type": "PERFORMANCE_HYPOTHESIS",
+      "statement": "The ARX-assisted and baseline arms may differ in measured correction count.",
+      "status": "HYPOTHESIS",
+      "evidence_classification": "UNKNOWN",
+      "evidence_refs": [],
+      "publishable": false
+    }
+  ]
+}
