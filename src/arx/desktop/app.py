@@ -219,3 +219,46 @@ def ui_smoke_test(target,output,timeout=180):
     app._compare();wait();checks=len(app.check_tree.get_children());compatibility=app.compat_badge.cget("text")
     app.controller.export(output,"json");result={"quick_machine_rows":quick_rows,"deep_machine_rows":deep_rows,"software_title":software_title,"compatibility":compatibility,"compatibility_checks":checks,"evidence_rows":len(app.evidence_tree.get_children()),"export_exists":Path(output).is_file()}
     app.destroy();return result
+
+def project_ui_smoke_test(target,output,timeout=180):
+    """Exercise the packaged Project Preflight UI and schema 0.2 export."""
+    app=ARXDesktopApp();app.withdraw();started=time.monotonic()
+    def wait():
+        while app._started is not None:
+            app.update()
+            if time.monotonic()-started>timeout:raise TimeoutError("ARX project UI smoke test timed out")
+            time.sleep(.02)
+        app.update()
+    try:
+        app._run("project preflight",lambda:app.controller.preflight(target),lambda _:app._render_project());wait()
+        report=app.controller.project_preflight
+        providers={item.id:item for item in report.providers}
+        evaluation=report.evaluation
+        resolved=providers.get(evaluation.resolved_provider_id or "")
+        preferred=providers.get(evaluation.preferred_provider_id or "")
+        compatible=[providers[item].version for item in evaluation.compatible_provider_ids]
+        app.controller.export(output,"codex")
+        contract=json.loads(Path(output).read_text(encoding="utf-8"))
+        return {
+            "app_version":__version__,
+            "window_title":app.title(),
+            "tabs":[app.tabs.tab(item,"text") for item in app.tabs.tabs()],
+            "project":report.project.identity,
+            "requirement":report.project.primary_python_requirement.constraint if report.project.primary_python_requirement else None,
+            "decision":app.project_badge.cget("text"),
+            "relevance":evaluation.relevance.value.upper(),
+            "satisfaction":evaluation.satisfaction.value.upper(),
+            "resolved_version":resolved.version if resolved else None,
+            "compatible_versions":compatible,
+            "preferred_version":preferred.version if preferred else None,
+            "finding_ids":[*report.severity.blocker_ids,*report.severity.warning_ids],
+            "plan_step_ids":[item.id for item in report.plan.steps],
+            "project_rows":len(app.project_tree.get_children()),
+            "evidence_rows":len(app.evidence_tree.get_children()),
+            "project_tab_selected":app.tabs.tab(app.tabs.select(),"text")=="Project Readiness",
+            "ai_schema_version":contract.get("schema_version"),
+            "ai_decision":contract.get("decision"),
+            "export_exists":Path(output).is_file(),
+        }
+    finally:
+        app.destroy()

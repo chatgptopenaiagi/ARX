@@ -1,5 +1,6 @@
 import json,struct
 import time
+from pathlib import Path
 from arx.core.engine import compare
 from arx.core.models import ToolRecord
 from arx.desktop.controllers import DesktopController
@@ -70,3 +71,15 @@ def test_desktop_project_readiness_uses_text_and_color(tmp_path):
     assert "SATISFIED" in detail
     assert len(app.project_tree.get_children())>=1
     app.destroy()
+
+
+def test_desktop_project_smoke_mode_writes_result(monkeypatch,tmp_path):
+    from arx.desktop.__main__ import main
+
+    expected={"decision":"YELLOW","ai_schema_version":"0.2"}
+    monkeypatch.setattr("arx.desktop.app.project_ui_smoke_test",lambda target,output:expected)
+    output=tmp_path/"project.codex.json"
+
+    assert main(["--project-ui-smoke-test",str(tmp_path),str(output)])==0
+    result=Path(str(output)+".result.json")
+    assert json.loads(result.read_text(encoding="utf-8"))==expected
