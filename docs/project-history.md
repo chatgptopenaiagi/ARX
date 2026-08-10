@@ -92,3 +92,9 @@ Compatibility Predicates
       v
 Explanation Chains
 ```
+
+## ARX 0.3.0
+
+ARX 0.3.0 adds the first project-aware vertical slice for Python. Project DNA and requirement evidence are combined with distinct provider identities and an execution-context-specific resolver. Deterministic semantic engines retain relevance, satisfaction, conflict, severity, policy, plans, and explanation chains independently before compressing the result to GREEN, YELLOW, or RED.
+
+The planner remains read-only, and project-aware AI reports use schema 0.2 without changing legacy schema 0.1 envelopes.

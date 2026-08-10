@@ -1,4 +1,14 @@
 # Changelog
+## 0.3.0 - 2026-08-10
+- Add bounded static Python Project DNA for `pyproject.toml`, `.python-version`, `uv.lock`, and supported requirements files.
+- Add typed requirement/provider graphs, execution contexts, and context-scoped Python resolution.
+- Keep availability, resolution, compatibility, relevance, satisfaction, severity, and remediation separate.
+- Add explicit conflicts, unknown handling, stable finding IDs, GREEN/YELLOW/RED severity, safe policy defaults, recommendation-only planning, and explanation graphs.
+- Add redacted project-aware AI contract schema 0.2 while preserving legacy schema 0.1 reports.
+- Add `project`, `resolve`, and `preflight` commands plus `codex --project` without removing ARX 0.2 commands.
+- Add desktop Project Preflight and Project Readiness views with textual status and Evidence Inspector integration.
+- Cover Python semantic cases A-H, manifest security boundaries, privacy, schemas, CLI, and desktop behavior.
+
 ## 0.2.0 - 2026-08-10
 - Add a responsive, dark-themed Windows desktop interface for Machine DNA, capabilities, Software DNA, compatibility, evidence, and redacted exports.
 - Represent multiple Python installations independently and preserve Java/JBR and MSBuild discovery in the desktop dashboard.

@@ -1,6 +1,9 @@
 import json
 from pathlib import Path
 
+from arx import __version__
+from arx.cli import envelope
+
 
 SCHEMAS = Path(__file__).parents[1] / "schemas"
 
@@ -47,3 +50,9 @@ def test_ai_contract_schema_version_is_independent_from_application_version():
         "unknowns",
         "evidence_references",
     }
+
+
+def test_application_and_legacy_schema_versions_remain_independent():
+    assert __version__ == "0.3.0"
+    assert 'version = "0.3.0"' in (SCHEMAS.parent / "pyproject.toml").read_text(encoding="utf-8")
+    assert envelope()["schema_version"] == "0.1"

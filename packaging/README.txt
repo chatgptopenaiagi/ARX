@@ -1,10 +1,11 @@
 ARX
-Experimental Desktop Release 0.2.0
+Experimental Desktop Release 0.3.0
 
 PURPOSE
-ARX is a read-only pre-installation compatibility intelligence tool. It scans
-this PC, statically inspects software, compares requirements, and explains its
-evidence. ARX is not a malware scanner and does not certify software as safe.
+ARX is a read-only project-aware compatibility and resolution engine. It scans
+this PC, statically inspects software and Python projects, resolves providers,
+compares requirements, and explains a GREEN/YELLOW/RED decision and advisory
+path to GREEN. ARX is not a malware scanner and does not certify software as safe.
 
 SUPPORTED OPERATING SYSTEM
 Windows 10/11 x64. This experimental build has been validated on Windows 10
@@ -19,6 +20,11 @@ Normal scanning does not install software, change PATH, edit the registry, or
 execute the selected target. Only fixed, timeout-bound trusted diagnostic
 commands are used to identify developer tools.
 
+PROJECT PREFLIGHT
+Select a Python project directory to inspect supported manifests without
+executing project scripts. ARX distinguishes the currently resolved Python,
+compatible existing providers, and the policy-preferred provider.
+
 SUPPORTED INSPECTION TARGETS
 EXE, DLL, MSI identification, ZIP, JAR, APK, scripts, and application
 directories. Static analysis includes hashes, PE metadata, Authenticode,
@@ -27,9 +33,10 @@ where available.
 
 KNOWN LIMITATIONS
 MSI action/table parsing, APK binary-manifest decoding, complete PE import-table
-resolution, and complex semantic-version ranges are incomplete. Compatibility
-results express available evidence and uncertainty; they are not malware
-verdicts or guarantees that an installer will succeed.
+resolution, pip-to-interpreter mismatch detection, non-Python project ecosystems,
+and some Python constraint forms are incomplete. Compatibility results express
+available evidence and uncertainty; they are not malware verdicts or guarantees
+that an installer will succeed.
 
 PRIVACY
 Reports redact the current user-profile path and allowlist environment data.
