@@ -33,6 +33,13 @@ from .resolver import (
     providers_from_machine,
     resolve_python,
 )
+from .engine import (
+    evaluate_requirement,
+    plan_resolution,
+    preflight,
+    project_preflight,
+    severity_for,
+)
 from .scanner import MAX_MANIFEST_BYTES, inspect_project
 from .versions import parse_python_version, python_version_satisfies
 
@@ -62,6 +69,7 @@ __all__ = [
     "Satisfaction",
     "Severity",
     "SeverityDecision",
+    "evaluate_requirement",
     "inspect_project",
     "infer_provider_kind",
     "make_provider",
@@ -69,5 +77,9 @@ __all__ = [
     "provider_graph_from_machine",
     "providers_from_machine",
     "python_version_satisfies",
+    "plan_resolution",
+    "preflight",
+    "project_preflight",
     "resolve_python",
+    "severity_for",
 ]
