@@ -75,6 +75,8 @@ class ARXDesktopApp(tk.Tk):
         )
         self._advisory_consent: set[str] = set()
         self._advisory_windows: list[AdvisoryWindow] = []
+        self._poll_id: str | None = None
+        self._closed = False
 
         self.title(f"ARX {__version__} — Project-Aware Compatibility Intelligence")
         self.geometry("1280x800")
@@ -83,7 +85,7 @@ class ARXDesktopApp(tk.Tk):
         self._build()
         self._restore_ui_state()
         self.protocol("WM_DELETE_WINDOW", self._close)
-        self.after(100, self._poll)
+        self._poll_id = self.after(100, self._poll)
 
     def _build(self) -> None:
         self._build_menu()
@@ -349,7 +351,8 @@ class ARXDesktopApp(tk.Tk):
                     self._show_error(callback, *payload)
         except queue.Empty:
             pass
-        self.after(100, self._poll)
+        if not self._closed:
+            self._poll_id = self.after(100, self._poll)
 
     def _set_busy(self, busy: bool) -> None:
         state = "disabled" if busy else "normal"
@@ -1183,6 +1186,27 @@ class ARXDesktopApp(tk.Tk):
         except (OSError, tk.TclError):
             pass
         self.destroy()
+
+    def destroy(self) -> None:
+        """Cancel root-owned work before destroying the Tcl interpreter."""
+
+        if self._closed:
+            return
+        self._closed = True
+        if self._operation_cancel is not None:
+            self._operation_cancel.set()
+        if self._poll_id is not None:
+            try:
+                self.after_cancel(self._poll_id)
+            except tk.TclError:
+                pass
+            self._poll_id = None
+        for window in tuple(self._advisory_windows):
+            try:
+                window._close()
+            except tk.TclError:
+                pass
+        super().destroy()
 
 
 def run() -> None:

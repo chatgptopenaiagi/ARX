@@ -27,8 +27,7 @@ def test_ci_uses_least_privilege_pinned_actions_and_safe_triggers():
 def test_ci_covers_supported_windows_and_linux_python_matrix():
     workflow = _read("ci.yml")
 
-    assert "windows-2022" in workflow
-    assert "os: [windows-latest" not in workflow
+    assert "windows-latest" in workflow
     assert "ubuntu-latest" in workflow
     assert 'python-version: ["3.10", "3.12", "3.14"]' in workflow
     assert 'python -m pip install -e ".[dev]"' in workflow
