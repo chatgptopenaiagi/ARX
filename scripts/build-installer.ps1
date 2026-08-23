@@ -34,13 +34,16 @@ if ($IsccPath) {
     $Command = Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue
     $Candidates = @(
         if ($Command) { $Command.Source }
+        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe')
+        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe')
+        (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe')
         (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe')
         (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
     ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) }
     $Compiler = $Candidates | Select-Object -First 1
 }
 if (-not $Compiler) {
-    throw 'Inno Setup 6 compiler (ISCC.exe) was not found. Install Inno Setup or pass -IsccPath.'
+    throw 'Inno Setup 6 or 7 compiler (ISCC.exe) was not found. Install Inno Setup or pass -IsccPath.'
 }
 
 & $Compiler "/DMyAppVersion=$Version" $InstallerScript

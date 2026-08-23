@@ -32,6 +32,8 @@ def test_installer_build_is_bounded_to_release_and_requires_validated_portable_p
     assert "Missing portable desktop build" in BUILD_SCRIPT
     assert "_internal" in BUILD_SCRIPT
     assert "Get-FileHash" in BUILD_SCRIPT and "SHA256SUMS" in BUILD_SCRIPT
+    assert "Inno Setup 7" in BUILD_SCRIPT and "Inno Setup 6" in BUILD_SCRIPT
+    assert "LOCALAPPDATA" in BUILD_SCRIPT
     assert "Invoke-Expression" not in BUILD_SCRIPT
     assert not re.search(r"powershell(?:\.exe)?\s+.*-Command", BUILD_SCRIPT, re.IGNORECASE)
 
