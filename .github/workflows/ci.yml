@@ -20,7 +20,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        # Python 3.10/3.12 bundle Tcl 8.6 builds that are stable on Server 2022;
+        # the current windows-latest (Server 2025) intermittently cannot reread init.tcl.
+        os: [windows-2022, ubuntu-latest]
         python-version: ["3.10", "3.12", "3.14"]
     steps:
       - name: Check out source

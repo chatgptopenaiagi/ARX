@@ -319,6 +319,8 @@ def test_user_and_machine_scope_are_preserved(monkeypatch):
 
     assert user.scope is ProviderScope.USER
     assert machine.scope is ProviderScope.MACHINE
+    assert user.path == r"C:\Users\Alice\Python312\python.exe"
+    assert machine.path == r"C:\Program Files\Python312\python.exe"
 
 
 def test_generic_provider_role_contract_keeps_facts_and_policy_separate():

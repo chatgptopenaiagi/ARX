@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-from pathlib import Path
+import ntpath
+from pathlib import Path, PureWindowsPath
 from typing import Iterable, Mapping
 
 from arx.core.models import Evidence, EvidenceKind
@@ -23,8 +24,34 @@ from .models import (
 SUPPORTED_PYTHON_COMMANDS = {"python", "python3", "py"}
 
 
+def _is_absolute_windows_path(value: str) -> bool:
+    """Recognize Windows drive and UNC paths independently of the host OS."""
+
+    return PureWindowsPath(value).is_absolute()
+
+
+def _resolved_path(value: str) -> str:
+    """Resolve native paths while preserving foreign absolute Windows paths."""
+
+    if os.name != "nt" and _is_absolute_windows_path(value):
+        return ntpath.normpath(value)
+    return str(Path(value).expanduser().resolve(strict=False))
+
+
 def _normalized_path(value: str) -> str:
-    return os.path.normcase(str(Path(value).expanduser().resolve(strict=False)))
+    resolved = _resolved_path(value)
+    if _is_absolute_windows_path(resolved):
+        return ntpath.normcase(resolved)
+    return os.path.normcase(resolved)
+
+
+def _is_relative_to(path: str, parent: str) -> bool:
+    if _is_absolute_windows_path(path) and _is_absolute_windows_path(parent):
+        return PureWindowsPath(path).is_relative_to(PureWindowsPath(parent))
+    try:
+        return Path(path).is_relative_to(Path(parent))
+    except (OSError, ValueError):
+        return False
 
 
 def infer_provider_kind(path: str) -> ProviderKind:
@@ -47,11 +74,8 @@ def infer_provider_scope(path: str) -> ProviderScope:
     user_profile = os.environ.get("USERPROFILE")
     if user_profile:
         profile = _normalized_path(user_profile)
-        try:
-            if Path(normalized).is_relative_to(profile):
-                return ProviderScope.USER
-        except (OSError, ValueError):
-            pass
+        if _is_relative_to(normalized, profile):
+            return ProviderScope.USER
     lowered = normalized.replace("/", "\\").lower()
     if lowered.startswith(("c:\\program files\\", "c:\\windows\\")):
         return ProviderScope.MACHINE
@@ -107,7 +131,7 @@ def make_provider(
     return Provider(
         id=provider_id,
         capability="python.runtime",
-        path=str(Path(path).expanduser().resolve(strict=False)),
+        path=_resolved_path(path),
         executable_identity=identity,
         version=version,
         kind=provider_kind,

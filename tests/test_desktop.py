@@ -180,15 +180,15 @@ def test_desktop_busy_state_disables_conflicting_actions_and_exposes_cancel(tmp_
 def test_desktop_close_persists_only_geometry_and_tab(tmp_path):
     state_path = tmp_path / "ui-state.json"
     app = ARXDesktopApp(state_store=UIStateStore(state_path))
-    app.withdraw()
     app.geometry("1100x700+20+30")
     app.tabs.select(3)
-    app.update_idletasks()
+    app.update()
 
     app._close()
 
     saved = json.loads(state_path.read_text(encoding="utf-8"))
     assert set(saved) == {"geometry", "selected_tab"}
+    assert saved["geometry"] == "1100x700+20+30"
     assert saved["selected_tab"] == 3
 
 
