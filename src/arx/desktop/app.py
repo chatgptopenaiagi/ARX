@@ -10,11 +10,15 @@ import traceback
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Callable
+from typing import Callable, Mapping
 
 from arx import __version__
+from arx.advisory.context import AdvisoryContext, build_advisory_context
+from arx.advisory.providers import AIProvider, CodexCLIProvider, OpenAIProvider
+from arx.advisory.web import build_search_query, build_search_url, open_search
 from arx.core.models import serialize
 
+from .advisory import AdvisoryWindow
 from .controllers import DesktopController, project_readiness_view_model
 from .theme import COLORS, apply_theme
 from .ux import (
@@ -42,7 +46,13 @@ from .widgets import (
 class ARXDesktopApp(tk.Tk):
     """Tk desktop shell; scanner and compatibility semantics remain in ARX core."""
 
-    def __init__(self, controller=None, *, state_store: UIStateStore | None = None):
+    def __init__(
+        self,
+        controller=None,
+        *,
+        state_store: UIStateStore | None = None,
+        advisory_providers: Mapping[str, AIProvider] | None = None,
+    ):
         super().__init__()
         self.controller = controller or DesktopController()
         self._state_store = state_store or UIStateStore()
@@ -55,6 +65,16 @@ class ARXDesktopApp(tk.Tk):
         self._last_error_summary: str | None = None
         self._action_buttons: list[ttk.Button] = []
         self._tooltips: list[ToolTip] = []
+        self._advisory_providers = (
+            dict(advisory_providers)
+            if advisory_providers is not None
+            else {
+                "ChatGPT / OpenAI": OpenAIProvider(),
+                "Codex CLI": CodexCLIProvider(),
+            }
+        )
+        self._advisory_consent: set[str] = set()
+        self._advisory_windows: list[AdvisoryWindow] = []
 
         self.title(f"ARX {__version__} — Project-Aware Compatibility Intelligence")
         self.geometry("1280x800")
@@ -844,7 +864,7 @@ class ARXDesktopApp(tk.Tk):
         row = self._tree_row(view, event)
         if row is None:
             return []
-        _item_id, values, columns = row
+        item_id, values, columns = row
         details = format_result_row(columns, values)
         column_value = ""
         if event is not None and hasattr(event, "x"):
@@ -855,6 +875,7 @@ class ARXDesktopApp(tk.Tk):
                     column_value = str(values[index] or "")
         path_value = find_path_value(columns, values)
         capabilities = path_capabilities(path_value)
+        advisory_context = self._context_for_row(view, item_id, columns, values)
         actions = [
             MenuAction("Copy Row", lambda: self._copy(details)),
             MenuAction("Copy Details", lambda: self._copy(details)),
@@ -872,7 +893,64 @@ class ARXDesktopApp(tk.Tk):
                 )
             actions.append(MenuAction("Reveal in File Explorer", lambda value=path_value: self._open_user_path(value, "reveal")))
             actions.append(MenuAction("Inspect with ARX", lambda value=path_value: self._start_inspect(str(value))))
-        actions.extend((MenuAction(None), MenuAction("View Details", lambda: self._show_report_window("Result details", details))))
+        if self._advisory_providers:
+            actions.append(MenuAction(None))
+            if "ChatGPT / OpenAI" in self._advisory_providers:
+                actions.append(
+                    MenuAction(
+                        "Ask ChatGPT About This…",
+                        lambda context=advisory_context: self._open_advisory(context, "ChatGPT / OpenAI"),
+                    )
+                )
+            if "Codex CLI" in self._advisory_providers:
+                actions.append(
+                    MenuAction(
+                        "Ask Codex About This…",
+                        lambda context=advisory_context: self._open_advisory(context, "Codex CLI"),
+                    )
+                )
+            actions.append(
+                MenuAction(
+                    "Suggest Safe Fix with AI…",
+                    lambda context=advisory_context: self._open_advisory(context, self._default_provider(), "Suggest Safe Fix"),
+                )
+            )
+            if advisory_context.project:
+                actions.append(
+                    MenuAction(
+                        "Compare With Project Requirements…",
+                        lambda context=advisory_context: self._open_advisory(
+                            context, self._default_provider(), "Compatibility Interpretation"
+                        ),
+                    )
+                )
+        actions.extend(
+            (
+                MenuAction(None),
+                MenuAction("Search Web About This…", lambda context=advisory_context: self._search_context(context, "web", "web")),
+                MenuAction(
+                    "Search Google About This…", lambda context=advisory_context: self._search_context(context, "web", "google")
+                ),
+            )
+        )
+        if any(key.casefold() in {"error", "reason", "evidence", "value"} for key in columns):
+            actions.append(
+                MenuAction(
+                    "Search Exact Error Message…",
+                    lambda context=advisory_context: self._search_context(context, "exact_error", "web"),
+                )
+            )
+        actions.append(
+            MenuAction(
+                "Search Official Documentation…",
+                lambda context=advisory_context: self._search_context(context, "official", "web"),
+            )
+        )
+        actions.append(MenuAction(None))
+        if advisory_context.evidence:
+            actions.append(MenuAction("View Evidence", lambda context=advisory_context: self._view_context_evidence(context)))
+        actions.append(MenuAction("View Raw Data", lambda context=advisory_context: self._view_advisory_context(context)))
+        actions.append(MenuAction("View Details", lambda: self._show_report_window("Result details", details)))
         return actions
 
     def _show_tree_context(self, view: ttk.Treeview, event: tk.Event) -> str:
@@ -904,6 +982,127 @@ class ARXDesktopApp(tk.Tk):
     def _copy(self, value: object) -> None:
         copy_to_clipboard(self, value)
         self._set_status("Copy complete")
+
+    def _project_advisory_context(self) -> tuple[dict[str, object], list[Path]]:
+        report = getattr(self.controller, "project_preflight", None)
+        if report is None:
+            return {}, []
+        view = project_readiness_view_model(report)
+        primary = report.project.primary_python_requirement
+        context: dict[str, object] = {
+            "identity": report.project.identity,
+            "project_root": str(report.project.root),
+            "decision": view["decision"],
+            "requirement": primary.constraint if primary else None,
+            "satisfaction": view["satisfaction"],
+            "current_context_satisfaction": view["current_context_satisfaction"],
+            "recoverability": view["recoverability"],
+            "resolved_version": (view["resolved"] or {}).get("version"),
+            "resolved_path": view["resolved_path"],
+            "preferred_version": (view["preferred"] or {}).get("version"),
+            "finding_ids": [*view["blocker_ids"], *view["warning_ids"]],
+        }
+        return context, [report.project.root]
+
+    def _row_evidence(self, view: ttk.Treeview, item_id: str) -> list[dict]:
+        if view is self.evidence_tree and item_id.startswith("e:"):
+            index = int(item_id.split(":", 1)[1])
+            return [self._evidence_items[index]] if index < len(self._evidence_items) else []
+        if view is self.machine_tree and item_id.startswith("tool:"):
+            key = item_id.split(":", 1)[1]
+            record = (self.controller.machine or {}).get("tools", {}).get(key)
+            return [serialize(item) for item in record.evidence] if record else []
+        if view is self.machine_tree and item_id.startswith("python:"):
+            index = int(item_id.split(":", 1)[1])
+            installations = (self.controller.machine or {}).get("python_installations", [])
+            if index < len(installations):
+                return [serialize(item) for item in installations[index].get("evidence", [])]
+            return []
+        if view is self.cap_tree:
+            capability = self.controller.capabilities.get(item_id)
+            return [serialize(item) for item in capability.evidence] if capability else []
+        if view is self.import_tree:
+            return [serialize(item) for item in (self.controller.software or {}).get("evidence", [])]
+        report = getattr(self.controller, "project_preflight", None)
+        if view is self.project_tree and report is not None:
+            return [
+                *(serialize(item) for item in report.project.evidence),
+                *(serialize(item) for item in report.resolution.evidence),
+            ]
+        return []
+
+    def _context_for_row(
+        self,
+        view: ttk.Treeview,
+        item_id: str,
+        columns: tuple[str, ...],
+        values: tuple,
+    ) -> AdvisoryContext:
+        project, private_roots = self._project_advisory_context()
+        return build_advisory_context(
+            getattr(view, "_arx_surface_name", "ARX finding"),
+            columns,
+            values,
+            project=project,
+            evidence=self._row_evidence(view, item_id),
+            private_roots=private_roots,
+        )
+
+    def _default_provider(self) -> str:
+        if "ChatGPT / OpenAI" in self._advisory_providers:
+            return "ChatGPT / OpenAI"
+        return next(iter(self._advisory_providers), "")
+
+    def _open_advisory(self, context: AdvisoryContext, provider: str, mode: str = "Explain Technically") -> None:
+        window = AdvisoryWindow(
+            self,
+            context,
+            self._advisory_providers,
+            initial_provider=provider,
+            initial_mode=mode,
+            consent_command=self._confirm_advisory_consent,
+            save_command=self._save_visible_report,
+            view_context_command=self._view_advisory_context,
+            change_context_command=lambda: self._set_status("Right-click another finding to change AI context."),
+            status_command=self._set_status,
+        )
+        self._advisory_windows.append(window)
+
+    def _confirm_advisory_consent(self, provider: str, _context: AdvisoryContext) -> bool:
+        if provider in self._advisory_consent:
+            return True
+        accepted = messagebox.askyesno(
+            "ARX — External advisory consent",
+            (
+                f"You chose {provider}. ARX will send only the selected, bounded, redacted diagnostic context and your "
+                "question to that provider. It will not send a complete machine scan, credentials, or unrelated project files.\n\n"
+                "The response is unverified advice and cannot change ARX evidence or modify this computer. You can preview "
+                "the exact diagnostic prompt before sending.\n\nContinue?"
+            ),
+            parent=self,
+        )
+        if accepted:
+            self._advisory_consent.add(provider)
+        return bool(accepted)
+
+    def _view_advisory_context(self, context: AdvisoryContext) -> None:
+        self._show_report_window("Redacted ARX context", context.preview(), content_type="json")
+
+    def _view_context_evidence(self, context: AdvisoryContext) -> None:
+        self._show_report_window(
+            "Relevant ARX evidence",
+            json.dumps(list(context.evidence), indent=2, ensure_ascii=False, sort_keys=True),
+            content_type="json",
+        )
+
+    def _search_context(self, context: AdvisoryContext, kind: str, engine: str) -> None:
+        try:
+            query = build_search_query(context, kind)
+            url = build_search_url(query, engine)
+            open_search(url)
+            self._set_status("Search opened in the default browser")
+        except (OSError, ValueError) as exc:
+            self._show_error("opening a web search", exc, traceback.format_exc())
 
     def _focused_event(self, sequence: str) -> None:
         focused = self.focus_get()

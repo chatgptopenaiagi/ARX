@@ -25,6 +25,12 @@ _OPENAI_KEY = re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9_-]{12,}\b")
 _GITHUB_KEY = re.compile(r"\bgh[opusr]_[A-Za-z0-9]{12,}\b")
 _JWT = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b")
 _PATH_KEY = re.compile(r"(?:^|_)(?:path|file|directory|root|location)(?:$|_)", re.IGNORECASE)
+_QUOTED_LOCAL_PATH = re.compile(
+    r'''(?P<quote>["'])(?:[A-Za-z]:[\\/]|\\\\|/(?:home|Users|tmp|private/tmp)/).*?(?P=quote)''',
+    re.IGNORECASE,
+)
+_WINDOWS_LOCAL_PATH = re.compile(r"(?i)(?<![\w%])(?:[A-Z]:[\\/]|\\\\)[^\s<>\"'|,;]+")
+_POSIX_LOCAL_PATH = re.compile(r"(?<![\w%])/(?:home|Users|tmp|private/tmp)/[^\s<>\"'|,;]+")
 
 
 ANALYSIS_MODES: Mapping[str, str] = {
@@ -47,6 +53,9 @@ def _redact_text(value: str, private_roots: Sequence[str | os.PathLike[str]] = (
     username = os.environ.get("USERNAME")
     if username:
         result = re.sub(re.escape(username), "%USERNAME%", result, flags=re.IGNORECASE)
+    result = _QUOTED_LOCAL_PATH.sub('"%LOCAL_PATH%"', result)
+    result = _WINDOWS_LOCAL_PATH.sub("%LOCAL_PATH%", result)
+    result = _POSIX_LOCAL_PATH.sub("%LOCAL_PATH%", result)
     result = _ASSIGNMENT_SECRET.sub(lambda match: f"{match.group(1)}=<redacted>", result)
     result = _BEARER.sub("Bearer <redacted>", result)
     result = _OPENAI_KEY.sub("<redacted-openai-key>", result)
@@ -60,19 +69,19 @@ def _redact_text(value: str, private_roots: Sequence[str | os.PathLike[str]] = (
 
 
 def _redact_path_field(value: str, private_roots: Sequence[str | os.PathLike[str]]) -> str:
-    result = _redact_text(value, private_roots)
-    if "%USERPROFILE%" in result or "%PROJECT_ROOT%" in result or "%LOCAL_PATH%" in result:
-        return result
+    conventional = redact_path(value, private_roots)
+    if conventional != value and ("%USERPROFILE%" in conventional or "%PROJECT_ROOT%" in conventional):
+        return _redact_text(conventional, private_roots)
     try:
         windows_path = PureWindowsPath(value)
         if windows_path.drive and windows_path.root:
-            return f"%LOCAL_PATH%/{windows_path.name or '<root>'}"
+            return f"%LOCAL_PATH%/{_redact_text(windows_path.name or '<root>', private_roots)}"
         path = Path(value)
         if path.is_absolute():
-            return f"%LOCAL_PATH%{os.sep}{path.name or '<root>'}"
+            return f"%LOCAL_PATH%{os.sep}{_redact_text(path.name or '<root>', private_roots)}"
     except (OSError, TypeError, ValueError):
         pass
-    return result
+    return _redact_text(value, private_roots)
 
 
 def redact_external(value: Any, private_roots: Sequence[str | os.PathLike[str]] = (), *, key: str = "") -> Any:

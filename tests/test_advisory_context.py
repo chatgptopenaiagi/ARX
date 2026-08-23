@@ -64,6 +64,18 @@ def test_windows_path_fields_are_redacted_on_every_platform():
     assert "Alice" not in result["resolved_path"]
 
 
+def test_unkeyed_free_text_redacts_arbitrary_local_paths():
+    result = redact_external(
+        {
+            "diagnostic": r"Read C:\Private\repo\build.log and /home/alice/private/report.json before retrying",
+        }
+    )
+
+    assert r"C:\Private" not in result["diagnostic"]
+    assert "/home/alice" not in result["diagnostic"]
+    assert result["diagnostic"].count("%LOCAL_PATH%") == 2
+
+
 def test_large_diagnostics_are_bounded_and_record_truncation():
     context = build_advisory_context(
         "Error",

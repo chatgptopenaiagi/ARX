@@ -142,7 +142,7 @@ def test_result_context_actions_are_path_sensitive(tmp_path):
     app.machine_tree.selection_set("missing")
     missing_labels = [action.label for action in app._tree_menu_actions(app.machine_tree) if action.label]
 
-    assert existing_labels == [
+    assert existing_labels[:7] == [
         "Copy Row",
         "Copy Details",
         "Copy Path",
@@ -150,8 +150,13 @@ def test_result_context_actions_are_path_sensitive(tmp_path):
         "Open Containing Folder",
         "Reveal in File Explorer",
         "Inspect with ARX",
-        "View Details",
     ]
+    assert "Ask ChatGPT About This…" in existing_labels
+    assert "Ask Codex About This…" in existing_labels
+    assert "Suggest Safe Fix with AI…" in existing_labels
+    assert "Search Web About This…" in existing_labels
+    assert "Search Google About This…" in existing_labels
+    assert existing_labels[-2:] == ["View Raw Data", "View Details"]
     assert "Copy Path" in missing_labels
     assert "Open" not in missing_labels
     assert "Inspect with ARX" not in missing_labels

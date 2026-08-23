@@ -15,6 +15,7 @@ def apply_theme(root):
     style.configure(".",background=COLORS["bg"],foreground=COLORS["text"],fieldbackground=COLORS["panel"],font=("Segoe UI",10))
     style.configure("TFrame",background=COLORS["bg"]);style.configure("Panel.TFrame",background=COLORS["panel"])
     style.configure("TLabel",background=COLORS["bg"],foreground=COLORS["text"]);style.configure("Muted.TLabel",foreground=COLORS["muted"])
+    style.configure("Advisory.TLabel",foreground=COLORS["external"],font=("Segoe UI Semibold",11))
     style.configure("Title.TLabel",font=("Segoe UI Semibold",24),foreground=COLORS["text"]);style.configure("Subtitle.TLabel",font=("Segoe UI",11),foreground=COLORS["accent"])
     style.configure("TButton",background=COLORS["panel_alt"],foreground=COLORS["text"],padding=(14,10),font=("Segoe UI Semibold",10),borderwidth=0)
     style.map("TButton",background=[("active",COLORS["selected"]),("disabled",COLORS["panel"])],foreground=[("disabled",COLORS["muted"])])
