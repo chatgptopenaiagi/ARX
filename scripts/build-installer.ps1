@@ -1,20 +1,28 @@
 param(
-    [string]$Version = '2.0.0',
+    [string]$Version = '3.0.0rc1',
     [string]$IsccPath
 )
 
 $ErrorActionPreference = 'Stop'
+$VersionMatch = [regex]::Match($Version, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:rc(?<rc>\d+))?$')
+if (-not $VersionMatch.Success) {
+    throw 'Version must use the package form X.Y.Z or X.Y.ZrcN.'
+}
+$BaseVersion = "$($VersionMatch.Groups['major'].Value).$($VersionMatch.Groups['minor'].Value).$($VersionMatch.Groups['patch'].Value)"
+$ReleaseComponent = if ($VersionMatch.Groups['rc'].Success) { $VersionMatch.Groups['rc'].Value } else { '0' }
+$FileVersion = "$BaseVersion.$ReleaseComponent"
+$ArtifactVersion = if ($VersionMatch.Groups['rc'].Success) {
+    "$BaseVersion-rc$ReleaseComponent"
+} else {
+    $BaseVersion
+}
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $ReleaseRoot = Join-Path $ProjectRoot 'release'
 $PortableRoot = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
 $Executable = Join-Path $PortableRoot 'ARX.exe'
 $InstallerScript = Join-Path $ProjectRoot 'packaging\arx-desktop.iss'
-$Installer = Join-Path $ReleaseRoot "ARX-Desktop-Setup-win-x64-v$Version.exe"
-$ChecksumFile = Join-Path $ReleaseRoot "SHA256SUMS-v$Version.txt"
-
-if ($Version -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') {
-    throw "Version must contain three or four numeric components: $Version"
-}
+$Installer = Join-Path $ReleaseRoot "ARX-Desktop-Setup-win-x64-v$ArtifactVersion.exe"
+$ChecksumFile = Join-Path $ReleaseRoot "SHA256SUMS-v$ArtifactVersion.txt"
 
 $ReleaseFullPath = [IO.Path]::GetFullPath($ReleaseRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 $InstallerFullPath = [IO.Path]::GetFullPath($Installer)
@@ -46,7 +54,7 @@ if (-not $Compiler) {
     throw 'Inno Setup 6 or 7 compiler (ISCC.exe) was not found. Install Inno Setup or pass -IsccPath.'
 }
 
-& $Compiler "/DMyAppVersion=$Version" $InstallerScript
+& $Compiler "/DMyAppVersion=$Version" "/DMyAppFileVersion=$FileVersion" "/DMyArtifactVersion=$ArtifactVersion" $InstallerScript
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup failed with exit code $LASTEXITCODE."
 }

@@ -1,5 +1,6 @@
-ARX
-Portable Desktop Release 2.0.0
+ARX 3
+ARX 3.0 Release Candidate
+Package version 3.0.0rc1
 
 PURPOSE
 ARX is a read-only project-aware compatibility and resolution engine. It scans
@@ -16,7 +17,7 @@ Extract the complete folder, then double-click ARX.exe. Keep the _internal
 folder beside ARX.exe; it contains the standalone Python/Tk runtime.
 
 INSTALLER DISTRIBUTION
-When ARX is distributed as ARX-Desktop-Setup-win-x64, the installer provides
+When ARX is distributed as ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe, the installer provides
 Start Menu and uninstall entries, offers an optional desktop shortcut, and can
 launch ARX after an interactive install. The portable extracted-folder workflow
 remains supported. Installer builds are currently unsigned; verify the published

@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Callable, Mapping
 
-from arx import __version__
+from arx import PRODUCT_NAME, RELEASE_NAME, __version__
 from arx.advisory.context import AdvisoryContext, build_advisory_context
 from arx.advisory.providers import AIProvider, CodexCLIProvider, OpenAIProvider
 from arx.advisory.web import build_search_query, build_search_url, open_search
@@ -78,7 +78,7 @@ class ARXDesktopApp(tk.Tk):
         self._poll_id: str | None = None
         self._closed = False
 
-        self.title(f"ARX {__version__} — Project-Aware Compatibility Intelligence")
+        self.title(f"{RELEASE_NAME} — Project-Aware Compatibility Intelligence")
         self.geometry("1280x800")
         self.minsize(900, 600)
         apply_theme(self)
@@ -93,8 +93,12 @@ class ARXDesktopApp(tk.Tk):
         header.pack(fill="x")
         title = ttk.Frame(header)
         title.pack(side="left")
-        ttk.Label(title, text="ARX", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(title, text="Project-Aware Compatibility Intelligence", style="Subtitle.TLabel").pack(anchor="w")
+        ttk.Label(title, text=PRODUCT_NAME, style="Title.TLabel").pack(anchor="w")
+        ttk.Label(
+            title,
+            text="Project-Aware Compatibility Intelligence · Release Candidate",
+            style="Subtitle.TLabel",
+        ).pack(anchor="w")
         self.details_button = ttk.Button(
             header,
             text="Technical details…",
@@ -1161,8 +1165,10 @@ class ARXDesktopApp(tk.Tk):
         self._show_report_window(
             "About ARX",
             (
-                f"ARX {__version__}\n\n"
-                "Project-aware compatibility intelligence for Windows.\n\n"
+                f"{PRODUCT_NAME}\n"
+                f"{RELEASE_NAME}\n"
+                f"Package version: {__version__}\n\n"
+                "Project-Aware Compatibility Intelligence for Windows.\n\n"
                 "ARX performs deterministic, read-only observation and explainable compatibility analysis. "
                 "It is not a malware scanner and does not certify software as safe.\n\n"
                 "License: MIT\n"

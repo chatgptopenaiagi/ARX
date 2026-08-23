@@ -1,6 +1,6 @@
 # Project-aware semantic engine
 
-ARX 0.3 adds project context without replacing the validated ARX 0.2 Machine DNA, Software DNA, capability, evidence, compatibility, exporter, CLI, or desktop foundations.
+ARX 0.3 introduced project context without replacing the validated Machine DNA, Software DNA, capability, evidence, compatibility, exporter, CLI, or desktop foundations. ARX 3 retains that compatibility and promotes the same canonical project semantics across its expanded Windows and advisory surfaces.
 
 ## Data flow
 
@@ -55,7 +55,7 @@ The following remain separate:
 - pinned runtime/provider candidates: discovered providers matching explicit project selection evidence such as `.python-version`, regardless of whether they are currently usable;
 - preferred provider: the healthy, policy-ranked compatible provider ARX recommends.
 
-`PINNED` is project-derived intent. `PREFERRED` is an ARX policy decision. Neither proves that the current shell uses that provider; only `RESOLVED` answers that question for a named `ExecutionContext`. ARX 0.3 does not add a `SELECTED` or `ACTIVE_FOR_PROJECT` role because it has no independent observation that a recommendation has been activated. Inventing that state would collapse intent or advice into execution fact.
+`PINNED` is project-derived intent. `PREFERRED` is an ARX policy decision. Neither proves that the current shell uses that provider; only `RESOLVED` answers that question for a named `ExecutionContext`. ARX does not add a `SELECTED` or `ACTIVE_FOR_PROJECT` role because it has no independent observation that a recommendation has been activated. Inventing that state would collapse intent or advice into execution fact.
 
 Provider identity retains normalized executable path, observed version, kind, architecture, discovery method, and scope. Equal versions at different paths or architectures remain distinct. Scope is `user`, `machine`, or `unknown` only when path evidence supports that classification; ARX does not enumerate other user accounts.
 
@@ -115,7 +115,7 @@ Interfaces always render a textual status as well as color.
 
 The default policy prefers existing and project-local providers, forbids host mutation, global PATH changes, global runtime upgrades, security changes, and removal of alternative providers, and favors reversible recommendations.
 
-The planner emits recommendations only. It never installs, uninstalls, changes PATH, modifies the registry, alters security, or executes remediation. A compatible existing provider is selected before an installation recommendation is considered. ARX 0.3 reports that an absent provider needs human-managed provisioning, but does not perform it.
+The planner emits recommendations only. It never installs, uninstalls, changes PATH, modifies the registry, alters security, or executes remediation. A compatible existing provider is selected before an installation recommendation is considered. ARX reports that an absent provider needs human-managed provisioning, but does not perform it.
 
 For recoverable YELLOW, the planner uses the healthy preferred existing provider and requests another preflight in the intended context. It does not install a duplicate runtime, edit global PATH, remove the current provider, or claim that the recommendation is already active. For pin disagreement it preserves the pin separately and either recommends a healthy pinned candidate or asks a human to review stale selection evidence. For RED it may recommend human-controlled provisioning, never automatic installation.
 
@@ -125,4 +125,4 @@ Stable typed nodes and edges preserve causal chains from evidence to requirement
 
 ## Contracts and versioning
 
-The ARX application version and schema version evolve independently. ARX 2.0.0 retains legacy machine/software commands and their schema `0.1` envelopes. Project-aware AI output uses schema `0.2` and separates facts, decisions, selected providers, blockers, warnings, recommendations, policy constraints, unknowns, and evidence references. See [AI contract 0.2](ai-contract-0.2.md).
+The ARX application version and schema version evolve independently. ARX 2.0.0 retained legacy machine/software commands and their schema `0.1` envelopes; ARX 3.0.0rc1 retains that compatibility. Project-aware AI output continues to use schema `0.2` and separates facts, decisions, selected providers, blockers, warnings, recommendations, policy constraints, unknowns, and evidence references. See [AI contract 0.2](ai-contract-0.2.md).

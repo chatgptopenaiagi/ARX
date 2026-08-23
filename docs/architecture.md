@@ -53,9 +53,9 @@ requirements + resolution -> semantic engines -> severity -> policy-aware plan
 
 Every inferred requirement retains its evidence classification and confidence. Unsupported constraints remain unknown rather than being treated as satisfied.
 
-## ARX 0.3 semantic law
+## Semantic law
 
-ARX 0.3 keeps each analytical question independent:
+ARX keeps each analytical question independent:
 
 ```text
 availability != resolution
@@ -68,4 +68,4 @@ severity != remediation
 
 Availability records what providers exist. Resolution records what a command invokes in one execution context. Compatibility compares a provider with a requirement. Relevance establishes whether the project needs the capability. Satisfaction combines the relevant requirement with the selected resolution. Severity compresses the consequence to GREEN, YELLOW, or RED. Remediation is a separate, non-executing plan constrained by policy.
 
-See [Project-aware semantic engine](project-semantic-engine.md) for the ARX 0.3 data flow and decision rules.
+See [Project-aware semantic engine](project-semantic-engine.md) for the data flow and decision rules.

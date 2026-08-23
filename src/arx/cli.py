@@ -3,7 +3,7 @@ import json
 import sys
 from pathlib import Path
 
-from arx import __version__
+from arx import PRODUCT_NAME, __version__
 from arx.core.engine import capabilities, compare
 from arx.core.evidence import redact
 from arx.core.models import serialize, utc_now
@@ -58,7 +58,7 @@ def preflight_envelope(report):
 
 def parser():
     root = argparse.ArgumentParser(
-        prog="arx", description="ARX project-aware compatibility intelligence"
+        prog="arx", description=f"{PRODUCT_NAME} project-aware compatibility intelligence"
     )
     root.add_argument("-o", "--output", type=Path)
     subcommands = root.add_subparsers(dest="command", required=True)
@@ -88,7 +88,7 @@ def quick(caps):
         "windows_cpp_build": "Visual C++ Build",
         "cuda_compute": "CUDA Compute",
     }
-    return "ARX - Quick Scan\n\n" + "\n".join(
+    return f"{PRODUCT_NAME} - Quick Scan\n\n" + "\n".join(
         f"[{caps[key].status.value.upper():<9}] {label:<24} {caps[key].reason}"
         for key, label in labels.items()
     )
@@ -98,7 +98,7 @@ def inspect_text(software, compat=None):
     pe = software.get("pe", {})
     signature = software.get("signature", {})
     lines = [
-        "ARX",
+        PRODUCT_NAME,
         f"Target: {software['filename']}",
         f"SHA256: {software.get('sha256', 'n/a')}",
         f"Type: {software['detected_file_type']}",
@@ -125,7 +125,7 @@ def project_text(project):
     primary = project.primary_python_requirement
     return "\n".join(
         [
-            "ARX - PROJECT DNA",
+            f"{PRODUCT_NAME} - PROJECT DNA",
             "",
             f"Project: {project.identity}",
             f"Root: {project.root}",
@@ -155,7 +155,7 @@ def preflight_text(report, *, resolution_only=False):
     ]
     preferred = provider_by_id.get(report.provider_roles.preferred_provider_id or "")
     lines = [
-        "ARX - PYTHON RESOLUTION" if resolution_only else "ARX - PROJECT PREFLIGHT",
+        f"{PRODUCT_NAME} - PYTHON RESOLUTION" if resolution_only else f"{PRODUCT_NAME} - PROJECT PREFLIGHT",
         "",
         f"PROJECT READINESS: {report.severity.severity.value.upper()}",
         f"Project: {report.project.identity}",

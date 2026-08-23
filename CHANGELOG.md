@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.0rc1 - 2026-08-24
+- Present ARX 3 as Project-Aware Compatibility Intelligence across package metadata, CLI text, the Windows application, portable resources, installer metadata, and public documentation.
+- Complete the Windows desktop interaction layer with reusable selectable reports, contextual evidence/path actions, keyboard behavior, responsive background work, cancellation, errors, state handling, and lifecycle cleanup.
+- Add the optional, explicit, bounded, redacted, cancellable ChatGPT/OpenAI and Codex CLI advisory bridge without allowing external output to become ARX evidence.
+- Add privacy-aware web, exact-error, Google, and official-documentation research that remains in the user's browser and outside deterministic results.
+- Add a stable-AppId Inno Setup installer around the validated portable payload, versioned RC ZIP/installer/checksum naming, and Windows version resources.
+- Expand deterministic, cross-surface, GUI-isolated, packaging, documentation, workflow, and external-boundary security coverage across Windows and Linux CI.
+- Add CodeQL analysis for Python and GitHub Actions with pinned actions and least-privilege permissions.
+- Retain honest release-candidate limitations for real DPI/multi-monitor, screen-reader/accessibility, and full installer lifecycle acceptance; aggregate Definition of Done remains partial.
+
 ## 2.0.0 - 2026-08-10
 - Promote ARX to Project-Aware Semantic Compatibility Intelligence with a locked canonical project-readiness domain.
 - Implement Python project semantic intelligence across CLI, desktop, Evidence Inspector, and AI Contract 0.2 output.

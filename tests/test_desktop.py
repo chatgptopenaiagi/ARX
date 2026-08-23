@@ -1,6 +1,7 @@
 import json,struct
 import time
 from pathlib import Path
+from arx import PRODUCT_NAME, RELEASE_NAME, __version__
 from arx.core.engine import compare
 from arx.core.models import ToolRecord
 from arx.desktop.controllers import DesktopController
@@ -277,7 +278,11 @@ def test_about_dialog_uses_repository_facts_without_invented_terms(monkeypatch, 
 
     app._show_about()
 
+    assert app.title() == f"{RELEASE_NAME} — Project-Aware Compatibility Intelligence"
     assert reports[0][0] == "About ARX"
+    assert PRODUCT_NAME in reports[0][1]
+    assert RELEASE_NAME in reports[0][1]
+    assert f"Package version: {__version__}" in reports[0][1]
     assert "License: MIT" in reports[0][1]
     assert "https://github.com/chatgptopenaiagi/ARX" in reports[0][1]
     assert len(app._tooltips) == len(app._action_buttons)

@@ -77,6 +77,59 @@ def test_external_boundary_document_preserves_three_separate_trust_domains():
     assert "does not enable PyPI publishing" in security
 
 
+def test_readme_is_the_complete_arx3_release_candidate_landing_page():
+    readme = _read("README.md")
+
+    for phrase in (
+        "# ARX 3",
+        "ARX 3.0 Release Candidate",
+        "Project-Aware Compatibility Intelligence",
+        "## Why ARX 3 is different",
+        "Machine DNA",
+        "Software DNA",
+        "Project DNA",
+        "Requirement Graph",
+        "Provider Graph",
+        "Execution Context",
+        "OBSERVED, INFERRED, and VERIFIED",
+        "GREEN, YELLOW, and RED",
+        "shortest trusted path to GREEN",
+        "There is no return path from external advice into ARX evidence",
+        "The human remains the final decision-maker",
+        "ARX-Desktop-win-x64-v3.0.0-rc1.zip",
+        "ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe",
+        "Real DPI and multi-monitor acceptance is incomplete",
+        "aggregate Definition of Done remains partial",
+    ):
+        assert phrase in readme
+    for workflow in ("actions/workflows/ci.yml", "actions/workflows/codeql.yml"):
+        assert workflow in readme
+    for document in (
+        "docs/architecture.md",
+        "docs/security-model.md",
+        "docs/testing.md",
+        "docs/arx-3-implementation-report.md",
+        "docs/windows-desktop-acceptance.md",
+    ):
+        assert document in readme
+
+
+def test_rc_release_notes_preserve_history_and_disclose_manual_limits():
+    notes = _read("docs/release-notes-3.0.0-rc1.md")
+    historical = _read("docs/release-notes-2.0.0.md")
+
+    assert notes.startswith("# ARX 3.0 Release Candidate")
+    assert "Package version: `3.0.0rc1`" in notes
+    assert "Planned Git tag: `v3.0.0-rc1`" in notes
+    assert "What changed since ARX 2" in notes
+    assert "schema `0.1` and project/AI contract schema `0.2`" in notes
+    assert "Real DPI and multi-monitor acceptance is incomplete" in notes
+    assert "Screen-reader and complete accessibility acceptance is incomplete" in notes
+    assert "same-AppId upgrade" in notes
+    assert "aggregate Definition of Done remains partial" in notes
+    assert historical.startswith("# ARX 2.0.0")
+
+
 def test_final_report_contains_every_point_and_required_engineering_sections():
     report = _read("docs/arx-3-implementation-report.md")
 

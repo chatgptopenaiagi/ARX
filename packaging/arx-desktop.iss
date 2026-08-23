@@ -1,10 +1,18 @@
 ; ARX Desktop x64 installer. Build through scripts/build-installer.ps1.
 
 #ifndef MyAppVersion
-  #define MyAppVersion "2.0.0"
+  #define MyAppVersion "3.0.0rc1"
+#endif
+#ifndef MyAppFileVersion
+  #define MyAppFileVersion "3.0.0.1"
+#endif
+#ifndef MyArtifactVersion
+  #define MyArtifactVersion "3.0.0-rc1"
 #endif
 
 #define MyAppName "ARX"
+#define MyAppProductName "ARX 3"
+#define MyAppDisplayName "ARX 3.0 Release Candidate"
 #define MyAppPublisher "chatgptopenaiagi"
 #define MyAppURL "https://github.com/chatgptopenaiagi/ARX"
 #define MyAppExeName "ARX.exe"
@@ -14,7 +22,7 @@
 AppId={{1BC9E705-070A-42B4-9378-45E2DD7C416A}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-AppVerName={#MyAppName} {#MyAppVersion} (Windows x64)
+AppVerName={#MyAppDisplayName} (Windows x64)
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}/issues
@@ -27,17 +35,17 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 LicenseFile=..\LICENSE
 OutputDir=..\release
-OutputBaseFilename=ARX-Desktop-Setup-win-x64-v{#MyAppVersion}
+OutputBaseFilename=ARX-Desktop-Setup-win-x64-v{#MyArtifactVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#MyAppExeName}
-UninstallDisplayName={#MyAppName} {#MyAppVersion} (Windows x64)
-VersionInfoVersion={#MyAppVersion}
+UninstallDisplayName={#MyAppDisplayName} (Windows x64)
+VersionInfoVersion={#MyAppFileVersion}
 VersionInfoCompany={#MyAppPublisher}
-VersionInfoDescription=ARX Project-Aware Compatibility Intelligence installer
-VersionInfoProductName={#MyAppName}
-VersionInfoProductVersion={#MyAppVersion}
+VersionInfoDescription={#MyAppDisplayName} installer
+VersionInfoProductName={#MyAppProductName}
+VersionInfoProductVersion={#MyAppFileVersion}
 CloseApplications=yes
 RestartApplications=no
 
@@ -54,9 +62,9 @@ Source: "{#MyAppSourceDir}\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\ARX"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
+Name: "{group}\ARX 3"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{group}\Uninstall ARX"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\ARX"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autodesktop}\ARX 3"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch ARX"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch ARX 3"; Flags: nowait postinstall skipifsilent

@@ -1,14 +1,24 @@
 param(
-    [string]$Version = '2.0.0'
+    [string]$Version = '3.0.0rc1'
 )
 
 $ErrorActionPreference = 'Stop'
+$VersionMatch = [regex]::Match($Version, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:rc(?<rc>\d+))?$')
+if (-not $VersionMatch.Success) {
+    throw 'Version must use the package form X.Y.Z or X.Y.ZrcN.'
+}
+$BaseVersion = "$($VersionMatch.Groups['major'].Value).$($VersionMatch.Groups['minor'].Value).$($VersionMatch.Groups['patch'].Value)"
+$ArtifactVersion = if ($VersionMatch.Groups['rc'].Success) {
+    "$BaseVersion-rc$($VersionMatch.Groups['rc'].Value)"
+} else {
+    $BaseVersion
+}
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $ReleaseRoot = Join-Path $ProjectRoot 'release'
 $DesktopDirectory = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
 $Executable = Join-Path $DesktopDirectory 'ARX.exe'
-$Archive = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64.zip'
-$ChecksumFile = Join-Path $ReleaseRoot "SHA256SUMS-v$Version.txt"
+$Archive = Join-Path $ReleaseRoot "ARX-Desktop-win-x64-v$ArtifactVersion.zip"
+$ChecksumFile = Join-Path $ReleaseRoot "SHA256SUMS-v$ArtifactVersion.txt"
 
 $ReleaseFullPath = [IO.Path]::GetFullPath($ReleaseRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 foreach ($target in @($DesktopDirectory,$Archive,$ChecksumFile)) {
@@ -38,7 +48,7 @@ $ExecutableHash = (Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash
 $ArchiveHash = (Get-FileHash -LiteralPath $Archive -Algorithm SHA256).Hash.ToLowerInvariant()
 $lines = @(
     "$ExecutableHash  ARX-Desktop-win-x64\ARX.exe",
-    "$ArchiveHash  ARX-Desktop-win-x64.zip"
+    "$ArchiveHash  $(Split-Path -Leaf $Archive)"
 )
 [IO.File]::WriteAllLines($ChecksumFile,$lines,[Text.UTF8Encoding]::new($false))
 
