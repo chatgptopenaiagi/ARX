@@ -15,6 +15,13 @@ START
 Extract the complete folder, then double-click ARX.exe. Keep the _internal
 folder beside ARX.exe; it contains the standalone Python/Tk runtime.
 
+INSTALLER DISTRIBUTION
+When ARX is distributed as ARX-Desktop-Setup-win-x64, the installer provides
+Start Menu and uninstall entries, offers an optional desktop shortcut, and can
+launch ARX after an interactive install. The portable extracted-folder workflow
+remains supported. Installer builds are currently unsigned; verify the published
+SHA-256 checksum before installation.
+
 READ-ONLY MODEL
 Normal scanning does not install software, change PATH, edit the registry, or
 execute the selected target. Only fixed, timeout-bound trusted diagnostic

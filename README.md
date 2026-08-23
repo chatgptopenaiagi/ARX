@@ -53,6 +53,8 @@ python -m arx.desktop
 
 Portable Windows builds are produced under `release/` and are distributed through GitHub Releases rather than source control.
 
+An optional Inno Setup 6 installer can be built after the portable application. See [packaging/INSTALLER.md](packaging/INSTALLER.md). The installer supports x64 Program Files installation, stable upgrades, Start Menu and uninstall entries, an optional desktop shortcut, the actual MIT license, and launch-at-finish behavior. Current development installers are unsigned; release signing requires a separately controlled signing policy and credentials.
+
 ## Install and run
 
 ```powershell
