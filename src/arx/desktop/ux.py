@@ -212,3 +212,23 @@ def selected_tree_text(tree: object) -> str:
         values = tree.item(item_id, "values")
         rows.append(format_result_row(tuple(columns), tuple(values)))
     return "\n\n".join(item for item in rows if item)
+
+
+def enable_windows_dpi_awareness(*, platform: str | None = None, windll: object | None = None) -> bool:
+    """Enable process DPI awareness on Windows as a best-effort startup step."""
+
+    if (platform or os.name) != "nt":
+        return False
+    try:
+        if windll is None:
+            import ctypes
+
+            windll = ctypes.windll
+        shcore = getattr(windll, "shcore", None)
+        if shcore is not None:
+            shcore.SetProcessDpiAwareness(1)
+        else:
+            windll.user32.SetProcessDPIAware()
+        return True
+    except (AttributeError, OSError):
+        return False

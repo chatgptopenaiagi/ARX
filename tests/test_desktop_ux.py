@@ -1,10 +1,13 @@
 import json
+import tkinter as tk
+from tkinter import ttk
 from pathlib import Path
 
 import pytest
 
 from arx.desktop.ux import (
     UIStateStore,
+    enable_windows_dpi_awareness,
     explorer_arguments,
     find_path_value,
     format_result_row,
@@ -12,6 +15,7 @@ from arx.desktop.ux import (
     path_capabilities,
     sanitize_geometry,
 )
+from arx.desktop.widgets import ReadOnlyText, tree
 
 
 def test_result_formatting_preserves_visible_unicode_and_omits_empty_values():
@@ -81,6 +85,22 @@ def test_geometry_validation_accepts_only_bounded_tk_geometry():
     assert sanitize_geometry("1280x820; calc.exe") is None
 
 
+def test_dpi_awareness_is_best_effort_and_platform_scoped():
+    class Shcore:
+        calls = []
+
+        @classmethod
+        def SetProcessDpiAwareness(cls, value):
+            cls.calls.append(value)
+
+    class Windll:
+        shcore = Shcore()
+
+    assert enable_windows_dpi_awareness(platform="nt", windll=Windll())
+    assert Shcore.calls == [1]
+    assert not enable_windows_dpi_awareness(platform="posix", windll=Windll())
+
+
 def test_ui_state_store_persists_only_non_sensitive_allowlisted_state(tmp_path):
     path = tmp_path / "state.json"
     store = UIStateStore(path)
@@ -107,3 +127,39 @@ def test_ui_state_store_rejects_malformed_or_oversized_content(tmp_path):
 
     path.write_text("x" * (17 * 1024), encoding="utf-8")
     assert store.load() == {}
+
+
+def test_json_text_panel_exposes_standard_actions_and_exact_save_content():
+    root = tk.Tk()
+    root.withdraw()
+    saved = []
+    panel = ReadOnlyText(root, content_type="json", save_command=lambda kind, value: saved.append((kind, value)))
+    panel.set_content('{\n  "name": "Jörg"\n}')
+
+    labels = [action.label for action in panel.menu_actions() if action.label]
+    panel.select_all()
+    assert panel.selected_text() == '{\n  "name": "Jörg"\n}'
+    panel.save()
+
+    assert labels == ["Copy", "Select All", "Copy All JSON", "Find…", "Save JSON As…"]
+    assert saved == [("json", '{\n  "name": "Jörg"\n}')]
+    root.destroy()
+
+
+def test_tree_supports_extended_selection_select_all_and_horizontal_scrollbar():
+    root = tk.Tk()
+    root.withdraw()
+    holder = ttk.Frame(root)
+    view = tree(holder, ("component", "status"))
+    view.insert("", "end", iid="one", values=("Python", "READY"))
+    view.insert("", "end", iid="two", values=("CMake", "MISSING"))
+
+    view._arx_select_all()  # type: ignore[attr-defined]
+
+    assert str(view.cget("selectmode")) == "extended"
+    assert view.selection() == ("one", "two")
+    assert any(
+        isinstance(child, ttk.Scrollbar) and str(child.cget("orient")) == "horizontal"
+        for child in holder.winfo_children()
+    )
+    root.destroy()

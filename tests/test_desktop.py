@@ -5,6 +5,8 @@ from arx.core.engine import compare
 from arx.core.models import ToolRecord
 from arx.desktop.controllers import DesktopController
 from arx.desktop.app import ARXDesktopApp
+from arx.desktop.ux import UIStateStore
+from arx.desktop.widgets import ReadOnlyText
 from arx.software.scanner import _application_evidence
 from arx.project import ExecutionContext, ProviderKind, inspect_project, make_provider, preflight, resolve_python
 
@@ -110,3 +112,156 @@ def test_desktop_project_smoke_mode_writes_result(monkeypatch,tmp_path):
     assert main(["--project-ui-smoke-test",str(tmp_path),str(output)])==0
     result=Path(str(output)+".result.json")
     assert json.loads(result.read_text(encoding="utf-8"))==expected
+
+
+def test_desktop_has_conventional_menus_and_selectable_report_surfaces(tmp_path):
+    app = ARXDesktopApp(state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+    menu = app.nametowidget(app.cget("menu"))
+
+    assert [menu.entrycget(index, "label") for index in range(menu.index("end") + 1)] == ["File", "Edit", "Help"]
+    assert isinstance(app.project_detail, ReadOnlyText)
+    assert app.project_detail.text.bind("<Control-c>")
+    assert app.project_detail.text.bind("<Control-a>")
+    assert app.project_detail.text.bind("<Control-f>")
+    assert app.project_detail.text.bind("<Control-s>")
+    app.destroy()
+
+
+def test_result_context_actions_are_path_sensitive(tmp_path):
+    app = ARXDesktopApp(state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+    target = tmp_path / "Jörg application.exe"
+    target.write_bytes(b"MZ")
+    app.machine_tree.insert("", "end", iid="existing", values=("Tool", "READY", "1", str(target), "HEALTHY", "fixture"))
+    app.machine_tree.selection_set("existing")
+
+    existing_labels = [action.label for action in app._tree_menu_actions(app.machine_tree) if action.label]
+
+    app.machine_tree.insert("", "end", iid="missing", values=("Tool", "MISSING", "", str(tmp_path / "missing.exe"), "", "fixture"))
+    app.machine_tree.selection_set("missing")
+    missing_labels = [action.label for action in app._tree_menu_actions(app.machine_tree) if action.label]
+
+    assert existing_labels == [
+        "Copy Row",
+        "Copy Details",
+        "Copy Path",
+        "Open",
+        "Open Containing Folder",
+        "Reveal in File Explorer",
+        "Inspect with ARX",
+        "View Details",
+    ]
+    assert "Copy Path" in missing_labels
+    assert "Open" not in missing_labels
+    assert "Inspect with ARX" not in missing_labels
+    app.destroy()
+
+
+def test_desktop_busy_state_disables_conflicting_actions_and_exposes_cancel(tmp_path):
+    app = ARXDesktopApp(state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+
+    app._set_busy(True)
+    assert all(str(button.cget("state")) == "disabled" for button in app._action_buttons)
+    assert str(app.cancel_button.cget("state")) == "normal"
+
+    app._set_busy(False)
+    assert all(str(button.cget("state")) == "normal" for button in app._action_buttons)
+    assert str(app.cancel_button.cget("state")) == "disabled"
+    app.destroy()
+
+
+def test_desktop_close_persists_only_geometry_and_tab(tmp_path):
+    state_path = tmp_path / "ui-state.json"
+    app = ARXDesktopApp(state_store=UIStateStore(state_path))
+    app.withdraw()
+    app.geometry("1100x700+20+30")
+    app.tabs.select(3)
+    app.update_idletasks()
+
+    app._close()
+
+    saved = json.loads(state_path.read_text(encoding="utf-8"))
+    assert set(saved) == {"geometry", "selected_tab"}
+    assert saved["selected_tab"] == 3
+
+
+def test_tree_double_click_reveals_files_and_opens_details_for_missing_paths(monkeypatch, tmp_path):
+    app = ARXDesktopApp(state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+    target = tmp_path / "safe target.exe"
+    target.write_bytes(b"MZ")
+    app.machine_tree.insert("", "end", iid="existing", values=("Tool", "READY", "1", str(target), "", ""))
+    app.machine_tree.selection_set("existing")
+    opened = []
+    monkeypatch.setattr("arx.desktop.app.open_path", lambda path, action: opened.append((path, action)))
+
+    app._tree_activate(app.machine_tree)
+
+    assert opened == [(str(target), "reveal")]
+
+    missing = tmp_path / "missing.exe"
+    app.machine_tree.insert("", "end", iid="missing", values=("Tool", "MISSING", "", str(missing), "", ""))
+    app.machine_tree.selection_set("missing")
+    details = []
+    monkeypatch.setattr(app, "_show_report_window", lambda title, content: details.append((title, content)))
+    app._tree_activate(app.machine_tree)
+    assert details and "Status: MISSING" in details[0][1]
+    app.destroy()
+
+
+def test_file_dialog_remembers_last_directory_for_the_session(monkeypatch, tmp_path):
+    app = ARXDesktopApp(state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+    first = tmp_path / "one" / "sample.exe"
+    first.parent.mkdir()
+    first.write_bytes(b"MZ")
+    calls = []
+
+    def choose(**kwargs):
+        calls.append(kwargs)
+        return str(first) if len(calls) == 1 else ""
+
+    monkeypatch.setattr("arx.desktop.app.filedialog.askopenfilename", choose)
+    monkeypatch.setattr(app, "_start_inspect", lambda _target: None)
+    app._inspect_file()
+    app._inspect_file()
+
+    assert calls[1]["initialdir"] == str(first.parent)
+    assert calls[0]["parent"] is app
+    assert any(label == "All files" for label, _pattern in calls[0]["filetypes"])
+    app.destroy()
+
+
+def test_error_surface_keeps_human_summary_and_copyable_technical_details(monkeypatch, tmp_path):
+    app = ARXDesktopApp(state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+    messages = []
+    dialogs = []
+    monkeypatch.setattr("arx.desktop.app.messagebox.showerror", lambda *args, **kwargs: messages.append((args, kwargs)))
+    monkeypatch.setattr("arx.desktop.app.ErrorDetailsDialog", lambda *args, **kwargs: dialogs.append((args, kwargs)))
+
+    app._show_error("opening this path", OSError("access denied"), "traceback detail")
+    app._show_last_error()
+
+    assert app.activity.cget("text") == "Failed"
+    assert "ARX could not complete opening this path" in app._last_error_details
+    assert "traceback detail" in app._last_error_details
+    assert messages and dialogs
+    app.destroy()
+
+
+def test_about_dialog_uses_repository_facts_without_invented_terms(monkeypatch, tmp_path):
+    app = ARXDesktopApp(state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+    reports = []
+    monkeypatch.setattr(app, "_show_report_window", lambda title, content: reports.append((title, content)))
+
+    app._show_about()
+
+    assert reports[0][0] == "About ARX"
+    assert "License: MIT" in reports[0][1]
+    assert "https://github.com/chatgptopenaiagi/ARX" in reports[0][1]
+    assert len(app._tooltips) == len(app._action_buttons)
+    app.destroy()
