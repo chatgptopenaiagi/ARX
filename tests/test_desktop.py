@@ -192,14 +192,16 @@ def test_desktop_close_persists_only_geometry_and_tab(tmp_path):
     assert saved["selected_tab"] == 3
 
 
-def test_desktop_destroy_cancels_recurring_poll_before_next_root(tmp_path):
-    for index in range(3):
-        app = ARXDesktopApp(state_store=UIStateStore(tmp_path / f"ui-state-{index}.json"))
-        app.withdraw()
-        assert app._poll_id is not None
-        app.destroy()
-        assert app._closed is True
-        assert app._poll_id is None
+def test_desktop_destroy_cancels_recurring_poll_idempotently(tmp_path):
+    app = ARXDesktopApp(state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+    assert app._poll_id is not None
+
+    app.destroy()
+    app.destroy()
+
+    assert app._closed is True
+    assert app._poll_id is None
 
 
 def test_tree_double_click_reveals_files_and_opens_details_for_missing_paths(monkeypatch, tmp_path):

@@ -32,6 +32,8 @@ def test_ci_covers_supported_windows_and_linux_python_matrix():
     assert 'python-version: ["3.10", "3.12", "3.14"]' in workflow
     assert 'python -m pip install -e ".[dev]"' in workflow
     assert "python -m pytest" in workflow
+    assert "python scripts/run-isolated-gui-tests.py" in workflow
+    assert workflow.count("--ignore=tests/test_desktop") == 3
     assert "xvfb-run -a python -m pytest" in workflow
     assert "python -m compileall -q src tests" in workflow
 
