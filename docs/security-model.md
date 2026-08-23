@@ -7,3 +7,7 @@ Project-aware reports fingerprint effective PATH and relevant process-environmen
 
 The Resolution Planner is advisory. Normal ARX analysis does not install or uninstall software, modify PATH or the registry, alter execution aliases, change Windows security/firewall/antivirus settings, remove runtimes, or execute remediation. A valid signature is integrity evidence, not a safety verdict.
 
+Optional AI advice is a separate trust domain from deterministic ARX evidence. It is invoked only by an explicit user action, receives one bounded relevant context packet after external-boundary redaction, and is visibly labeled unverified. OpenAI credentials are read from process configuration and are never placed in prompts, reports, saved conversations, URLs, or subprocess arguments. Codex runs through its supported non-interactive interface in an empty temporary directory with a read-only sandbox, an argument array, `shell=False`, a timeout, and cancellation. AI output never changes the evidence graph or executes remediation.
+
+Public web research is a third trust domain. ARX constructs a short redacted query, URL-encodes it, restricts generated URLs to known HTTPS search hosts, and opens the user's browser only after a direct search command. ARX does not scrape search results or merge them into evidence. See [AI assistance and external-boundary security](ai-assistance-security.md) for the provider, consent, privacy, and failure model.
+

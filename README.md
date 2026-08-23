@@ -55,6 +55,12 @@ Portable Windows builds are produced under `release/` and are distributed throug
 
 An optional Inno Setup 6 or 7 installer can be built after the portable application. See [packaging/INSTALLER.md](packaging/INSTALLER.md). The installer supports x64 Program Files installation, stable upgrades, Start Menu and uninstall entries, an optional desktop shortcut, the actual MIT license, and launch-at-finish behavior. Current development installers are unsigned; release signing requires a separately controlled signing policy and credentials.
 
+## Optional advisory and research bridge
+
+Structured desktop findings expose explicit user-triggered actions for ChatGPT/OpenAI, the official Codex CLI, safe-fix and project-requirement interpretation, web/Google search, exact-error search, official documentation, relevant evidence, and raw redacted context. External AI is provider-neutral, optional, bounded, redacted, cancellable, and visibly labeled as unverified advice. It never changes ARX evidence or applies remediation. Web searches open a safely encoded query in the default browser and remain separate from deterministic results.
+
+The OpenAI adapter uses the supported Responses API when `OPENAI_API_KEY` is available in the process environment. The Codex adapter detects the installed CLI and runs documented non-interactive analysis with a read-only ephemeral sandbox in an empty temporary directory. ARX remains fully functional when either provider or the network is unavailable. See [AI assistance and external-boundary security](docs/ai-assistance-security.md).
+
 ## Install and run
 
 ```powershell
@@ -97,7 +103,7 @@ Unknown targets and project scripts are never executed, loaded as libraries, or 
 
 ## Architecture and development
 
-Machine, software, and project scanners produce normalized evidence. The locked project domain preserves typed requirement provenance, the capability-grouped requirement graph, provider identity, execution context, resolved/compatible/pinned/preferred roles, current-context satisfaction, recoverability, conflict, severity, policy, plans, and explanations independently. See [ARX 2.0.0 release notes](docs/release-notes-2.0.0.md), [architecture](docs/architecture.md), [project semantic engine](docs/project-semantic-engine.md), [AI contract 0.2](docs/ai-contract-0.2.md), [schemas](schemas), and [roadmap](docs/roadmap.md).
+Machine, software, and project scanners produce normalized evidence. The locked project domain preserves typed requirement provenance, the capability-grouped requirement graph, provider identity, execution context, resolved/compatible/pinned/preferred roles, current-context satisfaction, recoverability, conflict, severity, policy, plans, and explanations independently. See [ARX 2.0.0 release notes](docs/release-notes-2.0.0.md), [architecture](docs/architecture.md), [project semantic engine](docs/project-semantic-engine.md), [AI contract 0.2](docs/ai-contract-0.2.md), [schemas](schemas), [testing boundaries](docs/testing.md), [manual Windows acceptance](docs/windows-desktop-acceptance.md), and [roadmap](docs/roadmap.md).
 
 ```powershell
 python -m pip install -e .[dev]
