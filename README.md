@@ -59,7 +59,7 @@ An optional Inno Setup 6 or 7 installer can be built after the portable applicat
 
 Structured desktop findings expose explicit user-triggered actions for ChatGPT/OpenAI, the official Codex CLI, safe-fix and project-requirement interpretation, web/Google search, exact-error search, official documentation, relevant evidence, and raw redacted context. External AI is provider-neutral, optional, bounded, redacted, cancellable, and visibly labeled as unverified advice. It never changes ARX evidence or applies remediation. Web searches open a safely encoded query in the default browser and remain separate from deterministic results.
 
-The OpenAI adapter uses the supported Responses API when `OPENAI_API_KEY` is available in the process environment. The Codex adapter detects the installed CLI and runs documented non-interactive analysis with a read-only ephemeral sandbox in an empty temporary directory. ARX remains fully functional when either provider or the network is unavailable. See [AI assistance and external-boundary security](docs/ai-assistance-security.md).
+The OpenAI adapter uses the supported Responses API when `OPENAI_API_KEY` is available in the process environment. The Codex adapter detects the installed CLI and runs documented non-interactive analysis with a read-only ephemeral sandbox in an empty temporary directory. ARX remains fully functional when either provider or the network is unavailable. See [AI assistance and external-boundary security](docs/ai-assistance-security.md) and the [ARX 3 implementation report](docs/arx-3-implementation-report.md).
 
 ## Install and run
 

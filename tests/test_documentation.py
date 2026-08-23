@@ -58,3 +58,23 @@ def test_external_boundary_document_preserves_three_separate_trust_domains():
     assert "cannot modify the workstation or become ARX evidence" in security
     assert "%PROJECT_ROOT%" in security and "%USERPROFILE%" in security and "%LOCAL_PATH%" in security
     assert "does not enable PyPI publishing" in security
+
+
+def test_final_report_contains_every_point_and_required_engineering_sections():
+    report = _read("docs/arx-3-implementation-report.md")
+
+    for point in range(1, 28):
+        assert f"| {point} |" in report
+    for section in (
+        "## UX problems found",
+        "## Changes implemented",
+        "## Files changed",
+        "## Tests and verification",
+        "## Manual verification",
+        "## Remaining limitations",
+        "## Point 24 Definition of Done audit",
+        "## Point 27 final implementation report",
+        "## Point-by-point final audit",
+        "| Point | Status | Main implementation | Tests | Remaining limitation |",
+    ):
+        assert section in report
