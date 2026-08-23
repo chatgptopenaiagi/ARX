@@ -2,6 +2,8 @@
 
 ARX 3 retains its portable PyInstaller distribution and adds an optional Inno Setup 6 or 7 installer for Windows 10/11 x64.
 
+This installer is distinct from the `arx-prescanner` Python package. Python developers can use `python -m pip install arx-prescanner==3.0.0rc1` to install the `arx` and `arx-desktop` entry points into a managed Python environment. The installer instead deploys the self-contained portable Windows payload and does not require a separately managed Python installation.
+
 Build the validated portable application first, then compile the installer:
 
 ```powershell
@@ -16,3 +18,5 @@ The release-candidate outputs are `ARX-Desktop-win-x64-v3.0.0-rc1.zip`, `ARX-Des
 The installer has a stable application identifier for in-place upgrades, installs in 64-bit Program Files, displays the repository's actual MIT license, creates Start Menu launch/uninstall entries, offers an unchecked desktop-shortcut task, registers uninstall metadata, and offers to launch ARX when an interactive installation finishes. Silent installs do not launch ARX.
 
 The current installer is not code-signed and uses the executable's ARX 3 version metadata rather than a custom project icon. Production releases should be signed with a publisher-controlled code-signing certificate after the release workflow has a secure signing policy. Do not place signing credentials in this repository or pass them through ordinary build logs. Compilation and checksum verification do not constitute install, upgrade, or uninstall acceptance; those actions remain on the manual Windows checklist.
+
+Python distribution publishing uses the separately documented [Trusted Publishing process](../docs/python-package-publishing.md). Installer compilation does not upload to PyPI, and Python package publication does not establish Windows installer lifecycle acceptance.

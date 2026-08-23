@@ -1,0 +1,225 @@
+name: Publish Python package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing published GitHub release tag to publish
+        required: true
+        default: v3.0.0-rc1
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-python-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+jobs:
+  build:
+    name: Build and validate tagged distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      package-version: ${{ steps.identity.outputs.package-version }}
+    steps:
+      - name: Check out the release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Verify release and package identity
+        id: identity
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(a|b|rc)[0-9]+)?$ ]]; then
+            echo "Release tag has an unsupported form: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$RELEASE_TAG")"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .draft)" = "false"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .tag_name)" = "$RELEASE_TAG"
+          VERSION="$(python - <<'PY'
+          import re
+          import tomllib
+
+          with open("pyproject.toml", "rb") as stream:
+              project = tomllib.load(stream)["project"]
+          version = project["version"]
+          match = re.fullmatch(r"(?P<base>\d+\.\d+\.\d+)(?:(?P<kind>a|b|rc)(?P<number>\d+))?", version)
+          if match is None:
+              raise SystemExit(f"Unsupported package version: {version}")
+          suffix = ""
+          if match.group("kind"):
+              suffix = f"-{match.group('kind')}{match.group('number')}"
+          expected_tag = f"v{match.group('base')}{suffix}"
+          if expected_tag != __import__("os").environ["RELEASE_TAG"]:
+              raise SystemExit(f"Package version {version} does not match {expected_tag}")
+          if project["name"] != "arx-prescanner":
+              raise SystemExit(f"Unexpected package name: {project['name']}")
+          print(version)
+          PY
+          )"
+          echo "package-version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Install isolated package tooling
+        run: python -m pip install "build>=1.2,<2" "twine>=6,<8" "check-wheel-contents>=0.6,<1"
+      - name: Build wheel and source distribution
+        run: python -m build
+      - name: Validate package metadata and README rendering
+        run: python -m twine check --strict dist/*
+      - name: Inspect wheel contents
+        run: python -m check_wheel_contents dist/*.whl
+      - name: Verify the exact distribution set
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.identity.outputs.package-version }}"
+          test -f "dist/arx_prescanner-${VERSION}-py3-none-any.whl"
+          test -f "dist/arx_prescanner-${VERSION}.tar.gz"
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 2
+      - name: Preserve the verified distributions
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-testpypi:
+    name: Publish verified distributions to TestPyPI
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/arx-prescanner
+    permissions:
+      id-token: write
+    steps:
+      - name: Download the verified distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish to TestPyPI with Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+          print-hash: true
+
+  verify-testpypi:
+    name: Verify installation from TestPyPI
+    needs: [build, publish-testpypi]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install and exercise the TestPyPI package outside a checkout
+        shell: bash
+        env:
+          PACKAGE_VERSION: ${{ needs.build.outputs.package-version }}
+        run: |
+          set -euo pipefail
+          VENV="$RUNNER_TEMP/arx-testpypi"
+          python -m venv "$VENV"
+          for attempt in {1..12}; do
+            if "$VENV/bin/python" -m pip install --disable-pip-version-check --no-cache-dir --no-deps \
+              --index-url https://test.pypi.org/simple/ "arx-prescanner==$PACKAGE_VERSION"; then
+              break
+            fi
+            if [[ "$attempt" -eq 12 ]]; then
+              echo "TestPyPI package did not become installable." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          cd "$RUNNER_TEMP"
+          unset PYTHONPATH
+          test "$("$VENV/bin/python" -c 'import arx; print(arx.__version__)')" = "$PACKAGE_VERSION"
+          "$VENV/bin/arx" --help >/dev/null
+          "$VENV/bin/arx" quick >/dev/null
+          test -x "$VENV/bin/arx-desktop"
+          "$VENV/bin/python" -c 'import importlib.metadata as m; names={e.name for e in m.entry_points(group="console_scripts")}; assert {"arx", "arx-desktop"} <= names'
+
+  publish-pypi:
+    name: Publish the same distributions to PyPI
+    needs: [build, verify-testpypi]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/p/arx-prescanner
+    permissions:
+      id-token: write
+    steps:
+      - name: Download the verified distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish to PyPI with Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: dist/
+          print-hash: true
+
+  verify-pypi:
+    name: Verify installation from production PyPI
+    needs: [build, publish-pypi]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install and exercise the production package outside a checkout
+        shell: bash
+        env:
+          PACKAGE_VERSION: ${{ needs.build.outputs.package-version }}
+        run: |
+          set -euo pipefail
+          VENV="$RUNNER_TEMP/arx-pypi"
+          python -m venv "$VENV"
+          for attempt in {1..12}; do
+            if "$VENV/bin/python" -m pip install --disable-pip-version-check --no-cache-dir --no-deps \
+              "arx-prescanner==$PACKAGE_VERSION"; then
+              break
+            fi
+            if [[ "$attempt" -eq 12 ]]; then
+              echo "PyPI package did not become installable." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          cd "$RUNNER_TEMP"
+          unset PYTHONPATH
+          test "$("$VENV/bin/python" -c 'import arx; print(arx.__version__)')" = "$PACKAGE_VERSION"
+          "$VENV/bin/arx" --help >/dev/null
+          "$VENV/bin/arx" quick >/dev/null
+          test -x "$VENV/bin/arx-desktop"
+          "$VENV/bin/python" -c 'import importlib.metadata as m; names={e.name for e in m.entry_points(group="console_scripts")}; assert {"arx", "arx-desktop"} <= names'

@@ -36,6 +36,16 @@ Application version `3.0.0rc1` remains independent from the frozen machine/softw
 
 Generated binaries, installers, and checksums remain outside source control.
 
+### Python package and PyPI installation
+
+- Publishes the Python distribution under the project name `arx-prescanner` for Python 3.10 and newer.
+- Installs the `arx` CLI and `arx-desktop` Windows entry points.
+- Uses a dedicated GitHub Actions Trusted Publishing workflow with short-lived OIDC credentials rather than a stored PyPI API token.
+- Builds once from the verified release tag, rehearses the exact files through TestPyPI, verifies an isolated installation, and gates production PyPI behind the `pypi` GitHub environment.
+- Validates the wheel and source distribution with strict Twine metadata/README checks and verifies public-index installation outside the source checkout.
+
+Install this pre-release explicitly with `python -m pip install arx-prescanner==3.0.0rc1`, or opt into pre-release discovery with `python -m pip install --pre arx-prescanner`. The Python package is a separate distribution path from the portable ZIP and Inno Setup installer.
+
 ### Optional AI, Codex, and web advisory bridge
 
 - Added explicit user-triggered ChatGPT/OpenAI and official Codex CLI advisory providers behind a common optional interface.

@@ -6,6 +6,7 @@
 - Add the optional, explicit, bounded, redacted, cancellable ChatGPT/OpenAI and Codex CLI advisory bridge without allowing external output to become ARX evidence.
 - Add privacy-aware web, exact-error, Google, and official-documentation research that remains in the user's browser and outside deterministic results.
 - Add a stable-AppId Inno Setup installer around the validated portable payload, versioned RC ZIP/installer/checksum naming, and Windows version resources.
+- Add the `arx-prescanner` Python distribution path with strict package validation, isolated installation checks, and tokenless TestPyPI-to-PyPI Trusted Publishing.
 - Expand deterministic, cross-surface, GUI-isolated, packaging, documentation, workflow, and external-boundary security coverage across Windows and Linux CI.
 - Add CodeQL analysis for Python and GitHub Actions with pinned actions and least-privilege permissions.
 - Retain honest release-candidate limitations for real DPI/multi-monitor, screen-reader/accessibility, and full installer lifecycle acceptance; aggregate Definition of Done remains partial.

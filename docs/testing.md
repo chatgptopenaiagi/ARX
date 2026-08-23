@@ -31,3 +31,15 @@ Artifact construction evidence is not lifecycle evidence. The following claims r
 A lower layer may be a prerequisite for a higher one, but it cannot be reported as proof of the higher layer. An unchecked manual acceptance item is incomplete evidence, not a passing result.
 
 GitHub CI runs the deterministic suite on Windows and Linux for Python 3.10, 3.12, and 3.14. Linux GUI tests run under Xvfb. A separate package job builds the sdist and wheel without publishing, while CodeQL analyzes Python and GitHub Actions. The visible Windows behaviors that are intentionally outside stable unit tests are recorded in the [ARX Desktop manual acceptance checklist](windows-desktop-acceptance.md); unchecked items must not be reported as tested.
+
+## Python distribution release evidence
+
+The Python package gate keeps these claims separate:
+
+- `python -m build` proves that the source tree can produce the expected wheel and source distribution;
+- `python -m twine check --strict` validates package metadata and PyPI README rendering compatibility;
+- installing the wheel into a fresh environment outside the checkout proves that its imports and console entry points do not depend on editable local source;
+- a TestPyPI upload plus a new TestPyPI environment proves the Trusted Publishing rehearsal and index installation path;
+- production publication is verified only by installing `arx-prescanner==3.0.0rc1` from production PyPI in another fresh environment.
+
+The dedicated publishing workflow builds once from the verified release tag and passes the same workflow artifact through TestPyPI and PyPI. Only its publishing jobs have OIDC permission. See [Python package publishing](python-package-publishing.md) for the trust boundary and release procedure.

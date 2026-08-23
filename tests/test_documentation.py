@@ -108,6 +108,7 @@ def test_readme_is_the_complete_arx3_release_candidate_landing_page():
         "docs/architecture.md",
         "docs/security-model.md",
         "docs/testing.md",
+        "docs/python-package-publishing.md",
         "docs/arx-3-implementation-report.md",
         "docs/windows-desktop-acceptance.md",
     ):
@@ -128,6 +129,27 @@ def test_rc_release_notes_preserve_history_and_disclose_manual_limits():
     assert "same-AppId upgrade" in notes
     assert "aggregate Definition of Done remains partial" in notes
     assert historical.startswith("# ARX 2.0.0")
+
+
+def test_python_publishing_document_preserves_release_and_credential_boundaries():
+    publishing = _read("docs/python-package-publishing.md")
+
+    for phrase in (
+        "arx-prescanner",
+        "Python 3.10 or newer",
+        "TestPyPI",
+        "Trusted Publishing",
+        "id-token: write",
+        "short-lived OIDC",
+        "publish-pypi.yml",
+        "environment | `pypi` | `testpypi`",
+        "same preserved artifact files",
+        "outside the source checkout",
+        "python -m pip install arx-prescanner==3.0.0rc1",
+    ):
+        assert phrase.casefold() in publishing.casefold()
+    assert "long-lived API token" in publishing
+    assert "pull_request_target" in publishing
 
 
 def test_final_report_contains_every_point_and_required_engineering_sections():

@@ -88,18 +88,78 @@ Serialized evidence provenance remains explicit as `declared`, `observed`, `infe
 
 GREEN is deliberately scoped. The current Python readiness vertical verifies interpreter/toolchain requirements; it does not prove dependency installation, lock/site-packages synchronization, project imports, or complete application startup.
 
+## Install ARX 3
+
+ARX `3.0.0rc1` is a pre-release. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
+
+### PyPI / Python developers
+
+Install this exact release candidate from PyPI:
+
+```console
+python -m pip install arx-prescanner==3.0.0rc1
+```
+
+Alternatively, allow pip to discover the newest available ARX pre-release:
+
+```console
+python -m pip install --pre arx-prescanner
+```
+
+Then use either console entry point:
+
+```console
+arx --help
+arx quick
+arx-desktop
+```
+
+`arx-desktop` launches the Windows Tk desktop application. The CLI remains usable independently. Once stable `3.0.0` is published, the normal installation command becomes:
+
+```console
+python -m pip install arx-prescanner
+```
+
+### GitHub source / tag
+
+Install the immutable RC source directly from its Git tag:
+
+```console
+python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v3.0.0-rc1"
+```
+
+### Windows installer
+
+Download `ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe` from the [GitHub pre-release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v3.0.0-rc1). It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The RC installer is currently unsigned.
+
+### Portable Windows
+
+Download `ARX-Desktop-win-x64-v3.0.0-rc1.zip`, verify it with `SHA256SUMS-v3.0.0-rc1.txt`, extract the complete folder, and run `ARX.exe` without installation.
+
+### Editable source checkout
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e .
+
+arx quick
+arx deep
+arx inspect C:\Path\To\Application.exe
+arx compare C:\Path\To\Application.exe
+arx project C:\Path\To\Project
+arx resolve C:\Path\To\Project
+arx preflight C:\Path\To\Project
+arx codex --project C:\Path\To\Project
+```
+
+Use the global `--output` option to save structured output, for example `arx --output machine.json deep`.
+
 ## Windows desktop application
 
 ARX Desktop presents the same canonical evidence and decisions as the CLI in a responsive Windows interface. It includes Project Preflight, Machine DNA, Software DNA, compatibility findings, evidence inspection, selectable and searchable reports, safe path navigation, redacted export, contextual advisory actions, background work, cancellation, and human-readable technical errors.
 
 Unknown targets are never launched, imported, or extracted. Static inspection recognizes EXE/DLL/PE, MSI identity, ZIP/JAR/APK containers, scripts, application directories, and bounded project manifests. Trusted developer-tool diagnostics use fixed argument arrays, `shell=False`, captured output, and timeouts.
-
-Run the desktop from source:
-
-```powershell
-$env:PYTHONPATH = 'src'
-python -m arx.desktop
-```
 
 ### Windows distribution
 
@@ -123,25 +183,6 @@ Only the selected finding and relevant bounded context may cross an external bou
 AI and web outputs remain unverified advice. They cannot change an observed fact, assign GREEN/YELLOW/RED, mutate the evidence graph, or execute a recovery step. **The human remains the final decision-maker.**
 
 Read the complete [AI assistance and external-boundary security model](docs/ai-assistance-security.md).
-
-## Install and use from source
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e .
-
-arx quick
-arx deep
-arx inspect C:\Path\To\Application.exe
-arx compare C:\Path\To\Application.exe
-arx project C:\Path\To\Project
-arx resolve C:\Path\To\Project
-arx preflight C:\Path\To\Project
-arx codex --project C:\Path\To\Project
-```
-
-Use the global `--output` option to save structured output, for example `arx --output machine.json deep`.
 
 ## Build the Windows RC artifacts
 
@@ -176,6 +217,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 | [Security model](docs/security-model.md) | Local inspection, subprocess, privacy, remediation, and external trust boundaries |
 | [AI assistance security](docs/ai-assistance-security.md) | OpenAI, Codex CLI, web research, consent, redaction, and failure behavior |
 | [Testing and acceptance](docs/testing.md) | Deterministic suite, runtime-shaped GUI isolation, CI, and evidence levels |
+| [Python package publishing](docs/python-package-publishing.md) | PyPI/TestPyPI Trusted Publishing, release gates, and installation verification |
 | [ARX 3 implementation report](docs/arx-3-implementation-report.md) | Point-by-point engineering record and remaining limitations |
 | [Windows manual acceptance](docs/windows-desktop-acceptance.md) | Visible UX, DPI, accessibility, installer, upgrade, and uninstall checklist |
 | [Report schemas](docs/report-schema.md) | Application/contract version independence and schema routing |

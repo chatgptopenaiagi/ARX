@@ -24,6 +24,25 @@ def test_active_product_and_package_versions_are_consistent():
 
     assert metadata["project"]["version"] == PACKAGE_VERSION
     assert metadata["project"]["description"] == "ARX 3 — Project-Aware Compatibility Intelligence"
+    assert metadata["project"]["name"] == "arx-prescanner"
+    assert metadata["project"]["requires-python"] == ">=3.10"
+    assert metadata["project"]["readme"] == "README.md"
+    assert metadata["project"]["scripts"] == {
+        "arx": "arx.cli:main",
+        "arx-desktop": "arx.desktop.__main__:main",
+    }
+    assert metadata["project"]["optional-dependencies"]["release"] == [
+        "build>=1.2,<2",
+        "twine>=6,<8",
+        "check-wheel-contents>=0.6,<1",
+    ]
+    assert set(metadata["project"]["urls"]) == {
+        "Homepage",
+        "Documentation",
+        "Source",
+        "Issues",
+        "Changelog",
+    }
     assert __version__ == PACKAGE_VERSION
     assert PRODUCT_NAME == "ARX 3"
     assert RELEASE_NAME == "ARX 3.0 Release Candidate"
@@ -50,3 +69,21 @@ def test_application_and_contract_versions_remain_independent():
     assert envelope()["schema_version"] == "0.1"
     assert '"const": "0.2"' in _read("schemas/ai-contract.schema.json")
     assert _read("docs/release-notes-2.0.0.md").startswith("# ARX 2.0.0")
+
+
+def test_readme_documents_every_supported_release_installation_path():
+    readme = _read("README.md")
+
+    for command_or_asset in (
+        "python -m pip install arx-prescanner==3.0.0rc1",
+        "python -m pip install --pre arx-prescanner",
+        "python -m pip install arx-prescanner",
+        'python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v3.0.0-rc1"',
+        "arx --help",
+        "arx quick",
+        "arx-desktop",
+        "ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe",
+        "ARX-Desktop-win-x64-v3.0.0-rc1.zip",
+    ):
+        assert command_or_asset in readme
+    assert "ARX `3.0.0rc1` is a pre-release" in readme
