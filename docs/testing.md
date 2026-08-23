@@ -13,4 +13,21 @@ The cross-surface category constructs one Machine DNA provider inventory, Projec
 
 Schema tests use deterministic GREEN/YELLOW/RED fixtures and Draft 2020-12 validation for Project DNA, Project Preflight, and AI Contract 0.2. Separate semantic-guard tests deliberately construct cross-field contradictions that JSON Schema cannot express and require rejection.
 
+## Runtime-shaped GUI testing
+
+Test topology follows runtime topology. ARX creates one Tk root per application process, so a shared interpreter must not accumulate independent GUI test applications whose toolkit-global event state can leak between nodes. On Windows, every GUI test node runs in a fresh interpreter; this is isolation, not a skip, and the wrapper fails unless every collected node executes successfully. Linux runs the full GUI suite under Xvfb. UI-neutral selection, formatting, clipboard, path, and state-validation helpers remain ordinary deterministic unit tests.
+
+Visible desktop acceptance remains a separate layer because a headless widget assertion cannot prove focus order, clipping, DPI behavior, Explorer integration, or native installer state.
+
+## Evidence levels must not be promoted
+
+Artifact construction evidence is not lifecycle evidence. The following claims remain distinct:
+
+- unit and component tests verify deterministic implementation behavior;
+- a portable smoke test verifies that the built payload launches and performs its bounded workflow outside the source tree;
+- installer compilation and checksum verification establish that a reproducible artifact was created intact;
+- install, upgrade, file-association, and uninstall behavior are tested only by exercising those transitions on Windows.
+
+A lower layer may be a prerequisite for a higher one, but it cannot be reported as proof of the higher layer. An unchecked manual acceptance item is incomplete evidence, not a passing result.
+
 GitHub CI runs the deterministic suite on Windows and Linux for Python 3.10, 3.12, and 3.14. Linux GUI tests run under Xvfb. A separate package job builds the sdist and wheel without publishing, while CodeQL analyzes Python and GitHub Actions. The visible Windows behaviors that are intentionally outside stable unit tests are recorded in the [ARX Desktop manual acceptance checklist](windows-desktop-acceptance.md); unchecked items must not be reported as tested.

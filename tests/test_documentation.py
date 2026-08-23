@@ -47,6 +47,23 @@ def test_regression_principle_treats_usability_as_correctness():
     assert "incomplete desktop result" in contributing
 
 
+def test_durable_arx3_lessons_are_architectural_invariants_not_run_history():
+    architecture = _read("docs/architecture.md")
+    testing = _read("docs/testing.md")
+    security = _read("docs/security-model.md")
+    contributing = _read("CONTRIBUTING.md")
+
+    assert "canonical report model is the sole owner" in architecture
+    assert "path syntax carried by the evidence, not the host process" in architecture
+    assert "one Tk root per application process" in architecture
+    assert "portable desktop payload is the canonical Windows application artifact" in architecture
+    assert "every GUI test node runs in a fresh interpreter" in testing
+    assert "Artifact construction evidence is not lifecycle evidence" in testing
+    assert "select canonical evidence -> filter for relevance -> redact -> bound" in security
+    assert "not fed back into evidence, severity, or remediation" in security
+    assert "must consume the canonical report model" in contributing
+
+
 def test_external_boundary_document_preserves_three_separate_trust_domains():
     security = _read("docs/ai-assistance-security.md")
 

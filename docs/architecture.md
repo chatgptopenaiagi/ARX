@@ -21,6 +21,26 @@ Runtime guards validate the canonical result before a CLI, GUI, or AI serializer
 
 PE targets are parsed as bytes, archives are listed without extraction, and only bounded (1 MiB or smaller) recognized manifests are read. Unknown targets are never launched. PowerShell and developer-tool execution is restricted to fixed diagnostic commands with argument arrays, timeouts, captured streams, and `shell=False`.
 
+## Decision record: canonical evidence and thin surfaces
+
+The canonical report model is the sole owner of observed facts, compatibility, satisfaction, severity, and remediation. CLI output, desktop views, exports, context menus, and external-advisory context are projections of a validated report; they do not recalculate its semantics. Presentation and interaction code may select a canonical object, format it, copy it, or navigate to its source, but it must preserve the object's stable IDs, provenance, verdict, and trust classification.
+
+Optional integrations attach after canonical validation and fail independently. They may receive a deliberately selected and redacted projection, but their output is never fed back into the evidence graph. This keeps a richer desktop or advisory surface from becoming a second evidence engine.
+
+## Decision record: path identity follows the evidence
+
+Evidence can describe a Windows path while ARX tests or processes the report on another operating system. Absolute-path detection, containment, redaction, and stable identity therefore follow the path syntax carried by the evidence, not the host process. Foreign absolute paths use the matching pure-path semantics and must never be accidentally resolved beneath the host's current working directory. The same observed path must retain the same meaning and identifier across supported hosts.
+
+## Decision record: owned desktop lifecycles
+
+The desktop has one Tk root per application process. Potentially slow work runs outside the UI thread and communicates through an owned queue; only the UI thread touches widgets. The owning window tracks scheduled callbacks, cancellation signals, worker results, and child windows. Teardown cancels owned callbacks and operations, and late results are ignored safely. Persisted desktop state is an explicit allowlist of non-sensitive presentation values rather than a serialization of live application state.
+
+This lifecycle ownership is part of correctness: it prevents destroyed widgets, queued callbacks, or optional integrations from outliving the surface that requested them.
+
+## Decision record: portable payload before installer shell
+
+The validated portable desktop payload is the canonical Windows application artifact. The installer consumes that payload and adds stable application identity, shortcuts, file associations, and uninstall metadata; it does not define a separate application build. Installer compilation and checksum generation prove artifact construction and integrity. Install, upgrade, association, and uninstall behavior are accepted only when those operating-system transitions are actually exercised.
+
 ## Data flow
 
 ```text
