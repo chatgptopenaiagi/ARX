@@ -26,8 +26,13 @@ def render_conversation(turns: list[dict[str, str]]) -> str:
 
     blocks = []
     for turn in turns:
-        role = "YOU" if turn.get("role") == "user" else "AI ADVISORY"
-        blocks.append(f"{role}\n{redact_external(str(turn.get('text', '')))}")
+        if turn.get("role") == "user":
+            role = "YOU"
+            label = ""
+        else:
+            role = str(redact_external(turn.get("provider") or "AI PROVIDER")).upper()
+            label = "AI ADVISORY — NON-AUTHORITATIVE\n"
+        blocks.append(f"{role}\n{label}{redact_external(str(turn.get('text', '')))}")
     return "\n\n".join(blocks)
 
 
@@ -103,10 +108,13 @@ class AdvisoryWindow(tk.Toplevel):
     def _build(self, initial_provider: str | None, initial_mode: str) -> None:
         body = ttk.Frame(self, padding=14)
         body.pack(fill="both", expand=True)
-        ttk.Label(body, text="AI ADVISORY — UNVERIFIED AI ANALYSIS", style="Advisory.TLabel").pack(fill="x")
+        ttk.Label(body, text="AI ADVISORY — NON-AUTHORITATIVE", style="Advisory.TLabel").pack(fill="x")
         ttk.Label(
             body,
-            text="ARX evidence remains authoritative. Advice is never applied automatically.",
+            text=(
+                "AI responses may interpret attached ARX evidence but cannot modify deterministic ARX evidence, "
+                "compatibility, or readiness."
+            ),
             style="Muted.TLabel",
         ).pack(fill="x", pady=(2, 10))
 
@@ -276,7 +284,7 @@ class AdvisoryWindow(tk.Toplevel):
                 if kind == "ok":
                     response: AdvisoryResponse = payload  # type: ignore[assignment]
                     self._last_response = response.display_text()
-                    self.turns.append({"role": "assistant", "text": self._last_response})
+                    self.turns.append({"role": "assistant", "provider": response.provider, "text": response.text})
                     self._render_turns()
                     self._set_status("Completed")
                 elif kind == "cancelled":

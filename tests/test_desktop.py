@@ -120,7 +120,12 @@ def test_desktop_has_conventional_menus_and_selectable_report_surfaces(tmp_path)
     app.withdraw()
     menu = app.nametowidget(app.cget("menu"))
 
-    assert [menu.entrycget(index, "label") for index in range(menu.index("end") + 1)] == ["File", "Edit", "Help"]
+    assert [menu.entrycget(index, "label") for index in range(menu.index("end") + 1)] == [
+        "File",
+        "Edit",
+        "Settings",
+        "Help",
+    ]
     assert isinstance(app.project_detail, ReadOnlyText)
     assert app.project_detail.text.bind("<Control-c>")
     assert app.project_detail.text.bind("<Control-a>")
@@ -152,7 +157,7 @@ def test_result_context_actions_are_path_sensitive(tmp_path):
         "Reveal in File Explorer",
         "Inspect with ARX",
     ]
-    assert "Ask ChatGPT About This…" in existing_labels
+    assert "Ask OpenAI About This…" in existing_labels
     assert "Ask Codex About This…" in existing_labels
     assert "Suggest Safe Fix with AI…" in existing_labels
     assert "Search Web About This…" in existing_labels

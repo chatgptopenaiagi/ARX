@@ -44,7 +44,7 @@ jobs:
       - name: Run tests on Windows
         if: runner.os == 'Windows'
         run: |
-          python -m pytest --ignore=tests/test_desktop.py --ignore=tests/test_desktop_advisory.py --ignore=tests/test_desktop_ux.py
+          python -m pytest --ignore=tests/test_desktop.py --ignore=tests/test_desktop_advisory.py --ignore=tests/test_desktop_provider_settings.py --ignore=tests/test_desktop_ux.py
           python scripts/run-isolated-gui-tests.py
       - name: Run tests on Linux under Xvfb
         if: runner.os == 'Linux'

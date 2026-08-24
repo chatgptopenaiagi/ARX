@@ -117,7 +117,8 @@ def test_advisory_window_runs_in_background_and_keeps_ai_output_separate(tmp_pat
     assert r"C:\Private" not in provider.calls[0]["question"]
     assert "abcdefghijklmnop" not in provider.calls[0]["question"]
     conversation = window.conversation.get("1.0", "end-1c")
-    assert "AI ADVISORY — UNVERIFIED AI ANALYSIS" in conversation
+    assert "AI ADVISORY — NON-AUTHORITATIVE" in conversation
+    assert "FAKE" in conversation
     assert "Technical interpretation" in conversation
     assert window.operation_status.cget("text") == "Completed"
     window.save_conversation()
@@ -171,7 +172,7 @@ def test_unavailable_or_empty_provider_configuration_does_not_break_core_ui(tmp_
 
     labels = [action.label for action in app._tree_menu_actions(app.machine_tree) if action.label]
 
-    assert not any(label.startswith("Ask ChatGPT") or label.startswith("Ask Codex") for label in labels)
+    assert not any(label.startswith("Ask OpenAI") or label.startswith("Ask Codex") for label in labels)
     assert "Search Web About This…" in labels
     assert "View Raw Data" in labels
     offline = AdvisoryWindow(app, _context(), {"Offline": FakeProvider(available=False)})

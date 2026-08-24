@@ -13,13 +13,20 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Callable, Mapping
 
 from arx import PRODUCT_NAME, RELEASE_NAME, __version__
+from arx.advisory.audit import TransmissionAudit, default_transmission_audit
 from arx.advisory.context import AdvisoryContext, build_advisory_context
+from arx.advisory.credentials import (
+    ProviderCredentialResolver,
+    WindowsDPAPICredentialStore,
+    default_openai_credential_store,
+)
 from arx.advisory.providers import AIProvider, CodexCLIProvider, OpenAIProvider
 from arx.advisory.web import build_search_query, build_search_url, open_search
 from arx.core.models import serialize
 
 from .advisory import AdvisoryWindow
 from .controllers import DesktopController, project_readiness_view_model
+from .provider_settings import OpenAIProviderSettingsWindow
 from .theme import COLORS, apply_theme
 from .ux import (
     UIStateStore,
@@ -52,6 +59,8 @@ class ARXDesktopApp(tk.Tk):
         *,
         state_store: UIStateStore | None = None,
         advisory_providers: Mapping[str, AIProvider] | None = None,
+        openai_credential_store: WindowsDPAPICredentialStore | None = None,
+        transmission_audit: TransmissionAudit | None = None,
     ):
         super().__init__()
         self.controller = controller or DesktopController()
@@ -65,16 +74,31 @@ class ARXDesktopApp(tk.Tk):
         self._last_error_summary: str | None = None
         self._action_buttons: list[ttk.Button] = []
         self._tooltips: list[ToolTip] = []
-        self._advisory_providers = (
-            dict(advisory_providers)
-            if advisory_providers is not None
-            else {
-                "ChatGPT / OpenAI": OpenAIProvider(),
-                "Codex CLI": CodexCLIProvider(),
+        self._openai_credential_store = openai_credential_store or default_openai_credential_store()
+        self._transmission_audit = transmission_audit or default_transmission_audit()
+        openai_resolver = ProviderCredentialResolver(
+            "openai-api",
+            "OPENAI_API_KEY",
+            self._openai_credential_store,
+        )
+        default_openai_provider = OpenAIProvider(
+            credential_resolver=openai_resolver,
+            audit=self._transmission_audit,
+        )
+        if advisory_providers is None:
+            self._advisory_providers = {
+                "OpenAI Chat": default_openai_provider,
+                "Codex CLI": CodexCLIProvider(audit=self._transmission_audit),
             }
+        else:
+            self._advisory_providers = dict(advisory_providers)
+        self._openai_provider = next(
+            (provider for provider in self._advisory_providers.values() if isinstance(provider, OpenAIProvider)),
+            default_openai_provider,
         )
         self._advisory_consent: set[str] = set()
         self._advisory_windows: list[AdvisoryWindow] = []
+        self._provider_settings_windows: list[OpenAIProviderSettingsWindow] = []
         self._poll_id: str | None = None
         self._closed = False
 
@@ -160,6 +184,12 @@ class ARXDesktopApp(tk.Tk):
         edit_menu.add_command(label="Select All", command=lambda: self._focused_event("<Control-a>"), accelerator="Ctrl+A")
         edit_menu.add_command(label="Find…", command=lambda: self._focused_event("<Control-f>"), accelerator="Ctrl+F")
         menu.add_cascade(label="Edit", menu=edit_menu)
+
+        settings_menu = tk.Menu(menu, tearoff=False)
+        intelligence_menu = tk.Menu(settings_menu, tearoff=False)
+        intelligence_menu.add_command(label="OpenAI API…", command=self._open_openai_settings)
+        settings_menu.add_cascade(label="Intelligence Providers", menu=intelligence_menu)
+        menu.add_cascade(label="Settings", menu=settings_menu)
 
         help_menu = tk.Menu(menu, tearoff=False)
         help_menu.add_command(label="About ARX", command=self._show_about)
@@ -902,11 +932,11 @@ class ARXDesktopApp(tk.Tk):
             actions.append(MenuAction("Inspect with ARX", lambda value=path_value: self._start_inspect(str(value))))
         if self._advisory_providers:
             actions.append(MenuAction(None))
-            if "ChatGPT / OpenAI" in self._advisory_providers:
+            if "OpenAI Chat" in self._advisory_providers:
                 actions.append(
                     MenuAction(
-                        "Ask ChatGPT About This…",
-                        lambda context=advisory_context: self._open_advisory(context, "ChatGPT / OpenAI"),
+                        "Ask OpenAI About This…",
+                        lambda context=advisory_context: self._open_advisory(context, "OpenAI Chat"),
                     )
                 )
             if "Codex CLI" in self._advisory_providers:
@@ -1056,9 +1086,37 @@ class ARXDesktopApp(tk.Tk):
         )
 
     def _default_provider(self) -> str:
-        if "ChatGPT / OpenAI" in self._advisory_providers:
-            return "ChatGPT / OpenAI"
+        if "OpenAI Chat" in self._advisory_providers:
+            return "OpenAI Chat"
         return next(iter(self._advisory_providers), "")
+
+    def _open_openai_settings(self) -> None:
+        for window in tuple(self._provider_settings_windows):
+            try:
+                if window.winfo_exists():
+                    window.deiconify()
+                    window.lift()
+                    window.focus_set()
+                    return
+            except tk.TclError:
+                pass
+            self._provider_settings_windows.remove(window)
+        window = OpenAIProviderSettingsWindow(
+            self,
+            self._openai_provider,
+            self._openai_credential_store,
+            self._transmission_audit,
+            open_chat_command=self._open_openai_chat,
+        )
+        self._provider_settings_windows.append(window)
+
+    def _open_openai_chat(self) -> None:
+        context = build_advisory_context(
+            "General Chat",
+            ("mode", "status"),
+            ("GENERAL CHAT", "NO ARX EVIDENCE ATTACHED"),
+        )
+        self._open_advisory(context, "OpenAI Chat")
 
     def _open_advisory(self, context: AdvisoryContext, provider: str, mode: str = "Explain Technically") -> None:
         window = AdvisoryWindow(
@@ -1083,7 +1141,7 @@ class ARXDesktopApp(tk.Tk):
             (
                 f"You chose {provider}. ARX will send only the selected, bounded, redacted diagnostic context and your "
                 "question to that provider. It will not send a complete machine scan, credentials, or unrelated project files.\n\n"
-                "The response is unverified advice and cannot change ARX evidence or modify this computer. You can preview "
+                "The response is non-authoritative advice and cannot change ARX evidence or modify this computer. You can preview "
                 "the exact diagnostic prompt before sending.\n\nContinue?"
             ),
             parent=self,
@@ -1208,6 +1266,11 @@ class ARXDesktopApp(tk.Tk):
                 pass
             self._poll_id = None
         for window in tuple(self._advisory_windows):
+            try:
+                window._close()
+            except tk.TclError:
+                pass
+        for window in tuple(self._provider_settings_windows):
             try:
                 window._close()
             except tk.TclError:

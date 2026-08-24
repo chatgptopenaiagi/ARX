@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GUI_MODULES = (
     "tests/test_desktop.py",
     "tests/test_desktop_advisory.py",
+    "tests/test_desktop_provider_settings.py",
     "tests/test_desktop_ux.py",
 )
 
