@@ -162,4 +162,4 @@ def test_codex_project_writes_schema_02(monkeypatch, capsys, tmp_path):
     assert main(["codex", "--project", str(tmp_path)]) == 0
     data = json.loads(capsys.readouterr().out)
     assert data["schema_version"] == "0.2"
-    assert data["producer"]["version"] == "4.0.0b1"
+    assert data["producer"]["version"] == "4.0.0b2"

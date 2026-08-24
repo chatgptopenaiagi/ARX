@@ -1,6 +1,6 @@
 param(
     [string]$PythonExecutable = 'python',
-    [string]$Version = '4.0.0b1',
+    [string]$Version = '4.0.0b2',
     [string]$ReleaseRoot,
     [long]$SourceDateEpoch = 0
 )

@@ -6,11 +6,10 @@ import tarfile
 import zipfile
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 VERIFIER = ROOT / "scripts" / "verify-release-assets.py"
-VERSION = "4.0.0b1"
-ARTIFACT_VERSION = "4.0.0-b1"
+VERSION = "4.0.0b2"
+ARTIFACT_VERSION = "4.0.0-b2"
 
 
 def _write_sdist(path):

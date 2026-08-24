@@ -1,6 +1,6 @@
 # Roadmap
 
-ARX 4.0.0 Beta 1 establishes the Phase B trust foundation on top of the ARX deterministic compatibility engine: expanded fact provenance, dependency enforcement, provider-neutral credentials, Windows DPAPI storage, OpenAI provider health/transport, metadata-only transmission audit, and minimal provider settings.
+ARX 4.0.0 Beta 2 preserves the Phase B trust foundation on top of the ARX deterministic compatibility engine and adds bounded fuzz remediation, index-download hardening, reproducible-build controls, release provenance, and trusted Windows installation preparation. The foundation still includes expanded fact provenance, dependency enforcement, provider-neutral credentials, Windows DPAPI storage, OpenAI provider health/transport, metadata-only transmission audit, and minimal provider settings.
 
 ## Phase C and future ARX 4 work
 
@@ -9,7 +9,7 @@ ARX 4.0.0 Beta 1 establishes the Phase B trust foundation on top of the ARX dete
 - Keep comparison limited to textual overlap, differences, and unresolved items without consensus, confidence boosts, or provenance upgrades.
 - Preserve independent OpenAI and Codex conversations and the one-way advisory boundary.
 
-Phase C is not part of ARX 4.0.0 Beta 1.
+Phase C is not part of ARX 4.0.0 Beta 2.
 
 ## Manual release evidence still required
 

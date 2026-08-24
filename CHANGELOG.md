@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.0.0b2 - 2026-08-24
+- Repair the bounded Hypothesis audit harness and correct malformed PE and non-object `package.json` handling exposed once all security properties reached product code.
+- Harden index-supplied artifact downloads with exact HTTPS host/port policy, credential-free URLs, redirect rejection and destination revalidation, bounded streaming, timeout, size, and SHA-256 enforcement.
+- Add commit-derived `SOURCE_DATE_EPOCH`, deterministic portable ZIP construction, stable archive ordering/timestamps, and controlled PyInstaller/Inno Setup inputs without rewriting binary metadata after a build.
+- Define a provider-neutral Authenticode policy and fail-closed verification layer while accurately keeping production signing blocked because no approved certificate or managed signing identity exists.
+- Prepare defensive Windows 10/11 standard-user install, upgrade, launch, ACL, credential, and uninstall evidence collection; lifecycle execution remains blocked until disposable guests are available.
+- Add a non-publishing security-gate workflow covering two dependency-advisory sources, bounded security regression, SAST, secrets, package integrity, and reproducible CycloneDX SBOM generation.
+- Add GitHub OIDC artifact-attestation preparation for exact release bytes without retrofitting or changing the immutable Beta 1 assets.
+- Add machine-validated public release-security and provenance record schemas that keep PASS, limitations, blocked, not-applicable, signature, reputation, SBOM, scanner, and reproducibility states independent.
+- Preserve the Phase B deterministic/advisory boundary and keep the Phase C Intelligence Console outside this prerelease.
+
 ## 4.0.0b1 - 2026-08-24
 - Extend `EvidenceKind` with ESTIMATED, SIMULATED, and STRUCTURAL while keeping VERIFIED out of fact provenance and preserving separate decision validation.
 - Enforce the reviewed ARX dependency graph and cycle rejection in CI, including a forbidden-import FAIL → discard mutation → PASS regression proof.

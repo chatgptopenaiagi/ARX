@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -127,7 +126,7 @@ def test_readme_is_the_complete_arx4_beta_landing_page():
 
     for phrase in (
         "# ARX 4",
-        "ARX 4.0.0 Beta 1",
+        "ARX 4.0.0 Beta 2",
         "Project-Aware Compatibility Intelligence",
         "## Why ARX 4 is different",
         "Machine DNA",
@@ -142,8 +141,8 @@ def test_readme_is_the_complete_arx4_beta_landing_page():
         "shortest trusted path to GREEN",
         "There is no return path from external advice into ARX evidence",
         "The human remains the final decision-maker",
-        "ARX-Desktop-win-x64-v4.0.0-b1.zip",
-        "ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe",
+        "ARX-Desktop-win-x64-v4.0.0-b2.zip",
+        "ARX-Desktop-Setup-win-x64-v4.0.0-b2.exe",
         "SHA256SUMS.txt",
         "Phase C",
         "Real DPI and multi-monitor acceptance is incomplete",
@@ -153,6 +152,7 @@ def test_readme_is_the_complete_arx4_beta_landing_page():
     for workflow in ("actions/workflows/ci.yml", "actions/workflows/codeql.yml"):
         assert workflow in readme
     for document in (
+        "docs/release-notes-4.0.0-b2.md",
         "docs/release-notes-4.0.0-b1.md",
         "docs/architecture.md",
         "docs/arx-4-phase-b-trust-foundation.md",
@@ -214,13 +214,13 @@ def test_rc_release_notes_preserve_history_and_disclose_manual_limits():
     assert historical.startswith("# ARX 2.0.0")
 
 
-def test_arx4_beta_release_notes_define_phase_b_and_exclude_phase_c():
-    notes = _read("docs/release-notes-4.0.0-b1.md")
+def test_arx4_beta_release_notes_define_security_remediation_and_exclude_phase_c():
+    notes = _read("docs/release-notes-4.0.0-b2.md")
 
     for phrase in (
-        "# ARX 4.0.0 Beta 1",
-        "Package version: `4.0.0b1`",
-        "Git tag: `v4.0.0-b1`",
+        "# ARX 4.0.0 Beta 2",
+        "Package version: `4.0.0b2`",
+        "Git tag: `v4.0.0-b2`",
         "DECLARED",
         "OBSERVED",
         "INFERRED",
@@ -241,8 +241,13 @@ def test_arx4_beta_release_notes_define_phase_b_and_exclude_phase_c():
         "Phase C is **NOT included**",
         "Ask Both",
         "QUOTA_EXHAUSTED",
-        "not relabel those failures as invalid authentication",
+        "does not relabel that failure as invalid authentication",
         "unsigned",
+        "Hypothesis",
+        "SOURCE_DATE_EPOCH",
+        "GitHub Artifact Attestations",
+        "RFC 3161",
+        "No trust store was modified",
     ):
         assert phrase in notes
 
@@ -264,7 +269,7 @@ def test_python_publishing_document_preserves_release_and_credential_boundaries(
         "outside the checkout",
         "target=testpypi",
         "target=production",
-        "python -m pip install arx-prescanner==4.0.0b1",
+        "python -m pip install arx-prescanner==4.0.0b2",
     ):
         assert phrase.casefold() in publishing.casefold()
     assert "long-lived API token" in publishing
