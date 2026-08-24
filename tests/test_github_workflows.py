@@ -205,3 +205,28 @@ def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
     assert "twine upload" not in workflow.casefold()
     assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3
+
+
+def test_trusted_signing_workflow_is_manual_protected_and_incapable_of_signing():
+    workflow = _read("trusted-signing.yml")
+    actions = ANY_ACTION.findall(workflow)
+
+    assert "workflow_dispatch:" in workflow
+    assert "push:" not in workflow
+    assert "pull_request" not in workflow
+    assert "pull_request_target" not in workflow
+    assert "environment: windows-production-signing" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "contents: read" in workflow
+    assert "contents: write" not in workflow
+    assert "id-token: write" not in workflow
+    assert "attestations: write" not in workflow
+    assert "BLOCKED_NO_PRODUCTION_CERTIFICATE" in workflow
+    assert "throw 'Production Authenticode signing is intentionally blocked.'" in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert "set-authenticodesignature" not in workflow.casefold()
+    assert "import-pfxcertificate" not in workflow.casefold()
+    assert "gh release upload" not in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 2
