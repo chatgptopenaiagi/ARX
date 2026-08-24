@@ -55,7 +55,7 @@
       "type": "object",
       "required": ["kind", "source", "value", "method", "confidence"],
       "properties": {
-        "kind": {"enum": ["declared", "observed", "inferred", "unknown"]},
+        "kind": {"enum": ["declared", "observed", "inferred", "estimated", "simulated", "structural", "unknown"]},
         "source": {"type": "string"},
         "value": {},
         "method": {"type": "string"},

@@ -74,7 +74,7 @@ relevance != satisfaction != severity != remediation
 
 ### Fact provenance and decision validation
 
-Every serialized fact uses exactly one `EvidenceKind`: **DECLARED**, **OBSERVED**, **INFERRED**, or **UNKNOWN**. `Evidence` also retains `source`, `value`, `method`, `confidence`, and an optional `note`, so a consumer can identify the value, provenance, and basis of the claim.
+Every serialized fact uses exactly one `EvidenceKind`: **DECLARED**, **OBSERVED**, **INFERRED**, **ESTIMATED**, **SIMULATED**, **STRUCTURAL**, or **UNKNOWN**. `Evidence` also retains `source`, `value`, `method`, `confidence`, and an optional `note`, so a consumer can identify the value, provenance, and basis of the claim. The three ARX 4 additions distinguish an assumption-backed estimate, an explicitly simulated result, and a fact about static structure from direct observation.
 
 **VERIFIED is not an `EvidenceKind` and is not a peer per-fact provenance state.** Relations and decisions are validated separately by semantic invariants and, for serialized contracts, schema/composed-state checks. Validation does not rewrite a fact's provenance and does not imply guaranteed compatibility or a safety verdict.
 

@@ -29,7 +29,7 @@ Optional integrations attach after canonical validation and fail independently. 
 
 ## Decision record: fact provenance is separate from decision validation
 
-The fact-provenance enum is exactly `DECLARED / OBSERVED / INFERRED / UNKNOWN`. VERIFIED is not an `EvidenceKind` and must not be introduced as a peer fact state. An `Evidence` record makes these claim dimensions traceable:
+The ARX 4 fact-provenance enum is exactly `DECLARED / OBSERVED / INFERRED / ESTIMATED / SIMULATED / STRUCTURAL / UNKNOWN`. VERIFIED is not an `EvidenceKind` and must not be introduced as a peer fact state. `ESTIMATED` marks a value derived from explicit assumptions or a heuristic; `SIMULATED` marks a value produced by an explicitly non-authoritative simulation; `STRUCTURAL` marks a fact established by static code, schema, or artifact structure rather than runtime behavior. None may be silently promoted to `OBSERVED`. An `Evidence` record makes these claim dimensions traceable:
 
 - **VALUE**: `value`, the claim ARX records;
 - **PROVENANCE**: `kind`, how the fact was obtained;

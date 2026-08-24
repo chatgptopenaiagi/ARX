@@ -15,10 +15,17 @@ def test_evidence_kind_stays_explicit():
         "DECLARED",
         "OBSERVED",
         "INFERRED",
+        "ESTIMATED",
+        "SIMULATED",
+        "STRUCTURAL",
         "UNKNOWN",
     }
     assert "VERIFIED" not in EvidenceKind.__members__
     assert serialize(Evidence(EvidenceKind.INFERRED, "x", "Java >= 17", "manifest", .8))["kind"] == "inferred"
+    assert [
+        serialize(Evidence(kind, "fixture", "value", "fixture"))["kind"]
+        for kind in (EvidenceKind.ESTIMATED, EvidenceKind.SIMULATED, EvidenceKind.STRUCTURAL)
+    ] == ["estimated", "simulated", "structural"]
 def test_capability_explains_missing():
     caps=capabilities({"tools":toolset(javac=True,adb=True,cmake=True)});assert caps["android.native.build"].status.value=="partial";assert "ninja" in caps["android.native.build"].reason
 def test_architecture_rules():

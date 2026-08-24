@@ -158,7 +158,7 @@ def test_fact_provenance_is_not_collapsed_into_decision_validation():
     prompt = _read("docs/ARX_CODEX_MASTER_PROMPT.md")
     advisory = _read("docs/ai-assistance-security.md")
 
-    assert "DECLARED / OBSERVED / INFERRED / UNKNOWN" in architecture
+    assert "DECLARED / OBSERVED / INFERRED / ESTIMATED / SIMULATED / STRUCTURAL / UNKNOWN" in architecture
     assert "VERIFIED is not an `EvidenceKind`" in architecture
     assert "VALIDATION" in architecture
     assert "claim semantic/schema validation" in advisory

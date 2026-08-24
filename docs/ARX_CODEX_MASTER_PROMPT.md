@@ -1735,7 +1735,7 @@ ARX deterministic evidence and AI-generated interpretation must remain separate.
 Never allow an AI response to silently become:
 
 
-DECLARED, OBSERVED, INFERRED, or UNKNOWN fact provenance
+DECLARED, OBSERVED, INFERRED, ESTIMATED, SIMULATED, STRUCTURAL, or UNKNOWN fact provenance
 
 a semantically or schema-validated ARX relation or decision
 
@@ -1777,6 +1777,12 @@ ARX fact evidence
     ├── OBSERVED
 
     ├── INFERRED
+
+    ├── ESTIMATED
+
+    ├── SIMULATED
+
+    ├── STRUCTURAL
 
     └── UNKNOWN
 

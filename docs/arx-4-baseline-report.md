@@ -40,14 +40,14 @@ The current source imports form this effective layer graph, where `A -> B` means
 core -> no other ARX layer
 machine -> core
 software -> core
-project -> core
+project -> core + machine (the machine edge is a late import in the convenience `project_preflight` orchestrator)
 exporters -> core + project
 advisory -> core
 cli -> core + machine + software + project + exporters
 desktop -> core + machine + software + project + exporters + advisory + cli
 ```
 
-`core` imports no other ARX layer. `machine`, `software`, and `project` do not import `advisory`. Direct source inspection found no current cycle.
+`core` imports no other ARX layer. `machine`, `software`, and `project` do not import `advisory`. A Phase B AST audit corrected the baseline's earlier omission of the late `project -> machine` import in `project.engine.project_preflight`; that pre-existing convenience edge is non-cyclic. Direct source inspection found no current cycle.
 
 There is no dedicated automated architectural-boundary/import-cycle test in the baseline repository. Documentation describes the separation and semantic tests protect canonical ownership, but CI does not yet enforce the dependency graph or prove a forbidden import fails. That gap belongs to Phase B, including the required FAIL → revert → PASS mutation demonstration; it is not claimed complete in Phase A.
 

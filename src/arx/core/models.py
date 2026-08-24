@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 class EvidenceKind(str, Enum):
-    DECLARED="declared"; OBSERVED="observed"; INFERRED="inferred"; UNKNOWN="unknown"
+    DECLARED="declared"; OBSERVED="observed"; INFERRED="inferred"; ESTIMATED="estimated"; SIMULATED="simulated"; STRUCTURAL="structural"; UNKNOWN="unknown"
 class Status(str, Enum):
     READY="ready"; PARTIAL="partial"; BLOCKED="blocked"; UNKNOWN="unknown"; NOT_APPLICABLE="not_applicable"; MISSING="missing"
 
