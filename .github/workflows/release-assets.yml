@@ -1,0 +1,161 @@
+name: Build GitHub release assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing draft prerelease tag to build and attach
+        required: true
+        default: v4.0.0-b1
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-release-assets-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and verify Windows and Python artifacts
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the exact release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Verify tag and draft prerelease identity
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -notmatch '^v(?<base>\d+\.\d+\.\d+)-(?<kind>a|b|rc)(?<number>\d+)$') {
+              throw "Unsupported prerelease tag: $env:RELEASE_TAG"
+          }
+          $Release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:RELEASE_TAG" | ConvertFrom-Json
+          if (-not $Release.draft -or -not $Release.prerelease -or $Release.tag_name -ne $env:RELEASE_TAG) {
+              throw 'Release assets may be attached only to the matching draft prerelease.'
+          }
+          if ((git rev-parse HEAD) -ne (git rev-list -n 1 $env:RELEASE_TAG)) {
+              throw 'Checkout does not resolve to the release tag commit.'
+          }
+          $Version = python -c "import sys; sys.path.insert(0, 'src'); import arx; print(arx.__version__)"
+          $ExpectedVersion = "$($Matches['base'])$($Matches['kind'])$($Matches['number'])"
+          if ($Version -ne $ExpectedVersion) {
+              throw "Package version $Version does not match $env:RELEASE_TAG."
+          }
+          "PACKAGE_VERSION=$Version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "ARTIFACT_VERSION=$($env:RELEASE_TAG.Substring(1))" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Install release tooling
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install -e ".[dev,build,release]"
+      - name: Compile and verify source
+        run: |
+          python -m compileall -q src tests scripts
+          python scripts/check-architecture.py
+          python -m pytest --ignore=tests/test_desktop.py --ignore=tests/test_desktop_advisory.py --ignore=tests/test_desktop_provider_settings.py --ignore=tests/test_desktop_ux.py
+          python scripts/run-isolated-gui-tests.py
+          python scripts/scan-tracked-secrets.py
+      - name: Build release artifacts
+        shell: pwsh
+        run: .\scripts\build-release.ps1 -Version $env:PACKAGE_VERSION -AllowMissingInstaller
+      - name: Validate Python distributions
+        shell: pwsh
+        run: |
+          $Root = "release\v$env:ARTIFACT_VERSION"
+          python -m twine check --strict "$Root\*.whl" "$Root\*.tar.gz"
+          python -m check_wheel_contents "$Root\*.whl"
+      - name: Verify Windows identity and unsigned status
+        shell: pwsh
+        run: |
+          $Root = "release\v$env:ARTIFACT_VERSION"
+          $Executable = Get-Item -LiteralPath "$Root\ARX-Desktop-win-x64\ARX.exe"
+          if ($Executable.VersionInfo.ProductName -ne 'ARX 4' -or $Executable.VersionInfo.ProductVersion -ne $env:PACKAGE_VERSION) {
+              throw 'ARX.exe product identity does not match the release.'
+          }
+          if ($Executable.VersionInfo.FileVersion -ne '4.0.0.1') {
+              throw 'ARX.exe numeric file version is not 4.0.0.1.'
+          }
+          if ((Get-AuthenticodeSignature -LiteralPath $Executable.FullName).Status -ne 'NotSigned') {
+              throw 'This beta workflow expects the disclosed unsigned ARX.exe.'
+          }
+          $Installer = "$Root\ARX-Desktop-Setup-win-x64-v$env:ARTIFACT_VERSION.exe"
+          if (Test-Path -LiteralPath $Installer) {
+              $InstallerItem = Get-Item -LiteralPath $Installer
+              if ($InstallerItem.VersionInfo.ProductName -ne 'ARX 4' -or $InstallerItem.VersionInfo.FileVersion -ne '4.0.0.1') {
+                  throw 'Installer version identity does not match the release.'
+              }
+              if ((Get-AuthenticodeSignature -LiteralPath $Installer).Status -ne 'NotSigned') {
+                  throw 'This beta workflow expects the disclosed unsigned installer.'
+              }
+          }
+      - name: Stage only public release artifacts
+        shell: pwsh
+        run: |
+          $Root = "release\v$env:ARTIFACT_VERSION"
+          $Destination = Join-Path $env:RUNNER_TEMP 'release-assets'
+          New-Item -ItemType Directory -Path $Destination -Force | Out-Null
+          $Names = @(
+              "arx_prescanner-$env:PACKAGE_VERSION-py3-none-any.whl",
+              "arx_prescanner-$env:PACKAGE_VERSION.tar.gz",
+              "ARX-Desktop-win-x64-v$env:ARTIFACT_VERSION.zip",
+              "SHA256SUMS.txt"
+          )
+          $Installer = "ARX-Desktop-Setup-win-x64-v$env:ARTIFACT_VERSION.exe"
+          if (Test-Path -LiteralPath (Join-Path $Root $Installer)) {
+              $Names += $Installer
+          }
+          foreach ($Name in $Names) {
+              Copy-Item -LiteralPath (Join-Path $Root $Name) -Destination (Join-Path $Destination $Name)
+          }
+      - name: Preserve verified release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: github-release-assets-${{ inputs.tag }}
+          path: ${{ runner.temp }}/release-assets/*
+          if-no-files-found: error
+          retention-days: 7
+
+  attach:
+    name: Attach verified assets to the draft prerelease
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-release-assets-${{ inputs.tag }}
+          path: assets
+      - name: Recheck checksums and attach to the empty draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          cd assets
+          sha256sum --check SHA256SUMS.txt
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .draft)" = "true"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .prerelease)" = "true"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets | length')" = "0"
+          mapfile -t files < <(find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print | sort)
+          files+=(./SHA256SUMS.txt)
+          gh release upload "$RELEASE_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY"
