@@ -1,7 +1,6 @@
 import re
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 FULL_SHA_ACTION = re.compile(r"^\s*uses:\s+[^\s@]+@[0-9a-f]{40}(?:\s+#.*)?$", re.MULTILINE)
@@ -124,13 +123,45 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "persist-credentials: false" in workflow
     assert "draft" in workflow and "prerelease" in workflow
     assert "build-release.ps1" in workflow
+    assert "-AllowMissingInstaller" not in workflow
+    assert 'python-version: "3.12.13"' in workflow
+    assert "packaging/release-build-requirements.txt" in workflow
+    assert '"FILE_VERSION=$($Matches[\'base\']).$($Matches[\'number\'])"' in workflow
+    assert "$Executable.VersionInfo.FileVersion -ne $env:FILE_VERSION" in workflow
     assert "scan-tracked-secrets.py" in workflow
     assert "Get-AuthenticodeSignature" in workflow
     assert "gh release upload" in workflow
     assert workflow.count("contents: write") == 1
-    assert "id-token: write" not in workflow
+    assert workflow.count("id-token: write") == 2
+    assert workflow.count("attestations: write") == 2
+    assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
+    assert "subject-path: ${{ runner.temp }}/release-assets/*" in workflow
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert "twine upload" not in workflow.casefold()
+    assert SECRET_CONTEXT.search(workflow) is None
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 5
+
+
+def test_trusted_preflight_attests_but_never_signs_or_publishes():
+    workflow = _read("trusted-installation-preflight.yml")
+    actions = ANY_ACTION.findall(workflow)
+
+    assert "workflow_dispatch:" in workflow
+    assert "pull_request_target" not in workflow
+    assert "persist-credentials: false" in workflow
+    assert 'python-version: "3.12.13"' in workflow
+    assert "packaging/release-build-requirements.txt" in workflow
+    assert "id-token: write" in workflow
+    assert "attestations: write" in workflow
+    assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
+    assert "unsigned preflight" in workflow.casefold()
+    assert "does not:" in workflow.casefold()
+    assert "sign ARX.exe" in workflow
+    assert "publish GitHub release assets" in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert "gh release upload" not in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert "contents: write" not in workflow
     assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
 
@@ -149,3 +180,92 @@ def test_codeql_analyzes_python_and_workflows_with_current_pinned_action():
     assert "pull_request_target" not in workflow
     assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3
+
+
+def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
+    workflow = _read("security-gate.yml")
+    actions = ANY_ACTION.findall(workflow)
+
+    assert "push:" in workflow
+    assert "pull_request:" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "pull_request_target" not in workflow
+    assert "permissions:\n  contents: read" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "pip-audit==2.10.1" in workflow
+    assert "--vulnerability-service pypi" in workflow
+    assert "--vulnerability-service osv" in workflow
+    assert "bandit==1.9.4" in workflow
+    assert "semgrep==1.174.0" in workflow
+    assert "semgrep-classification.json" in workflow
+    assert "unreviewed_errors" in workflow
+    assert "stale_reviews" in workflow
+    assert 'item.get("level") == "error"' in workflow
+    assert "cyclonedx-bom==7.3.1" in workflow
+    assert "detect-secrets==1.5.0" in workflow
+    assert "hypothesis==6.165.10" in workflow
+    assert "detect-secrets-classification.json" in workflow
+    assert "detect-secrets-summary.json" in workflow
+    assert "stale_reviews" in workflow
+    assert "scan-tracked-secrets.py" in workflow
+    assert "output-reproducible" in workflow
+    assert "security-results/*" in workflow
+    assert "id-token: write" not in workflow
+    assert "contents: write" not in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert "gh release upload" not in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert "twine upload" not in workflow.casefold()
+    assert SECRET_CONTEXT.search(workflow) is None
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3
+
+
+def test_trusted_signing_workflow_is_manual_protected_and_incapable_of_signing():
+    workflow = _read("trusted-signing.yml")
+    actions = ANY_ACTION.findall(workflow)
+
+    assert "workflow_dispatch:" in workflow
+    assert "push:" not in workflow
+    assert "pull_request" not in workflow
+    assert "pull_request_target" not in workflow
+    assert "environment: windows-production-signing" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "contents: read" in workflow
+    assert "contents: write" not in workflow
+    assert "id-token: write" not in workflow
+    assert "attestations: write" not in workflow
+    assert "BLOCKED_NO_PRODUCTION_CERTIFICATE" in workflow
+    assert "throw 'Production Authenticode signing is intentionally blocked.'" in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert "set-authenticodesignature" not in workflow.casefold()
+    assert "import-pfxcertificate" not in workflow.casefold()
+    assert "gh release upload" not in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 2
+
+
+def test_release_provenance_workflow_reproduces_without_modifying_release():
+    workflow = _read("release-provenance.yml")
+    actions = ANY_ACTION.findall(workflow)
+
+    assert "workflow_dispatch:" in workflow
+    assert "push:" not in workflow
+    assert "pull_request" not in workflow
+    assert "persist-credentials: false" in workflow
+    assert 'python-version: "3.12.13"' in workflow
+    assert "packaging/release-build-requirements.txt" in workflow
+    assert "--require-security-bundle" in workflow
+    assert "Core artifact is not bit-for-bit reproducible" in workflow
+    assert "Published CycloneDX SBOM is not bit-for-bit reproducible" in workflow
+    assert "Published checksum manifest is not exactly reproducible" in workflow
+    assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
+    assert workflow.count("id-token: write") == 2
+    assert workflow.count("attestations: write") == 2
+    assert "contents: write" not in workflow
+    assert "gh release upload" not in workflow
+    assert "gh release edit" not in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4

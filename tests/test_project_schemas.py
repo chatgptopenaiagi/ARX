@@ -9,8 +9,13 @@ from arx import __version__
 from arx.cli import envelope
 from arx.core.models import serialize
 from arx.exporters import project_codex_report
-from arx.project import ExecutionContext, inspect_project, make_provider, preflight, resolve_python
-
+from arx.project import (
+    ExecutionContext,
+    inspect_project,
+    make_provider,
+    preflight,
+    resolve_python,
+)
 
 SCHEMAS = Path(__file__).parents[1] / "schemas"
 
@@ -120,8 +125,8 @@ def test_ai_contract_schema_version_is_independent_from_application_version():
 
 
 def test_application_and_legacy_schema_versions_remain_independent():
-    assert __version__ == "4.0.0b1"
-    assert 'version = "4.0.0b1"' in (SCHEMAS.parent / "pyproject.toml").read_text(encoding="utf-8")
+    assert __version__ == "4.0.0b2"
+    assert 'version = "4.0.0b2"' in (SCHEMAS.parent / "pyproject.toml").read_text(encoding="utf-8")
     assert envelope()["schema_version"] == "0.1"
 
 

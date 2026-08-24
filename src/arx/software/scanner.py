@@ -1,4 +1,5 @@
 import hashlib, json, re, shutil, struct, subprocess, zipfile
+from collections.abc import Mapping
 from pathlib import Path
 from arx.core.models import Evidence,EvidenceKind,utc_now
 
@@ -24,10 +25,12 @@ def inspect_pe(path):
     off=struct.unpack_from("<I",data,60)[0]
     if off+24>len(data) or data[off:off+4]!=b"PE\0\0":raise PEError("missing or truncated PE header")
     machine,sections,timestamp,_,_,opt_size,chars=struct.unpack_from("<HHIIIHH",data,off+4); optional=off+24
-    if optional+opt_size>len(data):raise PEError("truncated optional header")
+    if opt_size<2 or optional+opt_size>len(data):raise PEError("truncated optional header")
     magic=struct.unpack_from("<H",data,optional)[0]
     if magic not in (0x10B,0x20B):raise PEError("unsupported optional header")
-    subsystem=struct.unpack_from("<H",data,optional+68)[0]; directory=optional+(96 if magic==0x10B else 112); clr=(0,0)
+    base_size=96 if magic==0x10B else 112
+    if opt_size<base_size:raise PEError("truncated optional header")
+    subsystem=struct.unpack_from("<H",data,optional+68)[0]; directory=optional+base_size; clr=(0,0)
     if directory+120<=optional+opt_size:clr=struct.unpack_from("<II",data,directory+112)
     lower=data.lower(); imports=sorted({x[:-1].decode("ascii","ignore") for x in re.findall(rb"[a-zA-Z0-9_.-]{2,80}\.dll\x00",lower)})
     level=next((x.decode() for x in (b"requireAdministrator",b"highestAvailable",b"asInvoker") if x.lower() in lower),None)
@@ -62,7 +65,10 @@ def _archive_metadata(path):
 
 def _package_requirements(data):
     result=[]
-    for runtime,spec in data.get("engines",{}).items():
+    if not isinstance(data,Mapping):return result
+    engines=data.get("engines",{})
+    if not isinstance(engines,Mapping):return result
+    for runtime,spec in engines.items():
         capability={"node":"node.available","npm":"npm"}.get(runtime,runtime)
         result.append({"capability":capability,"version":str(spec),"status":"declared","confidence":1.0,"source":"package.json engines"})
     return result

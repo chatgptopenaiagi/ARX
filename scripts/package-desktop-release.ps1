@@ -1,6 +1,7 @@
 param(
-    [string]$Version = '4.0.0b1',
-    [string]$ReleaseRoot
+    [string]$Version = '4.0.0b2',
+    [string]$ReleaseRoot,
+    [long]$SourceDateEpoch = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,6 +16,8 @@ $ArtifactVersion = if ($VersionMatch.Groups['kind'].Success) {
     $BaseVersion
 }
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
+$SourceDateEpoch = & (Join-Path $PSScriptRoot 'resolve-source-date-epoch.ps1') `
+    -ProjectRoot $ProjectRoot -RequestedEpoch $SourceDateEpoch
 $ReleaseBase = Join-Path $ProjectRoot 'release'
 if (-not $ReleaseRoot) {
     $ReleaseRoot = Join-Path $ReleaseBase "v$ArtifactVersion"
@@ -50,8 +53,9 @@ if ($forbiddenFiles) {
     throw "Forbidden development or private files found in release payload: $($forbiddenFiles.FullName -join ', ')"
 }
 
-if (Test-Path -LiteralPath $Archive) { Remove-Item -LiteralPath $Archive }
-Compress-Archive -LiteralPath $DesktopDirectory -DestinationPath $Archive -CompressionLevel Optimal
+& (Join-Path $PSScriptRoot 'new-deterministic-zip.ps1') `
+    -SourceDirectory $DesktopDirectory -DestinationPath $Archive `
+    -RootName 'ARX-Desktop-win-x64' -SourceDateEpoch $SourceDateEpoch
 
 & (Join-Path $PSScriptRoot 'write-release-checksums.ps1') -Version $Version -ReleaseRoot $ReleaseRoot
-Write-Host "Desktop archive created at $Archive"
+Write-Output "Desktop archive created at $Archive"

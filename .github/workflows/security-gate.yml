@@ -1,0 +1,275 @@
+name: ARX security gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: arx-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  safe-security-gates:
+    name: Safe automated security gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install bounded security toolchain
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install -e ".[dev,release]"
+          python -m pip install \
+            "bandit==1.9.4" \
+            "cyclonedx-bom==7.3.1" \
+            "detect-secrets==1.5.0" \
+            "hypothesis==6.165.10" \
+            "pip-audit==2.10.1" \
+            "semgrep==1.174.0"
+
+      - name: Compile, architecture, and focused security regression
+        run: |
+          python -m compileall -q src tests scripts security/fuzz
+          python scripts/check-architecture.py
+          python -m pytest -q \
+            security/fuzz \
+            tests/test_advisory_audit.py \
+            tests/test_advisory_context.py \
+            tests/test_advisory_credentials.py \
+            tests/test_advisory_providers.py \
+            tests/test_advisory_web.py \
+            tests/test_architecture_boundaries.py \
+            tests/test_python_hardening.py \
+            tests/test_release_artifacts.py \
+            tests/test_reproducible_build_controls.py \
+            tests/test_signing_architecture.py \
+            tests/test_software_scanner_security.py \
+            tests/test_verify_python_index_security.py \
+            tests/test_windows_lifecycle_assets.py \
+            tests/test_windows_packaging.py
+
+      - name: Prepare report directory
+        run: mkdir -p security-results
+
+      - name: Audit resolved runtime dependencies through PyPI advisory service
+        id: dependency_pypi
+        continue-on-error: true
+        run: python -m pip_audit --strict --vulnerability-service pypi --format json --output security-results/pip-audit-pypi.json .
+
+      - name: Audit resolved runtime dependencies through OSV advisory service
+        id: dependency_osv
+        continue-on-error: true
+        run: python -m pip_audit --strict --vulnerability-service osv --format json --output security-results/pip-audit-osv.json .
+
+      - name: Run Bandit and preserve all findings
+        id: bandit
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          bandit -r src scripts -f json -o security-results/bandit.json
+          tool_status=$?
+          set -e
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          report = json.loads(Path("security-results/bandit.json").read_text(encoding="utf-8"))
+          counts = Counter(item["issue_severity"] for item in report["results"])
+          Path("security-results/bandit-summary.json").write_text(
+              json.dumps({"counts": dict(sorted(counts.items())), "fail_threshold": "HIGH"}, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          if counts.get("HIGH", 0):
+              raise SystemExit("Bandit found HIGH-severity evidence.")
+          PY
+          if [ "$tool_status" -gt 1 ]; then
+            exit "$tool_status"
+          fi
+
+      - name: Run Semgrep and preserve all findings
+        id: semgrep
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          semgrep scan --config p/python --config p/github-actions --json-output=security-results/semgrep.json .
+          tool_status=$?
+          set -e
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          report = json.loads(Path("security-results/semgrep.json").read_text(encoding="utf-8"))
+          counts = Counter(item.get("extra", {}).get("severity", "UNKNOWN") for item in report.get("results", []))
+          classification = json.loads(
+              Path("security/beta2/evidence/semgrep-classification.json").read_text(encoding="utf-8")
+          )
+          reviewed = {
+              (
+                  classification["finding"]["rule_id"],
+                  classification["finding"]["path"].replace("\\", "/"),
+              )
+          }
+          observed_errors = {
+              (
+                  item.get("check_id", ""),
+                  item.get("path", "").replace("\\", "/"),
+              )
+              for item in report.get("results", [])
+              if item.get("extra", {}).get("severity") == "ERROR"
+          }
+          unreviewed_errors = sorted(observed_errors - reviewed)
+          stale_reviews = sorted(reviewed - observed_errors)
+          engine_errors = [
+              item for item in report.get("errors", []) if item.get("level") == "error"
+          ]
+          summary = {
+              "counts": dict(sorted(counts.items())),
+              "engine_errors": len(engine_errors),
+              "engine_warnings": sum(
+                  item.get("level") != "error" for item in report.get("errors", [])
+              ),
+              "reviewed_errors": len(observed_errors & reviewed),
+              "unreviewed_errors": unreviewed_errors,
+              "stale_reviews": stale_reviews,
+              "fail_policy": "engine error, unreviewed ERROR, or stale reviewed identity",
+          }
+          Path("security-results/semgrep-summary.json").write_text(
+              json.dumps(summary, indent=2) + "\n", encoding="utf-8"
+          )
+          if engine_errors or unreviewed_errors or stale_reviews:
+              raise SystemExit("Semgrep reported an engine error or an unreviewed/stale ERROR identity.")
+          PY
+          if [ "$tool_status" -gt 1 ]; then
+            exit "$tool_status"
+          fi
+
+      - name: Scan tracked source for credential-shaped material
+        id: secrets
+        continue-on-error: true
+        run: |
+          python scripts/scan-tracked-secrets.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+
+          files = subprocess.check_output(["git", "ls-files"], text=True).splitlines()
+          scan = subprocess.run(
+              ["detect-secrets", "scan", *files], capture_output=True, check=False
+          )
+          output = Path("security-results/detect-secrets.json")
+          output.write_bytes(scan.stdout)
+          if scan.returncode:
+              raise SystemExit("detect-secrets failed; stderr was intentionally not persisted.")
+          report = json.loads(scan.stdout)
+          classification = json.loads(
+              Path("security/beta2/evidence/detect-secrets-classification.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          observed = {
+              (path.replace("\\", "/"), item["line_number"], item["type"])
+              for path, items in report.get("results", {}).items()
+              for item in items
+          }
+          reviewed = {
+              (item["path"].replace("\\", "/"), item["line"], item["type"])
+              for item in classification["reviewed_candidates"]
+          }
+          summary = {
+              "observed": len(observed),
+              "reviewed": len(observed & reviewed),
+              "unreviewed": sorted(observed - reviewed),
+              "stale_reviews": sorted(reviewed - observed),
+          }
+          Path("security-results/detect-secrets-summary.json").write_text(
+              json.dumps(summary, indent=2) + "\n", encoding="utf-8"
+          )
+          if summary["unreviewed"] or summary["stale_reviews"]:
+              raise SystemExit("detect-secrets candidate identities require renewed review.")
+          PY
+
+      - name: Build and validate Python distributions
+        id: package
+        continue-on-error: true
+        run: |
+          python -m build
+          python -m twine check --strict dist/*
+          python -m check_wheel_contents dist/*.whl
+
+      - name: Generate a reproducible CycloneDX SBOM for the isolated wheel environment
+        id: sbom
+        continue-on-error: true
+        shell: bash
+        run: |
+          python -m venv --without-pip "$RUNNER_TEMP/arx-sbom"
+          site_dir=$("$RUNNER_TEMP/arx-sbom/bin/python" -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
+          python -m pip install --no-deps --target "$site_dir" dist/*.whl
+          cyclonedx-py environment "$RUNNER_TEMP/arx-sbom/bin/python" \
+            --pyproject pyproject.toml \
+            --mc-type application \
+            --spec-version 1.6 \
+            --output-reproducible \
+            --output-format JSON \
+            --output-file security-results/arx-release.sbom.cdx.json \
+            --validate
+          python -c 'import json; json.load(open("security-results/arx-release.sbom.cdx.json", encoding="utf-8"))'
+
+      - name: Upload complete security evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: arx-security-gate-${{ github.run_id }}
+          path: security-results/*
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Enforce the automatic gate
+        if: always()
+        shell: bash
+        env:
+          DEPENDENCY_PYPI: ${{ steps.dependency_pypi.outcome }}
+          DEPENDENCY_OSV: ${{ steps.dependency_osv.outcome }}
+          BANDIT: ${{ steps.bandit.outcome }}
+          SEMGREP: ${{ steps.semgrep.outcome }}
+          SECRETS: ${{ steps.secrets.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
+          SBOM: ${{ steps.sbom.outcome }}
+        run: |
+          printf '%s\n' \
+            "dependency_pypi=$DEPENDENCY_PYPI" \
+            "dependency_osv=$DEPENDENCY_OSV" \
+            "bandit=$BANDIT" \
+            "semgrep=$SEMGREP" \
+            "secrets=$SECRETS" \
+            "package=$PACKAGE" \
+            "sbom=$SBOM"
+          test "$DEPENDENCY_PYPI" = success
+          test "$DEPENDENCY_OSV" = success
+          test "$BANDIT" = success
+          test "$SEMGREP" = success
+          test "$SECRETS" = success
+          test "$PACKAGE" = success
+          test "$SBOM" = success

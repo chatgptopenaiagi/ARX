@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "record_type": "arx_release_provenance_bundle",
+  "record_state": "TEMPLATE",
+  "release": {
+    "version": "${VERSION}",
+    "artifact_version": "${ARTIFACT_VERSION}",
+    "tag": "${TAG}",
+    "commit_sha": "${COMMIT_SHA}",
+    "channel": "PRERELEASE"
+  },
+  "build": {
+    "repository": "chatgptopenaiagi/ARX",
+    "workflow": "${WORKFLOW}",
+    "run_id": "${RUN_ID}",
+    "builder": "${BUILDER}",
+    "source_date_epoch": 315532800,
+    "python_version": "${PYTHON_VERSION}"
+  },
+  "artifacts": [
+    {"name": "TBD", "sha256": "${SHA256}", "size": 0, "media_type": "application/octet-stream", "provenance": "TBD"}
+  ],
+  "sboms": [
+    {"name": "TBD", "sha256": "${SHA256}", "size": 0, "media_type": "application/vnd.cyclonedx+json", "provenance": "TBD"}
+  ],
+  "evidence": [
+    {"name": "TBD", "sha256": "${SHA256}", "size": 0, "media_type": "application/json", "provenance": "TBD"}
+  ],
+  "attestation": {
+    "state": "PREPARED",
+    "provider": "GitHub Artifact Attestations",
+    "verification_repository": "chatgptopenaiagi/ARX",
+    "limitation": "Attestation verification occurs only after GitHub creates the attestation."
+  }
+}

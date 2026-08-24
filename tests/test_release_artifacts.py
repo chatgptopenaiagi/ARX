@@ -6,11 +6,10 @@ import tarfile
 import zipfile
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 VERIFIER = ROOT / "scripts" / "verify-release-assets.py"
-VERSION = "4.0.0b1"
-ARTIFACT_VERSION = "4.0.0-b1"
+VERSION = "4.0.0b2"
+ARTIFACT_VERSION = "4.0.0-b2"
 
 
 def _write_sdist(path):
@@ -108,3 +107,15 @@ def test_release_asset_verifier_rejects_unmanifested_public_artifact(tmp_path):
 
     assert result.returncode != 0
     assert "Unexpected or missing versioned public release artifacts" in result.stderr
+
+
+def test_release_asset_verifier_rejects_partial_security_bundle(tmp_path):
+    _fixture(tmp_path)
+    (tmp_path / f"ARX-{ARTIFACT_VERSION}-SBOM.cdx.json").write_text(
+        '{"bomFormat":"CycloneDX"}\n', encoding="utf-8"
+    )
+
+    result = _run(tmp_path)
+
+    assert result.returncode != 0
+    assert "partial security release bundle" in result.stderr.casefold()

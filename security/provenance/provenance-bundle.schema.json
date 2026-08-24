@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/chatgptopenaiagi/ARX/security/provenance/provenance-bundle.schema.json",
+  "title": "ARX release provenance bundle index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_state",
+    "release",
+    "build",
+    "artifacts",
+    "sboms",
+    "evidence",
+    "attestation"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "record_type": {"const": "arx_release_provenance_bundle"},
+    "record_state": {"enum": ["TEMPLATE", "FINAL"]},
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "artifact_version", "tag", "commit_sha", "channel"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1, "maxLength": 64},
+        "artifact_version": {"type": "string", "minLength": 1, "maxLength": 64},
+        "tag": {"type": "string", "minLength": 1, "maxLength": 80},
+        "commit_sha": {"type": "string", "minLength": 1, "maxLength": 64},
+        "channel": {"const": "PRERELEASE"}
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "workflow", "run_id", "builder", "source_date_epoch", "python_version"],
+      "properties": {
+        "repository": {"const": "chatgptopenaiagi/ARX"},
+        "workflow": {"type": "string", "minLength": 1, "maxLength": 256},
+        "run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "builder": {"type": "string", "minLength": 1, "maxLength": 256},
+        "source_date_epoch": {"type": "integer", "minimum": 315532800, "maximum": 4354819199},
+        "python_version": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/subject"}
+    },
+    "sboms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/subject"}
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/subject"}
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "provider", "verification_repository", "limitation"],
+      "properties": {
+        "state": {"enum": ["PREPARED", "VERIFIED", "ABSENT", "BLOCKED"]},
+        "provider": {"const": "GitHub Artifact Attestations"},
+        "verification_repository": {"const": "chatgptopenaiagi/ARX"},
+        "limitation": {"type": ["string", "null"], "maxLength": 2048}
+      }
+    }
+  },
+  "$defs": {
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "size", "media_type", "provenance"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[^/\\\\]+$", "maxLength": 255},
+        "sha256": {"type": "string", "minLength": 1, "maxLength": 64},
+        "size": {"type": "integer", "minimum": 0},
+        "media_type": {"type": "string", "minLength": 1, "maxLength": 128},
+        "provenance": {"type": "string", "minLength": 1, "maxLength": 2048}
+      }
+    }
+  }
+}

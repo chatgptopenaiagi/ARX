@@ -1,6 +1,7 @@
 param(
-    [string]$Version = '4.0.0b1',
+    [string]$Version = '4.0.0b2',
     [string]$ReleaseRoot,
+    [long]$SourceDateEpoch = 0,
     [string]$IsccPath
 )
 
@@ -18,6 +19,8 @@ $ArtifactVersion = if ($VersionMatch.Groups['kind'].Success) {
     $BaseVersion
 }
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
+$SourceDateEpoch = & (Join-Path $PSScriptRoot 'resolve-source-date-epoch.ps1') `
+    -ProjectRoot $ProjectRoot -RequestedEpoch $SourceDateEpoch
 $ReleaseBase = Join-Path $ProjectRoot 'release'
 if (-not $ReleaseRoot) {
     $ReleaseRoot = Join-Path $ReleaseBase "v$ArtifactVersion"
@@ -62,14 +65,22 @@ if (-not $Compiler) {
     throw 'Inno Setup 6 or 7 compiler (ISCC.exe) was not found. Install Inno Setup or pass -IsccPath.'
 }
 
-& $Compiler "/DMyAppVersion=$Version" "/DMyAppFileVersion=$FileVersion" "/DMyArtifactVersion=$ArtifactVersion" `
-    "/DMyAppSourceDir=$PortableRoot" "/DMyOutputDir=$ReleaseRoot" $InstallerScript
-if ($LASTEXITCODE -ne 0) {
-    throw "Inno Setup failed with exit code $LASTEXITCODE."
+$PreviousSourceDateEpoch = [Environment]::GetEnvironmentVariable('SOURCE_DATE_EPOCH', 'Process')
+$CompilerExitCode = $null
+try {
+    $env:SOURCE_DATE_EPOCH = [string]$SourceDateEpoch
+    & $Compiler "/DMyAppVersion=$Version" "/DMyAppFileVersion=$FileVersion" "/DMyArtifactVersion=$ArtifactVersion" `
+        "/DMyAppSourceDir=$PortableRoot" "/DMyOutputDir=$ReleaseRoot" $InstallerScript
+    $CompilerExitCode = $LASTEXITCODE
+} finally {
+    [Environment]::SetEnvironmentVariable('SOURCE_DATE_EPOCH', $PreviousSourceDateEpoch, 'Process')
+}
+if ($CompilerExitCode -ne 0) {
+    throw "Inno Setup failed with exit code $CompilerExitCode."
 }
 if (-not (Test-Path -LiteralPath $Installer -PathType Leaf)) {
     throw "Inno Setup did not produce the expected installer: $Installer"
 }
 
 & (Join-Path $PSScriptRoot 'write-release-checksums.ps1') -Version $Version -ReleaseRoot $ReleaseRoot
-Write-Host "ARX Desktop installer created at $Installer"
+Write-Output "ARX Desktop installer created at $Installer"

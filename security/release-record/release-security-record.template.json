@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "record_type": "arx_release_security_record",
+  "record_state": "TEMPLATE",
+  "claim": "ARX passed the following defined security gates.",
+  "release_identity": {
+    "product": "ARX 4",
+    "version": "${VERSION}",
+    "artifact_version": "${ARTIFACT_VERSION}",
+    "tag": "${TAG}",
+    "commit_sha": "${COMMIT_SHA}",
+    "build_date": "${BUILD_DATE}",
+    "audit_date": "${AUDIT_DATE}",
+    "audit_commit": "${AUDIT_COMMIT}",
+    "release_channel": "PRERELEASE",
+    "windows_build_environment": "${WINDOWS_BUILD_ENVIRONMENT}",
+    "python_version": "${PYTHON_VERSION}"
+  },
+  "gates": [
+    {"name": "dependency/CVE", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "SBOM", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "malware", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "SAST", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "CodeQL", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "fuzz", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "privilege", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "tamper", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "Authenticode", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "reproducibility", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "provenance", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "regression", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "secrets", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"},
+    {"name": "installer lifecycle", "result": "BLOCKED", "evidence": ["TBD"], "limitation": "TBD"}
+  ],
+  "reproducibility": {
+    "wheel": {"classification": "UNRESOLVED", "evidence": "TBD", "limitation": "TBD"},
+    "sdist": {"classification": "UNRESOLVED", "evidence": "TBD", "limitation": "TBD"},
+    "portable_zip": {"classification": "UNRESOLVED", "evidence": "TBD", "limitation": "TBD"},
+    "arx_exe": {"classification": "UNRESOLVED", "evidence": "TBD", "limitation": "TBD"},
+    "installer": {"classification": "UNRESOLVED", "evidence": "TBD", "limitation": "TBD"},
+    "sha256sums": {"classification": "UNRESOLVED", "evidence": "TBD", "limitation": "TBD"}
+  },
+  "remaining_findings": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+  "remaining_blockers": ["TBD"],
+  "limitations": ["TBD"]
+}

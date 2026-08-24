@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "record_type": "index_download_hardening",
+  "candidate": "ARX 4.0.0 Beta 2",
+  "observation_timestamp": "2026-08-24T13:32:29.8453465+02:00",
+  "beta1_finding": {
+    "source": "security-audit-v4.0.0-b1:security/audits/v4.0.0-b1/evidence/bandit-classification.json",
+    "classification": "MEDIUM",
+    "test_id": "B310",
+    "location": "scripts/verify-python-index.py:32",
+    "summary": "An artifact URL supplied by package-index JSON was opened without independent origin, redirect, or response-size enforcement."
+  },
+  "disposition": "REMEDIATED",
+  "controls": [
+    "HTTPS-only validation before every package-index metadata and artifact request",
+    "independent exact host allowlists for PyPI, TestPyPI, and their artifact hosts",
+    "default HTTPS port only; username and password URL components rejected",
+    "expected path prefixes; query strings and fragments rejected",
+    "all redirects rejected and the effective response URL revalidated",
+    "30-second urllib connect/read timeout",
+    "2 MiB package-index metadata response ceiling",
+    "50 MiB absolute Python distribution ceiling",
+    "package-index size metadata must exactly match the reviewed local file",
+    "Content-Length must be numeric, bounded, and equal to reviewed size when present",
+    "streamed byte count is enforced when Content-Length is absent or untrusted",
+    "downloaded bytes retain the existing exact SHA-256 comparison",
+    "errors omit remote URLs and do not contain credentials",
+    "non-HTTPS and local-file schemes fail closed"
+  ],
+  "focused_tests": {
+    "path": "tests/test_verify_python_index_security.py",
+    "tests": 18,
+    "passed": 18,
+    "failed": 0
+  },
+  "focused_bandit": {
+    "tool": "Bandit 1.9.4",
+    "scope": "scripts/verify-python-index.py",
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "nosec_suppressions": 0
+  },
+  "limitations": [
+    "urllib exposes one request timeout value rather than separately configurable connect and read timeouts.",
+    "The verifier is intentionally coupled to the existing arx-prescanner project and the documented PyPI infrastructure origins."
+  ]
+}

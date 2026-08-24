@@ -2,6 +2,7 @@
 
 [![ARX CI](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml)
+[![Security Gate](https://github.com/chatgptopenaiagi/ARX/actions/workflows/security-gate.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/security-gate.yml)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://github.com/chatgptopenaiagi/ARX/blob/main/pyproject.toml)
 [![Windows 10/11 x64](https://img.shields.io/badge/Windows-10%2F11_x64-0078D4?logo=windows&logoColor=white)](https://github.com/chatgptopenaiagi/ARX/blob/main/packaging/INSTALLER.md)
 [![MIT License](https://img.shields.io/github/license/chatgptopenaiagi/ARX)](https://github.com/chatgptopenaiagi/ARX/blob/main/LICENSE)
@@ -10,7 +11,7 @@
 
 ARX 4 correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-This branch presents **ARX 4.0.0 Beta 1** (`4.0.0b1`; tag `v4.0.0-b1`). It contains the Phase B trust foundation, not ARX 4 stable or the completed Phase C Intelligence Console. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+This branch presents **ARX 4.0.0 Beta 2** (`4.0.0b2`; tag `v4.0.0-b2`). It preserves the Phase B trust foundation and adds security-audit remediation, reproducible-build controls, release provenance, and a human-gated Windows signing architecture. It is not ARX 4 stable or the completed Phase C Intelligence Console. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
@@ -90,14 +91,14 @@ GREEN is deliberately scoped. The current Python readiness vertical verifies int
 
 ## Install ARX 4
 
-ARX `4.0.0b1` is a pre-release. The Python package keeps the existing `arx-prescanner` identity and history. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
+ARX `4.0.0b2` is a pre-release. The Python package keeps the existing `arx-prescanner` identity and history. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
 
 ### PyPI / Python developers
 
 After the separately approved PyPI publication gate, install this exact beta from the existing `arx-prescanner` project:
 
 ```console
-python -m pip install arx-prescanner==4.0.0b1
+python -m pip install arx-prescanner==4.0.0b2
 ```
 
 Alternatively, allow pip to discover the newest available ARX pre-release:
@@ -125,16 +126,16 @@ python -m pip install arx-prescanner
 Install the immutable beta source directly from its Git tag:
 
 ```console
-python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v4.0.0-b1"
+python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v4.0.0-b2"
 ```
 
 ### Windows installer
 
-Download `ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe` from the [GitHub prerelease](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b1). It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The beta installer is unsigned.
+Download `ARX-Desktop-Setup-win-x64-v4.0.0-b2.exe` from the [GitHub prerelease](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b2). It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The Beta 2 installer is unsigned because no approved production code-signing identity is configured; checksums and GitHub provenance do not substitute for Authenticode.
 
 ### Portable Windows
 
-Download `ARX-Desktop-win-x64-v4.0.0-b1.zip`, verify it with `SHA256SUMS.txt`, extract the complete folder, and run `ARX.exe` without installation.
+Download `ARX-Desktop-win-x64-v4.0.0-b2.zip`, verify it with `SHA256SUMS.txt`, extract the complete folder, and run `ARX.exe` without installation.
 
 ### Editable source checkout
 
@@ -163,12 +164,12 @@ Unknown targets are never launched, imported, or extracted. Static inspection re
 
 ### Windows distribution
 
-ARX 4 Beta 1 can be built in two Windows forms:
+ARX 4 Beta 2 can be built in two Windows forms:
 
 - a portable x64 folder and versioned ZIP containing `ARX.exe` and its private `_internal` runtime;
 - an optional Inno Setup installer with a stable application identity, x64 Program Files installation, Start Menu and uninstall entries, an optional desktop shortcut, and SHA-256 checksums.
 
-Generated release artifacts stay under the ignored, version-specific `release/v4.0.0-b1/` directory and are not committed. Historical release artifacts are not overwritten. Current beta builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md).
+Generated release artifacts stay under the ignored, version-specific `release/v4.0.0-b2/` directory and are not committed. Historical release artifacts are not overwritten. Current beta builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md), [reproducible-build policy](docs/REPRODUCIBLE_BUILDS.md), and [trusted installation architecture](docs/TRUSTED_INSTALLATION.md).
 
 ## Optional advisory and safe research
 
@@ -194,19 +195,19 @@ At the real provider boundary ARX writes only bounded local transmission metadat
 
 Read the complete [AI assistance and external-boundary security model](docs/ai-assistance-security.md).
 
-## Build the ARX 4 Beta 1 artifacts
+## Build the ARX 4 Beta 2 artifacts
 
 ```powershell
 python -m pip install -e ".[dev,build,release]"
-.\scripts\build-release.ps1 -Version 4.0.0b1
+.\scripts\build-release.ps1 -Version 4.0.0b2
 ```
 
 Expected release filenames are:
 
-- `arx_prescanner-4.0.0b1-py3-none-any.whl`
-- `arx_prescanner-4.0.0b1.tar.gz`
-- `ARX-Desktop-win-x64-v4.0.0-b1.zip`
-- `ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe`
+- `arx_prescanner-4.0.0b2-py3-none-any.whl`
+- `arx_prescanner-4.0.0b2.tar.gz`
+- `ARX-Desktop-win-x64-v4.0.0-b2.zip`
+- `ARX-Desktop-Setup-win-x64-v4.0.0-b2.exe`
 - `SHA256SUMS.txt`
 
 Building an installer is not install, upgrade, or uninstall acceptance. Those operating-system transitions remain explicit manual checks.
@@ -221,7 +222,8 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 
 | Document | Purpose |
 |---|---|
-| [ARX 4.0.0 Beta 1 release notes](docs/release-notes-4.0.0-b1.md) | Implemented Phase B trust foundation, distribution identity, Phase C exclusions, and beta limitations |
+| [ARX 4.0.0 Beta 2 release notes](docs/release-notes-4.0.0-b2.md) | Security remediation, reproducibility, provenance, Windows trust preparation, Phase C exclusions, and beta limitations |
+| [ARX 4.0.0 Beta 1 release notes](docs/release-notes-4.0.0-b1.md) | Historical Phase B trust-foundation prerelease |
 | [ARX 3.0 RC1 release notes](docs/release-notes-3.0.0-rc1.md) | Changes since ARX 2, compatibility, verification, and RC limitations |
 | [Architecture](docs/architecture.md) | Canonical domain, evidence boundaries, path identity, UI lifecycle, and packaging decisions |
 | [Confidence semantics](docs/confidence-semantics.md) | Numeric assignment inventory and explicit non-probabilistic meaning |

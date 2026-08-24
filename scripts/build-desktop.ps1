@@ -1,7 +1,8 @@
 param(
     [string]$PythonExecutable = 'python',
-    [string]$Version = '4.0.0b1',
-    [string]$ReleaseRoot
+    [string]$Version = '4.0.0b2',
+    [string]$ReleaseRoot,
+    [long]$SourceDateEpoch = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,6 +18,8 @@ $ArtifactVersion = if ($VersionMatch.Groups['kind'].Success) {
 }
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
+$SourceDateEpoch = & (Join-Path $PSScriptRoot 'resolve-source-date-epoch.ps1') `
+    -ProjectRoot $ProjectRoot -RequestedEpoch $SourceDateEpoch
 $ReleaseBase = Join-Path $ProjectRoot 'release'
 if (-not $ReleaseRoot) {
     $ReleaseRoot = Join-Path $ReleaseBase "v$ArtifactVersion"
@@ -51,11 +54,25 @@ foreach ($target in @($Output, $Intermediate)) {
 }
 New-Item -ItemType Directory -Path $ReleaseRoot,$Work -Force | Out-Null
 
-& $PythonPath -m PyInstaller --noconfirm --clean --windowed --onedir --name ARX `
-    --contents-directory _internal --version-file $VersionInfo `
-    --paths (Join-Path $ProjectRoot 'src') --distpath $ReleaseRoot --workpath $Work `
-    --specpath $Work $Entry
-if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE." }
+$PreviousSourceDateEpoch = [Environment]::GetEnvironmentVariable('SOURCE_DATE_EPOCH', 'Process')
+$PreviousPythonHashSeed = [Environment]::GetEnvironmentVariable('PYTHONHASHSEED', 'Process')
+$PreviousTimezone = [Environment]::GetEnvironmentVariable('TZ', 'Process')
+$PyInstallerExitCode = $null
+try {
+    $env:SOURCE_DATE_EPOCH = [string]$SourceDateEpoch
+    $env:PYTHONHASHSEED = '0'
+    $env:TZ = 'UTC'
+    & $PythonPath -m PyInstaller --noconfirm --clean --noupx --windowed --onedir --name ARX `
+        --contents-directory _internal --version-file $VersionInfo `
+        --paths (Join-Path $ProjectRoot 'src') --distpath $ReleaseRoot --workpath $Work `
+        --specpath $Work $Entry
+    $PyInstallerExitCode = $LASTEXITCODE
+} finally {
+    [Environment]::SetEnvironmentVariable('SOURCE_DATE_EPOCH', $PreviousSourceDateEpoch, 'Process')
+    [Environment]::SetEnvironmentVariable('PYTHONHASHSEED', $PreviousPythonHashSeed, 'Process')
+    [Environment]::SetEnvironmentVariable('TZ', $PreviousTimezone, 'Process')
+}
+if ($PyInstallerExitCode -ne 0) { throw "PyInstaller failed with exit code $PyInstallerExitCode." }
 
 Move-Item -LiteralPath $Intermediate -Destination $Output
 Copy-Item -LiteralPath (Join-Path $ProjectRoot 'packaging\README.txt') -Destination (Join-Path $Output 'README.txt')
@@ -68,4 +85,4 @@ if (-not (Test-Path -LiteralPath (Join-Path $Output '_internal') -PathType Conta
     throw 'PyInstaller did not produce the required _internal runtime directory.'
 }
 
-Write-Host "ARX Desktop release created at $Output"
+Write-Output "ARX Desktop release created at $Output"

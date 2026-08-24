@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/chatgptopenaiagi/ARX/security/signing/signing-policy.schema.json",
+  "title": "ARX production Authenticode signing policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "state",
+    "signing_provider",
+    "certificate_selector",
+    "timestamp_url",
+    "expected_publisher_subject",
+    "expected_issuer_subjects",
+    "signing_algorithm",
+    "timestamp_algorithm",
+    "verification_policy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "state": {
+      "enum": [
+        "UNCONFIGURED",
+        "CONFIGURED"
+      ]
+    },
+    "signing_provider": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "certificate_selector": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "reference"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "thumbprint",
+            "subject",
+            "provider_key_id"
+          ]
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      }
+    },
+    "timestamp_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri"
+    },
+    "expected_publisher_subject": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "expected_issuer_subjects": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "uniqueItems": true
+    },
+    "signing_algorithm": {
+      "const": "SHA256"
+    },
+    "timestamp_algorithm": {
+      "const": "SHA256"
+    },
+    "verification_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "require_trusted_chain",
+        "require_rfc3161_timestamp",
+        "require_exact_publisher_subject",
+        "require_approved_issuer",
+        "require_signtool_policy_verification",
+        "fail_on_verification_warning"
+      ],
+      "properties": {
+        "require_trusted_chain": {
+          "const": true
+        },
+        "require_rfc3161_timestamp": {
+          "const": true
+        },
+        "require_exact_publisher_subject": {
+          "const": true
+        },
+        "require_approved_issuer": {
+          "const": true
+        },
+        "require_signtool_policy_verification": {
+          "const": true
+        },
+        "fail_on_verification_warning": {
+          "const": true
+        }
+      }
+    }
+  }
+}

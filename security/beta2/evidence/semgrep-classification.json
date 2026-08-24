@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "record_type": "semgrep_finding_classification",
+  "candidate": "ARX 4.0.0 Beta 2",
+  "observation_timestamp": "2026-08-24T14:50:00+02:00",
+  "tool": "Semgrep 1.174.0",
+  "finding": {
+    "rule_id": "python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args",
+    "path": "src/arx/machine/windows.py",
+    "scanner_severity": "ERROR",
+    "assessed_severity": "LOW",
+    "disposition": "ACCEPTED_WITH_RATIONALE",
+    "release_blocking": false
+  },
+  "rationale": [
+    "The reported call is the intentional, read-only vswhere.exe tool-discovery probe.",
+    "ARX passes a fixed argument vector with shell=False; no user-controlled string is interpreted by a command shell.",
+    "The executable must exist at the conventional Visual Studio Installer path before it is invoked.",
+    "ARX runs asInvoker, and the probe does not cross an elevation or privileged-process boundary.",
+    "The probe output is treated as discovery input and candidate paths must exist before ARX reports a tool provider."
+  ],
+  "residual_limitation": "ProgramFiles(x86) is obtained from the process environment, which the launching user can alter. ARX already treats command-visible executables as same-user discovery targets; a future hardening pass may derive this location through the Windows Known Folder API and independently verify publisher identity.",
+  "gate_policy": "Only this exact rule and normalized repository path may be accepted. Any additional Semgrep ERROR, an engine error, or a stale reviewed identity fails the automatic gate.",
+  "provenance": {
+    "source": "Local tracked-source Semgrep scan",
+    "method": "semgrep scan --config p/python --config p/github-actions --metrics=off",
+    "report": "security-results/beta2/validation/semgrep.json",
+    "report_publication": "LOCAL_ONLY_CONTAINS_MACHINE_PATHS"
+  }
+}

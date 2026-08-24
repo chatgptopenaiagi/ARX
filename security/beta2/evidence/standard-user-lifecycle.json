@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "record_type": "standard_user_windows_lifecycle_gate",
+  "candidate": "ARX 4.0.0 Beta 2",
+  "observation_timestamp": "2026-08-24T13:36:00+02:00",
+  "result": "BLOCKED_NOT_EXECUTED",
+  "execution": {
+    "windows_10_22h2": "NOT_EXECUTED",
+    "windows_11_current_stable": "NOT_EXECUTED",
+    "install": "NOT_EXECUTED",
+    "launch": "NOT_EXECUTED",
+    "upgrade": "NOT_EXECUTED",
+    "uninstall": "NOT_EXECUTED",
+    "credential_cross_user": "NOT_EXECUTED"
+  },
+  "infrastructure_observation": {
+    "development_host": "Windows 10 Home 22H2 build 19045",
+    "development_host_used_as_disposable_guest": false,
+    "hyper_v_command_available": false,
+    "available_hyper_v_guest_count": null,
+    "windows_sandbox_state": "UNAVAILABLE",
+    "windows_11_disposable_guest_available": false
+  },
+  "missing_infrastructure": [
+    "Disposable Windows 10 guest with separate standard-user and administrator accounts",
+    "Disposable current stable Windows 11 guest with separate standard-user and administrator accounts",
+    "Snapshot/rollback capability for upgrade and uninstall transitions",
+    "Direct application-token observation in both guests"
+  ],
+  "prepared_assets": [
+    "docs/WINDOWS_STANDARD_USER_LIFECYCLE.md",
+    "scripts/collect-windows-lifecycle-evidence.ps1"
+  ],
+  "safety": {
+    "defender_modified": false,
+    "uac_modified": false,
+    "trust_store_modified": false,
+    "installer_executed_on_development_host": false,
+    "credential_bytes_read": false
+  },
+  "blocker": "The lifecycle gate cannot become PASS until both disposable Windows generations are directly exercised."
+}

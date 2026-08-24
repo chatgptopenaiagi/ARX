@@ -1,7 +1,6 @@
 import re
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = (ROOT / "packaging" / "arx-desktop.iss").read_text(encoding="utf-8")
 BUILD_SCRIPT = (ROOT / "scripts" / "build-installer.ps1").read_text(encoding="utf-8")
@@ -32,21 +31,21 @@ def test_installer_uses_real_license_and_complete_windows_entries():
 
 
 def test_beta_version_and_artifact_identity_are_consistent():
-    assert '#define MyAppVersion "4.0.0b1"' in INSTALLER
-    assert '#define MyAppFileVersion "4.0.0.1"' in INSTALLER
-    assert '#define MyArtifactVersion "4.0.0-b1"' in INSTALLER
-    assert '#define MyAppDisplayName "ARX 4.0.0 Beta 1"' in INSTALLER
+    assert '#define MyAppVersion "4.0.0b2"' in INSTALLER
+    assert '#define MyAppFileVersion "4.0.0.2"' in INSTALLER
+    assert '#define MyArtifactVersion "4.0.0-b2"' in INSTALLER
+    assert '#define MyAppDisplayName "ARX 4.0.0 Beta 2"' in INSTALLER
     assert "VersionInfoVersion={#MyAppFileVersion}" in INSTALLER
     assert "VersionInfoProductVersion={#MyAppFileVersion}" in INSTALLER
     assert "OutputBaseFilename=ARX-Desktop-Setup-win-x64-v{#MyArtifactVersion}" in INSTALLER
-    assert "[string]$Version = '4.0.0b1'" in BUILD_SCRIPT
+    assert "[string]$Version = '4.0.0b2'" in BUILD_SCRIPT
     assert "ARX-Desktop-Setup-win-x64-v$ArtifactVersion.exe" in BUILD_SCRIPT
-    assert "[string]$Version = '4.0.0b1'" in PACKAGE_SCRIPT
+    assert "[string]$Version = '4.0.0b2'" in PACKAGE_SCRIPT
     assert "ARX-Desktop-win-x64-v$ArtifactVersion.zip" in PACKAGE_SCRIPT
     assert "StringStruct('ProductName', 'ARX 4')" in VERSION_INFO
-    assert "StringStruct('ProductVersion', '4.0.0b1')" in VERSION_INFO
-    assert "StringStruct('FileVersion', '4.0.0.1')" in VERSION_INFO
-    assert "filevers=(4, 0, 0, 1)" in VERSION_INFO
+    assert "StringStruct('ProductVersion', '4.0.0b2')" in VERSION_INFO
+    assert "StringStruct('FileVersion', '4.0.0.2')" in VERSION_INFO
+    assert "filevers=(4, 0, 0, 2)" in VERSION_INFO
 
 
 def test_installer_build_is_bounded_to_release_and_requires_validated_portable_payload():

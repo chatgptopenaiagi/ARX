@@ -1,0 +1,58 @@
+name: Trusted Windows signing gate (blocked)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Exact reviewed release commit or tag to inspect
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trusted-windows-signing-${{ inputs.ref }}
+  cancel-in-progress: false
+
+jobs:
+  blocked-preparation:
+    name: Confirm production signing remains unconfigured
+    runs-on: windows-latest
+    timeout-minutes: 10
+    environment: windows-production-signing
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out the exact requested source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate the public unconfigured policy
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install "jsonschema>=4.23,<5"
+          python scripts/validate-signing-policy.py security/signing/signing-policy.template.json
+
+      - name: Stop before any signing operation
+        shell: pwsh
+        run: |
+          @'
+          PRODUCTION_SIGNING=BLOCKED_NO_PRODUCTION_CERTIFICATE
+
+          This workflow has no signing provider integration, private-key access,
+          signing credential, OIDC signing permission, artifact write permission,
+          or publication permission. Configure and review a Windows-trusted
+          production identity in a separate change before implementing signing.
+          '@ | Write-Host
+          throw 'Production Authenticode signing is intentionally blocked.'

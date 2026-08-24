@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "record_type": "bounded_fuzz_gate",
+  "candidate": "ARX 4.0.0 Beta 2",
+  "observation_timestamp": "2026-08-24T13:27:27.9361857+02:00",
+  "gate": "PASS",
+  "claim": "ARX passed this defined bounded, deterministic, local-only Hypothesis campaign after separately recorded product remediation.",
+  "environment": "Conda arx-sec / Python 3.12.13",
+  "settings": {
+    "max_examples_per_property": 200,
+    "deadline_milliseconds": 250,
+    "derandomize": true,
+    "database": null,
+    "suppressed_health_checks": [
+      "too_slow"
+    ]
+  },
+  "campaign": {
+    "tests": 10,
+    "property_tests": 9,
+    "passed": 10,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "duration_seconds": 21.915,
+    "raw_junit_local_path": "security-results/beta2/fuzz-post-remediation.xml",
+    "raw_junit_sha256": "3fc1869fd576eecb431541797aba93b7bea383534927c4c21aad911d59bdb72c",
+    "raw_junit_publication": "LOCAL_ONLY_CONTAINS_MACHINE_PATHS"
+  },
+  "examples": [
+    {
+      "property": "test_openai_response_parser_has_only_documented_outcomes",
+      "passing_examples": 200,
+      "failing_examples": 0
+    },
+    {
+      "property": "test_openai_endpoint_acceptance_implies_exact_https_origin",
+      "passing_examples": 200,
+      "failing_examples": 0
+    },
+    {
+      "property": "test_external_redaction_removes_secret_value_and_stays_json_serializable",
+      "passing_examples": 200,
+      "failing_examples": 0
+    },
+    {
+      "property": "test_project_text_parsers_return_without_unhandled_exceptions",
+      "passing_examples": 200,
+      "failing_examples": 0
+    },
+    {
+      "property": "test_python_version_parsers_are_total_for_bounded_text",
+      "passing_examples": 200,
+      "failing_examples": 0
+    },
+    {
+      "property": "test_evidence_serialization_is_json_serializable",
+      "passing_examples": 200,
+      "failing_examples": 0
+    },
+    {
+      "property": "test_archive_inspection_is_bounded_and_never_extracts",
+      "passing_examples": 200,
+      "failing_examples": 0
+    },
+    {
+      "property": "test_directory_package_metadata_is_handled_without_execution",
+      "passing_examples": 200,
+      "failing_examples": 0
+    },
+    {
+      "property": "test_truncated_pe_optional_header_is_reported_not_raised",
+      "passing_examples": 200,
+      "failing_examples": 0
+    }
+  ],
+  "product_defect_disposition": [
+    {
+      "id": "ARX-B2-FUZZ-001",
+      "disposition": "REMEDIATED",
+      "verification": "ZIP package.json non-object inputs no longer raise and the archive remains unextracted."
+    },
+    {
+      "id": "ARX-B2-FUZZ-002",
+      "disposition": "REMEDIATED",
+      "verification": "Directory package.json non-object inputs no longer raise and the source remains unchanged."
+    },
+    {
+      "id": "ARX-B2-FUZZ-003",
+      "disposition": "REMEDIATED",
+      "verification": "PE32 and PE32+ base optional-header sizes are validated before structured field access."
+    }
+  ],
+  "focused_regression": {
+    "tests": 28,
+    "passed": 28,
+    "failed": 0,
+    "scope": [
+      "tests/test_software_scanner_security.py",
+      "tests/test_arx.py"
+    ]
+  },
+  "limitations": [
+    "This bounded campaign is not coverage-guided native-code fuzzing.",
+    "Passing this campaign does not prove absence of defects outside the generated domains and configured bounds."
+  ]
+}

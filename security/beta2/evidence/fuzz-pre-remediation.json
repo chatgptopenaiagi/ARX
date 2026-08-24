@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "record_type": "bounded_fuzz_pre_remediation",
+  "candidate": "ARX 4.0.0 Beta 2",
+  "starting_commit": "a1a71e0d40d09a9582615851bc84ab2b6006e69e",
+  "beta1_audit_commit": "e8dc5b9e5e9ba32e172f053b644ff2b1de221f94",
+  "observation_timestamp": "2026-08-24T13:23:08.7920251+02:00",
+  "gate": "FAIL_PRODUCT_DEFECTS",
+  "campaign": {
+    "command_scope": "pytest security/fuzz/test_bounded_fuzz.py",
+    "environment": "Conda arx-sec / Python 3.12.13",
+    "settings": {
+      "max_examples_per_property": 200,
+      "deadline_milliseconds": 250,
+      "derandomize": true,
+      "database": null,
+      "suppressed_health_checks": [
+        "too_slow"
+      ]
+    },
+    "tests": 10,
+    "passed": 7,
+    "failed": 3,
+    "errors": 0,
+    "skipped": 0,
+    "duration_seconds": 80.72,
+    "raw_junit_local_path": "security-results/beta2/fuzz-harness-repair-pre-product-fix.xml",
+    "raw_junit_sha256": "b77b8ae63ca5c0a3a46f5e7380bff5f5916023c70809a30ac308cde26165377d",
+    "raw_junit_publication": "LOCAL_ONLY_CONTAINS_MACHINE_PATHS"
+  },
+  "findings": [
+    {
+      "id": "ARX-B2-FUZZ-001",
+      "test": "test_archive_inspection_is_bounded_and_never_extracts",
+      "boundary": "ZIP package.json metadata parsing",
+      "classification": "PRODUCT_DEFECT",
+      "severity": "MEDIUM",
+      "release_blocking": true,
+      "minimal_sanitized_counterexample": {
+        "package_json_value_category": "valid JSON non-object (null)",
+        "additional_entries": 0,
+        "payload_category": "empty",
+        "member_name_category": "parent-relative name"
+      },
+      "observed": "scan_software raised AttributeError because _package_requirements assumed every decoded package.json value was a mapping.",
+      "expected": "Valid but non-object package.json content must be treated as unsupported metadata without executing or extracting content and without an unhandled exception.",
+      "security_relevance": "A selected local archive can terminate inspection, creating a bounded availability and parser-robustness failure. No extraction or code execution was observed."
+    },
+    {
+      "id": "ARX-B2-FUZZ-002",
+      "test": "test_directory_package_metadata_is_handled_without_execution",
+      "boundary": "Directory package.json metadata parsing",
+      "classification": "PRODUCT_DEFECT",
+      "severity": "MEDIUM",
+      "release_blocking": true,
+      "minimal_sanitized_counterexample": {
+        "package_json_value_category": "valid JSON non-object (null)"
+      },
+      "observed": "Directory inspection raised AttributeError because _package_requirements assumed every decoded package.json value was a mapping.",
+      "expected": "Valid but non-object package.json content must be ignored as unsupported metadata while preserving the input file and avoiding execution or filesystem side effects.",
+      "security_relevance": "A selected local directory can terminate inspection, creating a bounded availability and parser-robustness failure. No code execution was observed."
+    },
+    {
+      "id": "ARX-B2-FUZZ-003",
+      "test": "test_truncated_pe_optional_header_is_reported_not_raised",
+      "boundary": "Windows PE optional-header parsing",
+      "classification": "PRODUCT_DEFECT",
+      "severity": "MEDIUM",
+      "release_blocking": true,
+      "minimal_sanitized_counterexample": {
+        "declared_optional_header_size_categories": [
+          "2 bytes with no trailing bytes",
+          "45 bytes with sufficient unrelated trailing bytes"
+        ]
+      },
+      "observed": "A short file raised struct.error; a separate example was parsed without an inspection error by reading beyond the declared optional-header boundary into trailing bytes.",
+      "expected": "The parser must validate the declared PE32/PE32+ base optional-header size before field access, report a bounded inspection error, and leave the input unchanged.",
+      "security_relevance": "Malformed PE metadata can terminate inspection or be misclassified because parser reads were not constrained to the declared structure boundary."
+    }
+  ],
+  "disposition": "Preserved before remediation. Product fixes must be narrow, separately committed, and followed by the same deterministic campaign."
+}
