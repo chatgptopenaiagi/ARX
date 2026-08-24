@@ -1,6 +1,12 @@
 name: Verify and attest GitHub release provenance
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Existing ARX 4 draft or public prerelease tag
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -36,12 +42,34 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up the locked release Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12.13"
-          cache: pip
-          cache-dependency-path: packaging/release-build-requirements.txt
+      - name: Set up locked release Python
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Conda = Join-Path $env:CONDA 'Scripts\conda.exe'
+          if (-not (Test-Path -LiteralPath $Conda -PathType Leaf)) {
+              throw 'The documented GitHub Windows image Miniconda installation is unavailable.'
+          }
+          $PythonRoot = Join-Path $env:RUNNER_TEMP 'arx-release-python'
+          & $Conda create --yes --quiet --prefix $PythonRoot --override-channels --channel defaults python=3.12.13 pip
+          if ($LASTEXITCODE -ne 0) {
+              throw "Unable to provision the locked CPython 3.12.13 release environment (exit $LASTEXITCODE)."
+          }
+          $Python = Join-Path $PythonRoot 'python.exe'
+          $Identity = & $Python -c "import platform, struct; print(platform.python_version()); print(struct.calcsize('P') * 8)"
+          if ($LASTEXITCODE -ne 0 -or $Identity.Count -ne 2 -or $Identity[0] -ne '3.12.13' -or $Identity[1] -ne '64') {
+              throw "Release Python identity mismatch: $($Identity -join ' / ')."
+          }
+          $RuntimeBin = Join-Path $PythonRoot 'Library\bin'
+          foreach ($Runtime in @('ffi.dll', 'tcl86t.dll', 'tk86t.dll')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $RuntimeBin $Runtime) -PathType Leaf)) {
+                  throw "The locked release Python is missing required desktop runtime $Runtime."
+              }
+          }
+          $PythonRoot | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          (Join-Path $PythonRoot 'Scripts') | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          $RuntimeBin | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          "CONDA_PREFIX=$PythonRoot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Verify release and source identity
         shell: pwsh
@@ -96,6 +124,43 @@ jobs:
             -Version $env:PACKAGE_VERSION `
             -ReleaseRoot "$env:GITHUB_WORKSPACE\release\reproduced"
 
+      - name: Require complete reproduced desktop runtime and smoke-test it
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Portable = "$env:GITHUB_WORKSPACE\release\reproduced\ARX-Desktop-win-x64"
+          $Executable = Join-Path $Portable 'ARX.exe'
+          $Internal = Join-Path $Portable '_internal'
+          foreach ($Runtime in @('ffi.dll', 'tcl86t.dll', 'tk86t.dll')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $Internal $Runtime) -PathType Leaf)) {
+                  throw "Reproduced portable runtime is incomplete: missing $Runtime."
+              }
+          }
+          $Target = Join-Path $env:SystemRoot 'System32\notepad.exe'
+          $Cases = @(
+              @{ Mode = '--smoke-test'; Name = 'controller' },
+              @{ Mode = '--ui-smoke-test'; Name = 'ui' }
+          )
+          foreach ($Case in $Cases) {
+              $Output = Join-Path $env:RUNNER_TEMP "reproduced-$($Case.Name)-smoke.json"
+              $Process = Start-Process -FilePath $Executable `
+                  -ArgumentList @($Case.Mode, $Target, $Output) `
+                  -WindowStyle Hidden -PassThru
+              if (-not $Process.WaitForExit(240000)) {
+                  Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+                  throw "Reproduced portable $($Case.Name) smoke test timed out."
+              }
+              $Process.Refresh()
+              if ($Process.ExitCode -ne 0) {
+                  throw "Reproduced portable $($Case.Name) smoke test exited $($Process.ExitCode)."
+              }
+              foreach ($Expected in @($Output, "$Output.result.json")) {
+                  if (-not (Test-Path -LiteralPath $Expected -PathType Leaf)) {
+                      throw "Reproduced portable $($Case.Name) smoke test did not produce $Expected."
+                  }
+              }
+          }
+
       - name: Require bit-for-bit equality for every core release artifact
         shell: pwsh
         run: |
@@ -125,9 +190,33 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $Python = (Get-Command python -ErrorAction Stop).Source
           $Wheel = "$env:GITHUB_WORKSPACE\release\reproduced\arx_prescanner-$env:PACKAGE_VERSION-py3-none-any.whl"
           $Sbom = "$env:RUNNER_TEMP\ARX-$env:ARTIFACT_VERSION-SBOM.cdx.json"
-          .\scripts\generate-release-sbom.ps1 -WheelPath $Wheel -OutputPath $Sbom -PythonExecutable python
+          $Scratch = Join-Path $env:RUNNER_TEMP 'arx-provenance-sbom'
+          if (Test-Path -LiteralPath $Scratch) {
+              throw 'Refusing to reuse provenance SBOM scratch storage.'
+          }
+          & $Python -m venv --without-pip $Scratch
+          if ($LASTEXITCODE -ne 0) {
+              throw "Provenance SBOM virtual environment creation failed with exit code $LASTEXITCODE."
+          }
+          $ScratchPython = Join-Path $Scratch 'Scripts\python.exe'
+          $SiteDirectory = & $ScratchPython -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"
+          if ($LASTEXITCODE -ne 0 -or -not $SiteDirectory) {
+              throw 'Unable to resolve the isolated provenance SBOM site-packages directory.'
+          }
+          & $Python -m pip install --disable-pip-version-check --no-deps --target $SiteDirectory $Wheel
+          if ($LASTEXITCODE -ne 0) {
+              throw "Isolated wheel installation for provenance SBOM failed with exit code $LASTEXITCODE."
+          }
+          & $Python -m cyclonedx_py environment $ScratchPython `
+              --pyproject "$env:GITHUB_WORKSPACE\pyproject.toml" `
+              --mc-type application --spec-version 1.6 --output-reproducible `
+              --output-format JSON --output-file $Sbom --validate
+          if ($LASTEXITCODE -ne 0) {
+              throw "Provenance CycloneDX generation or validation failed with exit code $LASTEXITCODE."
+          }
           $Published = "$env:RUNNER_TEMP\published\ARX-$env:ARTIFACT_VERSION-SBOM.cdx.json"
           if ((Get-FileHash $Sbom -Algorithm SHA256).Hash -ne (Get-FileHash $Published -Algorithm SHA256).Hash) {
               throw 'Published CycloneDX SBOM is not bit-for-bit reproducible.'
@@ -143,12 +232,13 @@ jobs:
               throw 'Published checksum manifest is not exactly reproducible.'
           }
 
-      - name: Stage only independently reproduced subjects
+      - name: Stage complete validated release subjects
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $Stage = "$env:RUNNER_TEMP\attestation-subjects"
           New-Item -ItemType Directory -Path $Stage -Force | Out-Null
+          Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\published" -File | Copy-Item -Destination $Stage
           $Names = @(
               "arx_prescanner-$env:PACKAGE_VERSION-py3-none-any.whl",
               "arx_prescanner-$env:PACKAGE_VERSION.tar.gz",
@@ -156,10 +246,15 @@ jobs:
               "ARX-Desktop-Setup-win-x64-v$env:ARTIFACT_VERSION.exe"
           )
           foreach ($Name in $Names) {
-              Copy-Item -LiteralPath "$env:GITHUB_WORKSPACE\release\reproduced\$Name" -Destination "$Stage\$Name"
+              Copy-Item -LiteralPath "$env:GITHUB_WORKSPACE\release\reproduced\$Name" -Destination "$Stage\$Name" -Force
           }
-          Copy-Item -LiteralPath "$env:RUNNER_TEMP\ARX-$env:ARTIFACT_VERSION-SBOM.cdx.json" -Destination $Stage
-          Copy-Item -LiteralPath "$env:RUNNER_TEMP\SHA256SUMS.txt" -Destination $Stage
+          Copy-Item -LiteralPath "$env:RUNNER_TEMP\ARX-$env:ARTIFACT_VERSION-SBOM.cdx.json" -Destination $Stage -Force
+          Copy-Item -LiteralPath "$env:RUNNER_TEMP\SHA256SUMS.txt" -Destination $Stage -Force
+          $PublishedNames = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\published" -File | Select-Object -ExpandProperty Name | Sort-Object)
+          $StagedNames = @(Get-ChildItem -LiteralPath $Stage -File | Select-Object -ExpandProperty Name | Sort-Object)
+          if (Compare-Object -ReferenceObject $PublishedNames -DifferenceObject $StagedNames) {
+              throw 'Attestation subjects do not exactly match the complete validated release file set.'
+          }
 
       - name: Attest exact independently reproduced subjects
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2

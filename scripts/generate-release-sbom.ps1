@@ -15,9 +15,9 @@ Set-StrictMode -Version Latest
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $Wheel = (Resolve-Path -LiteralPath $WheelPath -ErrorAction Stop).Path
 $Python = (Get-Command $PythonExecutable -ErrorAction Stop).Source
-$CycloneDx = Join-Path (Split-Path -Parent $Python) 'cyclonedx-py.exe'
-if (-not (Test-Path -LiteralPath $CycloneDx -PathType Leaf)) {
-    throw 'cyclonedx-py.exe is missing from the selected locked release environment.'
+& $Python -c "import cyclonedx_py; print(cyclonedx_py.__version__)" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw 'cyclonedx-py is missing from the selected locked release environment.'
 }
 $Output = [IO.Path]::GetFullPath($OutputPath)
 $OutputParent = Split-Path -Parent $Output
@@ -52,7 +52,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Isolated wheel installation for SBOM failed with exit code $LASTEXITCODE."
     }
-    & $CycloneDx environment $ScratchPython `
+    & $Python -m cyclonedx_py environment $ScratchPython `
         --pyproject (Join-Path $ProjectRoot 'pyproject.toml') `
         --mc-type application --spec-version 1.6 --output-reproducible `
         --output-format JSON --output-file $Output --validate

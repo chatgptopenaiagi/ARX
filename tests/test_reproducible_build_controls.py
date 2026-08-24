@@ -170,6 +170,8 @@ def test_windows_release_toolchain_is_exact_and_created_outside_checkout():
 def test_sbom_generation_is_reproducible_validated_and_cleans_only_temp_storage():
     script = _read("generate-release-sbom.ps1")
 
+    assert '-m cyclonedx_py' in script
+    assert "cyclonedx-py.exe" not in script
     assert "--without-pip" in script
     assert "--no-deps" in script
     assert "--spec-version 1.6" in script

@@ -115,6 +115,8 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     actions = ANY_ACTION.findall(workflow)
 
     assert "workflow_dispatch:" in workflow
+    assert "attach_assets:" in workflow
+    assert "if: inputs.attach_assets" in workflow
     assert "release:\n" not in workflow
     assert "push:" not in workflow
     assert "pull_request" not in workflow
@@ -122,14 +124,24 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "workflow_run" not in workflow
     assert "persist-credentials: false" in workflow
     assert "draft" in workflow and "prerelease" in workflow
+    assert "releases?per_page=100" in workflow
+    assert "releases/$release_id" in workflow
     assert "build-release.ps1" in workflow
     assert "-AllowMissingInstaller" not in workflow
-    assert 'python-version: "3.12.13"' in workflow
+    assert "python=3.12.13" in workflow
+    assert "Release Python identity mismatch" in workflow
+    assert "Library\\bin" in workflow
+    assert all(runtime in workflow for runtime in ("ffi.dll", "tcl86t.dll", "tk86t.dll"))
     assert "packaging/release-build-requirements.txt" in workflow
+    assert "write-build-environment.py" in workflow
+    assert "release-build-environment-${{ github.run_id }}" in workflow
     assert '"FILE_VERSION=$($Matches[\'base\']).$($Matches[\'number\'])"' in workflow
-    assert "$Executable.VersionInfo.FileVersion -ne $env:FILE_VERSION" in workflow
+    assert "$Executable.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION" in workflow
+    assert "$InstallerItem.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION" in workflow
     assert "scan-tracked-secrets.py" in workflow
     assert "Get-AuthenticodeSignature" in workflow
+    assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
+    assert "Portable desktop runtime is incomplete" in workflow
     assert "gh release upload" in workflow
     assert workflow.count("contents: write") == 1
     assert workflow.count("id-token: write") == 2
@@ -142,6 +154,14 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 5
 
 
+def test_beta2_release_trigger_separates_attachment_from_reproduction():
+    workflow = _read("beta2-release-assets-trigger.yml")
+
+    assert "release-v4.0.0-b2-assets" in workflow
+    assert "release-v4.0.0-b2-repro-*" in workflow
+    assert "attach_assets: ${{ github.ref_name == 'release-v4.0.0-b2-assets' }}" in workflow
+
+
 def test_trusted_preflight_attests_but_never_signs_or_publishes():
     workflow = _read("trusted-installation-preflight.yml")
     actions = ANY_ACTION.findall(workflow)
@@ -149,12 +169,18 @@ def test_trusted_preflight_attests_but_never_signs_or_publishes():
     assert "workflow_dispatch:" in workflow
     assert "pull_request_target" not in workflow
     assert "persist-credentials: false" in workflow
-    assert 'python-version: "3.12.13"' in workflow
+    assert "python=3.12.13" in workflow
+    assert "Release Python identity mismatch" in workflow
+    assert "Library\\bin" in workflow
+    assert all(runtime in workflow for runtime in ("ffi.dll", "tcl86t.dll", "tk86t.dll"))
     assert "packaging/release-build-requirements.txt" in workflow
+    assert "write-build-environment.py" in workflow
     assert "id-token: write" in workflow
     assert "attestations: write" in workflow
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
     assert "unsigned preflight" in workflow.casefold()
+    assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
+    assert "Unsigned portable runtime is incomplete" in workflow
     assert "does not:" in workflow.casefold()
     assert "sign ARX.exe" in workflow
     assert "publish GitHub release assets" in workflow
@@ -163,7 +189,7 @@ def test_trusted_preflight_attests_but_never_signs_or_publishes():
     assert "signtool sign" not in workflow.casefold()
     assert "contents: write" not in workflow
     assert SECRET_CONTEXT.search(workflow) is None
-    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3
 
 
 def test_codeql_analyzes_python_and_workflows_with_current_pinned_action():
@@ -253,12 +279,23 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "push:" not in workflow
     assert "pull_request" not in workflow
     assert "persist-credentials: false" in workflow
-    assert 'python-version: "3.12.13"' in workflow
+    assert "python=3.12.13" in workflow
+    assert "Release Python identity mismatch" in workflow
+    assert "Library\\bin" in workflow
+    assert all(runtime in workflow for runtime in ("ffi.dll", "tcl86t.dll", "tk86t.dll"))
     assert "packaging/release-build-requirements.txt" in workflow
     assert "--require-security-bundle" in workflow
     assert "Core artifact is not bit-for-bit reproducible" in workflow
+    assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
+    assert "Reproduced portable runtime is incomplete" in workflow
+    assert "-m cyclonedx_py" in workflow
+    assert "--without-pip" in workflow
+    assert "--output-reproducible" in workflow
     assert "Published CycloneDX SBOM is not bit-for-bit reproducible" in workflow
     assert "Published checksum manifest is not exactly reproducible" in workflow
+    assert "Stage complete validated release subjects" in workflow
+    assert 'Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\\published" -File' in workflow
+    assert "Attestation subjects do not exactly match" in workflow
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
     assert workflow.count("id-token: write") == 2
     assert workflow.count("attestations: write") == 2
@@ -268,4 +305,4 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "signtool sign" not in workflow.casefold()
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert SECRET_CONTEXT.search(workflow) is None
-    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3

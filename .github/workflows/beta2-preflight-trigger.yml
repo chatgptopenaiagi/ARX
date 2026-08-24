@@ -1,0 +1,20 @@
+name: ARX Beta 2 independent preflight trigger
+
+on:
+  push:
+    branches: [release-v4.0.0-b2-repro]
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  independent-preflight:
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/trusted-installation-preflight.yml
+    with:
+      ref: v4.0.0-b2

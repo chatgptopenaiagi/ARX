@@ -36,8 +36,7 @@ def test_desktop_file_picker_inspects_without_blocking(monkeypatch):
         def inspect(self,target):self.software={"filename":"Chosen.exe","absolute_path":target,"detected_file_type":"windows_pe","evidence":[],"pe":{"architecture":"x64","imports":[]}};return self.software
     controller=FakeController();app=ARXDesktopApp(controller);app.withdraw();monkeypatch.setattr("arx.desktop.app.filedialog.askopenfilename",lambda **kwargs:r"C:\Chosen.exe")
     app._inspect_file();deadline=time.monotonic()+3
-    while controller.software is None and time.monotonic()<deadline:app.update();time.sleep(.01)
-    for _ in range(10):app.update();time.sleep(.01)
+    while (controller.software is None or app._started is not None) and time.monotonic()<deadline:app.update();time.sleep(.01)
     assert controller.software["filename"]=="Chosen.exe";assert app._started is None;app.destroy()
 
 

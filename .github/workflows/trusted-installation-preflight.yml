@@ -1,6 +1,12 @@
 name: Trusted installation preflight
 
 on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit, branch, or future prerelease tag to evaluate
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       ref:
@@ -36,12 +42,34 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12.13"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+      - name: Set up locked release Python
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Conda = Join-Path $env:CONDA 'Scripts\conda.exe'
+          if (-not (Test-Path -LiteralPath $Conda -PathType Leaf)) {
+              throw 'The documented GitHub Windows image Miniconda installation is unavailable.'
+          }
+          $PythonRoot = Join-Path $env:RUNNER_TEMP 'arx-release-python'
+          & $Conda create --yes --quiet --prefix $PythonRoot --override-channels --channel defaults python=3.12.13 pip
+          if ($LASTEXITCODE -ne 0) {
+              throw "Unable to provision the locked CPython 3.12.13 release environment (exit $LASTEXITCODE)."
+          }
+          $Python = Join-Path $PythonRoot 'python.exe'
+          $Identity = & $Python -c "import platform, struct; print(platform.python_version()); print(struct.calcsize('P') * 8)"
+          if ($LASTEXITCODE -ne 0 -or $Identity.Count -ne 2 -or $Identity[0] -ne '3.12.13' -or $Identity[1] -ne '64') {
+              throw "Release Python identity mismatch: $($Identity -join ' / ')."
+          }
+          $RuntimeBin = Join-Path $PythonRoot 'Library\bin'
+          foreach ($Runtime in @('ffi.dll', 'tcl86t.dll', 'tk86t.dll')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $RuntimeBin $Runtime) -PathType Leaf)) {
+                  throw "The locked release Python is missing required desktop runtime $Runtime."
+              }
+          }
+          $PythonRoot | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          (Join-Path $PythonRoot 'Scripts') | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          $RuntimeBin | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          "CONDA_PREFIX=$PythonRoot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Install release and audit tooling
         shell: pwsh
@@ -49,6 +77,49 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m pip install --disable-pip-version-check --requirement packaging/release-build-requirements.txt
           python -m pip install "pip-audit==2.10.1" "bandit==1.9.4"
+
+      - name: Record path-free build environment
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Candidates = @(
+              (Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue).Source,
+              (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe'),
+              (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
+              (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),
+              (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+              (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
+          ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) }
+          $Iscc = $Candidates | Select-Object -First 1
+          if (-not $Iscc) {
+              throw 'Inno Setup compiler identity cannot be recorded.'
+          }
+          $Products = @()
+          foreach ($Root in @(
+              'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+              'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+              'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+          )) {
+              if (Test-Path -LiteralPath $Root) {
+                  foreach ($Key in Get-ChildItem -LiteralPath $Root) {
+                      $Product = Get-ItemProperty -LiteralPath $Key.PSPath
+                      if ($Product.DisplayName -like 'Inno Setup *' -and $Product.DisplayVersion -match '^\d+\.\d+\.\d+$') {
+                          $Products += $Product
+                      }
+                  }
+              }
+          }
+          $InnoVersions = @($Products | Select-Object -ExpandProperty DisplayVersion -Unique)
+          if ($InnoVersions.Count -ne 1) {
+              throw "Unable to establish one Inno Setup version: $($InnoVersions -join ', ')"
+          }
+          $Epoch = .\scripts\resolve-source-date-epoch.ps1 -ProjectRoot $env:GITHUB_WORKSPACE
+          python scripts/write-build-environment.py `
+            --output "$env:RUNNER_TEMP\release-build-environment.json" `
+            --builder-label "github-independent-preflight-$env:GITHUB_RUN_ID" `
+            --source-commit (git rev-parse HEAD) `
+            --source-date-epoch $Epoch `
+            --inno-setup-version $InnoVersions[0]
 
       - name: Compile, architecture, tests, and tracked-secret scan
         shell: pwsh
@@ -115,6 +186,44 @@ jobs:
             }
           }
 
+      - name: Require complete desktop runtime and smoke-test unsigned portable candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Root = Get-ChildItem release -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          $Portable = Join-Path $Root.FullName 'ARX-Desktop-win-x64'
+          $Executable = Join-Path $Portable 'ARX.exe'
+          $Internal = Join-Path $Portable '_internal'
+          foreach ($Runtime in @('ffi.dll', 'tcl86t.dll', 'tk86t.dll')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $Internal $Runtime) -PathType Leaf)) {
+                  throw "Unsigned portable runtime is incomplete: missing $Runtime."
+              }
+          }
+          $Target = Join-Path $env:SystemRoot 'System32\notepad.exe'
+          $Cases = @(
+              @{ Mode = '--smoke-test'; Name = 'controller' },
+              @{ Mode = '--ui-smoke-test'; Name = 'ui' }
+          )
+          foreach ($Case in $Cases) {
+              $Output = Join-Path $env:RUNNER_TEMP "preflight-$($Case.Name)-smoke.json"
+              $Process = Start-Process -FilePath $Executable `
+                  -ArgumentList @($Case.Mode, $Target, $Output) `
+                  -WindowStyle Hidden -PassThru
+              if (-not $Process.WaitForExit(240000)) {
+                  Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+                  throw "Unsigned portable $($Case.Name) smoke test timed out."
+              }
+              $Process.Refresh()
+              if ($Process.ExitCode -ne 0) {
+                  throw "Unsigned portable $($Case.Name) smoke test exited $($Process.ExitCode)."
+              }
+              foreach ($Expected in @($Output, "$Output.result.json")) {
+                  if (-not (Test-Path -LiteralPath $Expected -PathType Leaf)) {
+                      throw "Unsigned portable $($Case.Name) smoke test did not produce $Expected."
+                  }
+              }
+          }
+
       - name: Stage unsigned candidates for review
         shell: pwsh
         run: |
@@ -123,6 +232,7 @@ jobs:
           $Stage = Join-Path $env:RUNNER_TEMP 'trusted-installation-preflight'
           New-Item -ItemType Directory -Force $Stage | Out-Null
           Get-ChildItem -LiteralPath $Root.FullName -File | Copy-Item -Destination $Stage
+          Copy-Item -LiteralPath "$env:RUNNER_TEMP\release-build-environment.json" -Destination $Stage
           if (Test-Path -LiteralPath "$($Root.FullName)\ARX-Desktop-win-x64") {
             Compress-Archive -Path "$($Root.FullName)\ARX-Desktop-win-x64" -DestinationPath (Join-Path $Stage 'ARX-Desktop-win-x64-preflight.zip') -Force
           }

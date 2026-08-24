@@ -1,6 +1,17 @@
 name: Build GitHub release assets
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Existing draft prerelease tag to build and attach
+        required: true
+        type: string
+      attach_assets:
+        description: Attach verified artifacts to the existing empty draft
+        required: false
+        default: true
+        type: boolean
   workflow_dispatch:
     inputs:
       tag:
@@ -8,6 +19,11 @@ on:
         required: true
         default: v4.0.0-b2
         type: string
+      attach_assets:
+        description: Attach verified artifacts to the existing empty draft
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -34,25 +50,42 @@ jobs:
           ref: ${{ inputs.tag }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12.13"
-          cache: pip
-          cache-dependency-path: packaging/release-build-requirements.txt
-      - name: Verify tag and draft prerelease identity
+      - name: Set up locked release Python
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Conda = Join-Path $env:CONDA 'Scripts\conda.exe'
+          if (-not (Test-Path -LiteralPath $Conda -PathType Leaf)) {
+              throw 'The documented GitHub Windows image Miniconda installation is unavailable.'
+          }
+          $PythonRoot = Join-Path $env:RUNNER_TEMP 'arx-release-python'
+          & $Conda create --yes --quiet --prefix $PythonRoot --override-channels --channel defaults python=3.12.13 pip
+          if ($LASTEXITCODE -ne 0) {
+              throw "Unable to provision the locked CPython 3.12.13 release environment (exit $LASTEXITCODE)."
+          }
+          $Python = Join-Path $PythonRoot 'python.exe'
+          $Identity = & $Python -c "import platform, struct; print(platform.python_version()); print(struct.calcsize('P') * 8)"
+          if ($LASTEXITCODE -ne 0 -or $Identity.Count -ne 2 -or $Identity[0] -ne '3.12.13' -or $Identity[1] -ne '64') {
+              throw "Release Python identity mismatch: $($Identity -join ' / ')."
+          }
+          $RuntimeBin = Join-Path $PythonRoot 'Library\bin'
+          foreach ($Runtime in @('ffi.dll', 'tcl86t.dll', 'tk86t.dll')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $RuntimeBin $Runtime) -PathType Leaf)) {
+                  throw "The locked release Python is missing required desktop runtime $Runtime."
+              }
+          }
+          $PythonRoot | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          (Join-Path $PythonRoot 'Scripts') | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          $RuntimeBin | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          "CONDA_PREFIX=$PythonRoot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Verify tag and source identity
         shell: pwsh
         env:
-          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           $ErrorActionPreference = 'Stop'
           if ($env:RELEASE_TAG -notmatch '^v(?<base>\d+\.\d+\.\d+)-(?<kind>a|b|rc)(?<number>\d+)$') {
               throw "Unsupported prerelease tag: $env:RELEASE_TAG"
-          }
-          $Release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:RELEASE_TAG" | ConvertFrom-Json
-          if (-not $Release.draft -or -not $Release.prerelease -or $Release.tag_name -ne $env:RELEASE_TAG) {
-              throw 'Release assets may be attached only to the matching draft prerelease.'
           }
           if ((git rev-parse HEAD) -ne (git rev-list -n 1 $env:RELEASE_TAG)) {
               throw 'Checkout does not resolve to the release tag commit.'
@@ -67,6 +100,48 @@ jobs:
           "FILE_VERSION=$($Matches['base']).$($Matches['number'])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Install release tooling
         run: python -m pip install --disable-pip-version-check --requirement packaging/release-build-requirements.txt
+      - name: Record path-free build environment
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Candidates = @(
+              (Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue).Source,
+              (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe'),
+              (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
+              (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),
+              (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+              (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
+          ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) }
+          $Iscc = $Candidates | Select-Object -First 1
+          if (-not $Iscc) {
+              throw 'Inno Setup compiler identity cannot be recorded.'
+          }
+          $Products = @()
+          foreach ($Root in @(
+              'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+              'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+              'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+          )) {
+              if (Test-Path -LiteralPath $Root) {
+                  foreach ($Key in Get-ChildItem -LiteralPath $Root) {
+                      $Product = Get-ItemProperty -LiteralPath $Key.PSPath
+                      if ($Product.DisplayName -like 'Inno Setup *' -and $Product.DisplayVersion -match '^\d+\.\d+\.\d+$') {
+                          $Products += $Product
+                      }
+                  }
+              }
+          }
+          $InnoVersions = @($Products | Select-Object -ExpandProperty DisplayVersion -Unique)
+          if ($InnoVersions.Count -ne 1) {
+              throw "Unable to establish one Inno Setup version: $($InnoVersions -join ', ')"
+          }
+          $Epoch = .\scripts\resolve-source-date-epoch.ps1 -ProjectRoot $env:GITHUB_WORKSPACE
+          python scripts/write-build-environment.py `
+            --output "$env:RUNNER_TEMP\release-build-environment.json" `
+            --builder-label "github-release-assets-$env:GITHUB_RUN_ID" `
+            --source-commit (git rev-parse HEAD) `
+            --source-date-epoch $Epoch `
+            --inno-setup-version $InnoVersions[0]
       - name: Compile and verify source
         run: |
           python -m compileall -q src tests scripts
@@ -88,10 +163,10 @@ jobs:
         run: |
           $Root = "release\v$env:ARTIFACT_VERSION"
           $Executable = Get-Item -LiteralPath "$Root\ARX-Desktop-win-x64\ARX.exe"
-          if ($Executable.VersionInfo.ProductName -ne 'ARX 4' -or $Executable.VersionInfo.ProductVersion -ne $env:PACKAGE_VERSION) {
+          if ($Executable.VersionInfo.ProductName.Trim() -ne 'ARX 4' -or $Executable.VersionInfo.ProductVersion.Trim() -ne $env:PACKAGE_VERSION) {
               throw 'ARX.exe product identity does not match the release.'
           }
-          if ($Executable.VersionInfo.FileVersion -ne $env:FILE_VERSION) {
+          if ($Executable.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION) {
               throw "ARX.exe numeric file version is not $env:FILE_VERSION."
           }
           if ((Get-AuthenticodeSignature -LiteralPath $Executable.FullName).Status -ne 'NotSigned') {
@@ -100,11 +175,48 @@ jobs:
           $Installer = "$Root\ARX-Desktop-Setup-win-x64-v$env:ARTIFACT_VERSION.exe"
           if (Test-Path -LiteralPath $Installer) {
               $InstallerItem = Get-Item -LiteralPath $Installer
-              if ($InstallerItem.VersionInfo.ProductName -ne 'ARX 4' -or $InstallerItem.VersionInfo.FileVersion -ne $env:FILE_VERSION) {
+              if ($InstallerItem.VersionInfo.ProductName.Trim() -ne 'ARX 4' -or $InstallerItem.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION) {
                   throw 'Installer version identity does not match the release.'
               }
               if ((Get-AuthenticodeSignature -LiteralPath $Installer).Status -ne 'NotSigned') {
                   throw 'This beta workflow expects the disclosed unsigned installer.'
+              }
+          }
+      - name: Require complete desktop runtime and smoke-test portable executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Root = "release\v$env:ARTIFACT_VERSION"
+          $Portable = Join-Path $Root 'ARX-Desktop-win-x64'
+          $Executable = Join-Path $Portable 'ARX.exe'
+          $Internal = Join-Path $Portable '_internal'
+          foreach ($Runtime in @('ffi.dll', 'tcl86t.dll', 'tk86t.dll')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $Internal $Runtime) -PathType Leaf)) {
+                  throw "Portable desktop runtime is incomplete: missing $Runtime."
+              }
+          }
+          $Target = Join-Path $env:SystemRoot 'System32\notepad.exe'
+          $Cases = @(
+              @{ Mode = '--smoke-test'; Name = 'controller' },
+              @{ Mode = '--ui-smoke-test'; Name = 'ui' }
+          )
+          foreach ($Case in $Cases) {
+              $Output = Join-Path $env:RUNNER_TEMP "portable-$($Case.Name)-smoke.json"
+              $Process = Start-Process -FilePath $Executable `
+                  -ArgumentList @($Case.Mode, $Target, $Output) `
+                  -WindowStyle Hidden -PassThru
+              if (-not $Process.WaitForExit(240000)) {
+                  Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+                  throw "Portable $($Case.Name) smoke test timed out."
+              }
+              $Process.Refresh()
+              if ($Process.ExitCode -ne 0) {
+                  throw "Portable $($Case.Name) smoke test exited $($Process.ExitCode)."
+              }
+              foreach ($Expected in @($Output, "$Output.result.json")) {
+                  if (-not (Test-Path -LiteralPath $Expected -PathType Leaf)) {
+                      throw "Portable $($Case.Name) smoke test did not produce $Expected."
+                  }
               }
           }
       - name: Stage only public release artifacts
@@ -134,6 +246,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Preserve path-free build environment
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-build-environment-${{ github.run_id }}
+          path: ${{ runner.temp }}/release-build-environment.json
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Attest exact staged release bytes
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
@@ -142,6 +262,7 @@ jobs:
 
   attach:
     name: Attach verified assets to the draft prerelease
+    if: inputs.attach_assets
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -162,9 +283,11 @@ jobs:
           set -euo pipefail
           cd assets
           sha256sum --check SHA256SUMS.txt
-          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .draft)" = "true"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .prerelease)" = "true"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets | length')" = "0"
+          release_ids="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select(.tag_name == \"$RELEASE_TAG\" and .draft == true and .prerelease == true) | .id")"
+          test "$(printf '%s\n' "$release_ids" | sed '/^$/d' | wc -l)" = "1"
+          release_id="$(printf '%s\n' "$release_ids" | sed '/^$/d')"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" --jq '.assets | length')" = "0"
           mapfile -t files < <(find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print | sort)
           files+=(./SHA256SUMS.txt)
           gh release upload "$RELEASE_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY"
