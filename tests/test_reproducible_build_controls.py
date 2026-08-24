@@ -76,6 +76,20 @@ def test_windows_release_toolchain_is_exact_and_created_outside_checkout():
     assert "-m pip check" in environment
 
 
+def test_sbom_generation_is_reproducible_validated_and_cleans_only_temp_storage():
+    script = _read("generate-release-sbom.ps1")
+
+    assert "--without-pip" in script
+    assert "--no-deps" in script
+    assert "--spec-version 1.6" in script
+    assert "--output-reproducible" in script
+    assert "--validate" in script
+    assert "bomFormat" in script and "CycloneDX" in script
+    assert "GetTempPath" in script
+    assert "StartsWith" in script
+    assert "Remove-Item -LiteralPath $ResolvedScratch -Recurse -Force" in script
+
+
 @pytest.mark.skipif(os.name != "nt", reason="PowerShell ZIP implementation is Windows release tooling")
 def test_deterministic_zip_ignores_source_creation_order_and_mtime(tmp_path):
     pwsh = shutil.which("pwsh") or shutil.which("powershell")

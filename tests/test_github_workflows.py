@@ -234,3 +234,29 @@ def test_trusted_signing_workflow_is_manual_protected_and_incapable_of_signing()
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 2
+
+
+def test_release_provenance_workflow_reproduces_without_modifying_release():
+    workflow = _read("release-provenance.yml")
+    actions = ANY_ACTION.findall(workflow)
+
+    assert "workflow_dispatch:" in workflow
+    assert "push:" not in workflow
+    assert "pull_request" not in workflow
+    assert "persist-credentials: false" in workflow
+    assert 'python-version: "3.12.13"' in workflow
+    assert "packaging/release-build-requirements.txt" in workflow
+    assert "--require-security-bundle" in workflow
+    assert "Core artifact is not bit-for-bit reproducible" in workflow
+    assert "Published CycloneDX SBOM is not bit-for-bit reproducible" in workflow
+    assert "Published checksum manifest is not exactly reproducible" in workflow
+    assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
+    assert workflow.count("id-token: write") == 2
+    assert workflow.count("attestations: write") == 2
+    assert "contents: write" not in workflow
+    assert "gh release upload" not in workflow
+    assert "gh release edit" not in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
