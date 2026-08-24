@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import io
+import json
 import os
 import re
 import tarfile
@@ -12,7 +13,6 @@ import zipfile
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path, PurePosixPath
-
 
 KEY_PATTERN = re.compile(rb"(?<![A-Za-z0-9])sk-[A-Za-z0-9_.-]{16,}")
 FORBIDDEN_ENTRY_NAMES = {
@@ -132,6 +132,7 @@ def main() -> int:
     parser.add_argument("--release-root", type=Path, required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--artifact-version", required=True)
+    parser.add_argument("--require-security-bundle", action="store_true")
     arguments = parser.parse_args()
 
     root = arguments.release_root.resolve()
@@ -142,6 +143,13 @@ def main() -> int:
     portable = root / f"ARX-Desktop-win-x64-v{artifact_version}.zip"
     installer = root / f"ARX-Desktop-Setup-win-x64-v{artifact_version}.exe"
     manifest_path = root / "SHA256SUMS.txt"
+    sbom = root / f"ARX-{artifact_version}-SBOM.cdx.json"
+    provenance = root / f"ARX-{artifact_version}-provenance.zip"
+    reproducibility = root / f"ARX-{artifact_version}-reproducibility.json"
+    security_gates = root / f"ARX-{artifact_version}-security-gates.json"
+    signing = root / f"ARX-{artifact_version}-signing-preflight.json"
+    lifecycle = root / f"ARX-{artifact_version}-lifecycle-preparation.json"
+    release_notes = root / "RELEASE_NOTES.md"
 
     required = (wheel, sdist, portable, manifest_path)
     missing = [path.name for path in required if not path.is_file()]
@@ -151,11 +159,15 @@ def main() -> int:
     public = [wheel, sdist, portable]
     if installer.is_file():
         public.append(installer)
-    actual_public = {
-        path.name
-        for path in root.iterdir()
-        if path.is_file() and (path.suffix in {".whl", ".zip", ".exe"} or path.name.endswith(".tar.gz"))
-    }
+    security_bundle = [sbom, provenance, reproducibility, security_gates, signing, lifecycle, release_notes]
+    present_security_bundle = [path for path in security_bundle if path.is_file()]
+    if arguments.require_security_bundle and len(present_security_bundle) != len(security_bundle):
+        missing_security = [path.name for path in security_bundle if not path.is_file()]
+        raise SystemExit("Missing required security release asset(s): " + ", ".join(missing_security))
+    if present_security_bundle and len(present_security_bundle) != len(security_bundle):
+        raise SystemExit("A partial security release bundle is not permitted.")
+    public.extend(present_security_bundle)
+    actual_public = {path.name for path in root.iterdir() if path.is_file() and path != manifest_path}
     expected_public = {path.name for path in public}
     if actual_public != expected_public:
         raise SystemExit("Unexpected or missing versioned public release artifacts.")
@@ -212,6 +224,41 @@ def main() -> int:
         raise SystemExit("Portable archive is missing ARX.exe, README.txt, or LICENSE.txt.")
     if not any(name.startswith("ARX-Desktop-win-x64/_internal/") for name in portable_names):
         raise SystemExit("Portable archive is missing the PyInstaller _internal runtime.")
+
+    if present_security_bundle:
+        try:
+            sbom_payload = json.loads(sbom.read_text(encoding="utf-8"))
+            security_payload = json.loads(security_gates.read_text(encoding="utf-8"))
+            reproducibility_payload = json.loads(reproducibility.read_text(encoding="utf-8"))
+            signing_payload = json.loads(signing.read_text(encoding="utf-8"))
+            lifecycle_payload = json.loads(lifecycle.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise SystemExit(f"Security release JSON is malformed: {type(exc).__name__}") from None
+        if sbom_payload.get("bomFormat") != "CycloneDX":
+            raise SystemExit("Release SBOM is not CycloneDX JSON.")
+        if security_payload.get("record_type") != "arx_release_security_record" or security_payload.get(
+            "record_state"
+        ) != "FINAL":
+            raise SystemExit("Release security record is not FINAL.")
+        if reproducibility_payload.get("record_type") != "arx_release_reproducibility":
+            raise SystemExit("Reproducibility evidence has an unexpected record type.")
+        if signing_payload.get("record_type") != "authenticode_verification":
+            raise SystemExit("Signing preflight evidence has an unexpected record type.")
+        if lifecycle_payload.get("record_type") != "standard_user_windows_lifecycle_gate":
+            raise SystemExit("Lifecycle preparation evidence has an unexpected record type.")
+        provenance_names, provenance_findings = inspect_zip(provenance, markers)
+        findings.extend(provenance_findings)
+        required_provenance = {
+            f"ARX-{artifact_version}-provenance/provenance.json",
+            f"ARX-{artifact_version}-provenance/{sbom.name}",
+            f"ARX-{artifact_version}-provenance/{security_gates.name}",
+            f"ARX-{artifact_version}-provenance/{reproducibility.name}",
+            f"ARX-{artifact_version}-provenance/{signing.name}",
+            f"ARX-{artifact_version}-provenance/{lifecycle.name}",
+            f"ARX-{artifact_version}-provenance/{release_notes.name}",
+        }
+        if not required_provenance.issubset(provenance_names):
+            raise SystemExit("Provenance bundle is missing required public evidence.")
 
     if findings:
         for finding in sorted(set(findings)):
