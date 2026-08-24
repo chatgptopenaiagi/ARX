@@ -1735,9 +1735,9 @@ ARX deterministic evidence and AI-generated interpretation must remain separate.
 Never allow an AI response to silently become:
 
 
-OBSERVED
+DECLARED, OBSERVED, INFERRED, or UNKNOWN fact provenance
 
-VERIFIED
+a semantically or schema-validated ARX relation or decision
 
 GREEN
 
@@ -1768,15 +1768,24 @@ AI interpretation remains AI interpretation.
 Conceptually:
 
 
-ARX Evidence
+ARX fact evidence
 
     │
+
+    ├── DECLARED
 
     ├── OBSERVED
 
     ├── INFERRED
 
-    └── VERIFIED
+    └── UNKNOWN
+
+
+ARX relations and decisions
+
+    │
+
+    └── semantic invariants and schema/composed-state validation
 
 
 AI
@@ -2096,7 +2105,7 @@ Where an AI recommendation conflicts with ARX evidence, visibly preserve the con
 Example:
 
 
-ARX verified:
+ARX observed through a bounded detector:
 
 Python 3.11.9 exists.
 
@@ -2106,7 +2115,7 @@ AI response:
 "Python may not be installed."
 
 
-ARX must not rewrite its verified evidence.
+ARX must not rewrite the provenance of its observed evidence.
 
 
 Instead indicate that the AI interpretation conflicts with observed ARX evidence.

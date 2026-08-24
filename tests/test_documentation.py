@@ -30,6 +30,8 @@ def test_manual_windows_checklist_covers_every_required_interaction():
         "path no longer exists",
         "Copy Details",
         "DPI scaling",
+        "code-signing release gate",
+        "checksum is not a signature",
         "interactive install",
         "Uninstall",
         "newer test version over an older build",
@@ -38,6 +40,21 @@ def test_manual_windows_checklist_covers_every_required_interaction():
     for phrase in required:
         assert phrase.casefold() in checklist.casefold()
     assert "An unchecked item is not tested" in checklist
+
+
+def test_phase_a_acceptance_keeps_blocked_release_gates_explicit():
+    acceptance = _read("docs/arx-3-final-acceptance.md")
+
+    for phrase in (
+        "Stable `v3.0.0` is **not approved and was not created**",
+        "Geometry arithmetic and headless/widget state remain structural evidence only",
+        "Screen-reader verification and accessibility certification are not claimed",
+        "Lifecycle result: **BLOCKED / NOT RUN**",
+        "Code-signing readiness: **BLOCKED**",
+        "matching hashes do not substitute for Authenticode",
+        "Human review is required before any Phase B branch is created",
+    ):
+        assert phrase in acceptance
 
 
 def test_regression_principle_treats_usability_as_correctness():
@@ -91,7 +108,8 @@ def test_readme_is_the_complete_arx3_release_candidate_landing_page():
         "Requirement Graph",
         "Provider Graph",
         "Execution Context",
-        "OBSERVED, INFERRED, and VERIFIED",
+        "Fact provenance and decision validation",
+        "VERIFIED is not an `EvidenceKind`",
         "GREEN, YELLOW, and RED",
         "shortest trusted path to GREEN",
         "There is no return path from external advice into ARX evidence",
@@ -106,6 +124,7 @@ def test_readme_is_the_complete_arx3_release_candidate_landing_page():
         assert workflow in readme
     for document in (
         "docs/architecture.md",
+        "docs/confidence-semantics.md",
         "docs/security-model.md",
         "docs/testing.md",
         "docs/python-package-publishing.md",
@@ -113,6 +132,38 @@ def test_readme_is_the_complete_arx3_release_candidate_landing_page():
         "docs/windows-desktop-acceptance.md",
     ):
         assert document in readme
+
+
+def test_confidence_document_disclaims_calibration_and_audits_assignments():
+    confidence = _read("docs/confidence-semantics.md")
+
+    for phrase in (
+        "detector-author weight",
+        "not a probability",
+        "measured accuracy",
+        "statistical confidence",
+        "Evidence and ToolRecord defaults",
+        "Machine and provider discovery",
+        "Software inspection",
+        "Project inspection",
+        "Resolution and conflicts",
+        "Legacy compatibility aggregation",
+        "Fixtures and schemas",
+    ):
+        assert phrase.casefold() in confidence.casefold()
+
+
+def test_fact_provenance_is_not_collapsed_into_decision_validation():
+    architecture = _read("docs/architecture.md")
+    prompt = _read("docs/ARX_CODEX_MASTER_PROMPT.md")
+    advisory = _read("docs/ai-assistance-security.md")
+
+    assert "DECLARED / OBSERVED / INFERRED / UNKNOWN" in architecture
+    assert "VERIFIED is not an `EvidenceKind`" in architecture
+    assert "VALIDATION" in architecture
+    assert "claim semantic/schema validation" in advisory
+    assert "VERIFIED\n\n\nGREEN" not in prompt
+    assert "ARX fact evidence" in prompt
 
 
 def test_rc_release_notes_preserve_history_and_disclose_manual_limits():

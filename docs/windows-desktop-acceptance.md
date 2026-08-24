@@ -9,6 +9,8 @@ Use this checklist for a release candidate on a visible Windows 10 or Windows 11
 - Artifact filename and SHA-256:
 - Windows edition/build and architecture:
 - Display scale(s):
+- Disposable/isolated lifecycle environment:
+- Signing certificate and signature status:
 - Tester and date:
 - Test project/target (non-sensitive fixture preferred):
 
@@ -65,7 +67,9 @@ Use this checklist for a release candidate on a visible Windows 10 or Windows 11
 
 These items change Windows application state. Exercise them only on an approved test machine or disposable VM. Compilation alone does not satisfy them.
 
+- [ ] Confirm the install/upgrade/uninstall target is an approved disposable or isolated Windows environment. If it is not, mark every lifecycle transition `BLOCKED`; do not use the development workstation as a substitute.
 - [ ] Verify the published SHA-256 manifest against the installer before running it. Record whether the installer is signed; current development builds are expected to be unsigned.
+- [ ] Complete the code-signing release gate: identify the approved publisher certificate, confirm private-key and timestamping policy, sign both the application executable and installer, and independently verify a valid Authenticode signature. If no approved certificate is available, record `BLOCKED`; a checksum is not a signature.
 - [ ] Run an interactive install. Confirm the MIT license, x64 Program Files destination, Start Menu entry, optional unchecked desktop shortcut, and launch-at-finish choice behave as documented.
 - [ ] Launch the installed application from the Start Menu and directly from its install directory. Repeat representative scan, report, path, and Unicode checks.
 - [ ] Run a silent install and confirm it does not launch ARX unexpectedly.

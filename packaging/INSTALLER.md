@@ -17,6 +17,19 @@ The release-candidate outputs are `ARX-Desktop-win-x64-v3.0.0-rc1.zip`, `ARX-Des
 
 The installer has a stable application identifier for in-place upgrades, installs in 64-bit Program Files, displays the repository's actual MIT license, creates Start Menu launch/uninstall entries, offers an unchecked desktop-shortcut task, registers uninstall metadata, and offers to launch ARX when an interactive installation finishes. Silent installs do not launch ARX.
 
-The current installer is not code-signed and uses the executable's ARX 3 version metadata rather than a custom project icon. Production releases should be signed with a publisher-controlled code-signing certificate after the release workflow has a secure signing policy. Do not place signing credentials in this repository or pass them through ordinary build logs. Compilation and checksum verification do not constitute install, upgrade, or uninstall acceptance; those actions remain on the manual Windows checklist.
+The current installer is not code-signed and uses the executable's ARX 3 version metadata rather than a custom project icon. Compilation and checksum verification do not constitute install, upgrade, or uninstall acceptance. They also do not constitute signing acceptance; those actions remain on the manual Windows checklist.
+
+## Code-signing release gate
+
+Code signing is an explicit release item, not an implied property of a successful build. A production release requires all of the following:
+
+- an approved publisher identity and currently valid code-signing certificate;
+- a protected private-key and timestamping policy outside the repository and ordinary build logs;
+- signing of both the portable application executable and the installer at the controlled release boundary;
+- independent Authenticode verification of the exact files named in the checksum manifest.
+
+Do not place signing credentials in this repository or pass them through ordinary build logs.
+
+If an approved certificate or signing service is unavailable, the signing item is `BLOCKED`. `Get-FileHash`, Inno Setup verification, and an unsigned executable cannot be reported as a valid signature. The current Phase A workstation result is recorded in [ARX 3 final acceptance](../docs/arx-3-final-acceptance.md).
 
 Python distribution publishing uses the separately documented [Trusted Publishing process](../docs/python-package-publishing.md). Installer compilation does not upload to PyPI, and Python package publication does not establish Windows installer lifecycle acceptance.

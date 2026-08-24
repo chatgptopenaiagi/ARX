@@ -8,7 +8,7 @@ ARX remains the deterministic evidence authority, safe local observer, and proje
 2. **External AI advice** receives a deliberately selected, bounded, redacted packet only after a visible user action and provider consent. Responses are labeled `AI ADVISORY — UNVERIFIED AI ANALYSIS`.
 3. **Public web search** receives only a short redacted, URL-encoded query after the user selects a search command. Search results stay in the browser and outside ARX evidence.
 
-Information never crosses these boundaries automatically. AI output cannot set OBSERVED, VERIFIED, GREEN, YELLOW, or RED state and cannot execute a recommendation.
+Information never crosses these boundaries automatically. AI output cannot assign an `EvidenceKind`, claim semantic/schema validation, set GREEN/YELLOW/RED state, or execute a recommendation.
 
 ## Context selection and redaction
 

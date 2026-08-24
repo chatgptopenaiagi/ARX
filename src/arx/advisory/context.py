@@ -230,9 +230,9 @@ def build_advisory_prompt(
     prompt = (
         "ARX AI ADVISORY REQUEST\n\n"
         "Trust boundary: the JSON below is redacted deterministic ARX evidence. Your response is advisory only. "
-        "Do not claim to have changed the machine, do not reinterpret your answer as OBSERVED/VERIFIED/GREEN/RED evidence, "
+        "Do not claim to have changed the machine, assign ARX fact provenance, claim ARX decision validation, or set GREEN/RED state, "
         "and do not recommend destructive actions without clearly explaining risk. If your assumptions conflict with the supplied "
-        "evidence, state the conflict and defer to verified ARX observations.\n\n"
+        "evidence, state the conflict and defer to the supplied ARX observations and validated decisions.\n\n"
         f"Analysis mode: {mode}\nMode instruction: {instruction}\n\n"
         f"ARX CONTEXT\n{packet}\n\n"
     )

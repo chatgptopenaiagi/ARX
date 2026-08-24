@@ -27,6 +27,16 @@ The canonical report model is the sole owner of observed facts, compatibility, s
 
 Optional integrations attach after canonical validation and fail independently. They may receive a deliberately selected and redacted projection, but their output is never fed back into the evidence graph. This keeps a richer desktop or advisory surface from becoming a second evidence engine.
 
+## Decision record: fact provenance is separate from decision validation
+
+The fact-provenance enum is exactly `DECLARED / OBSERVED / INFERRED / UNKNOWN`. VERIFIED is not an `EvidenceKind` and must not be introduced as a peer fact state. An `Evidence` record makes these claim dimensions traceable:
+
+- **VALUE**: `value`, the claim ARX records;
+- **PROVENANCE**: `kind`, how the fact was obtained;
+- **BASIS**: `source`, `method`, and optional `note`, which identify the detector, input, rule, or observation behind it.
+
+For a relation or decision, ARX additionally records **VALIDATION**: the semantic invariant, composed-state guard, and, where serialized, schema validation that accepted the conclusion. Validation operates on the relation or decision; it never rewrites the provenance of supporting facts. Numeric `confidence` is an uncalibrated detector-author weight and cannot serve as provenance or validation. The assignment inventory and limitations are documented in [Confidence semantics and assignment audit](confidence-semantics.md).
+
 ## Decision record: path identity follows the evidence
 
 Evidence can describe a Windows path while ARX tests or processes the report on another operating system. Absolute-path detection, containment, redaction, and stable identity therefore follow the path syntax carried by the evidence, not the host process. Foreign absolute paths use the matching pure-path semantics and must never be accidentally resolved beneath the host's current working directory. The same observed path must retain the same meaning and identifier across supported hosts.

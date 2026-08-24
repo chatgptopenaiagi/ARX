@@ -10,7 +10,15 @@ from arx.machine.windows import _known_tool_path,discover_python_installations,p
 def toolset(**present):
     names={"git","github_cli","python","node","javac","dotnet","cmake","ninja","adb","flutter","cuda","msbuild","rust","go","docker"}
     return {n:ToolRecord(n,present.get(n,False)) for n in names}
-def test_evidence_kind_stays_explicit():assert serialize(Evidence(EvidenceKind.INFERRED,"x","Java >= 17","manifest",.8))["kind"]=="inferred"
+def test_evidence_kind_stays_explicit():
+    assert {item.name for item in EvidenceKind} == {
+        "DECLARED",
+        "OBSERVED",
+        "INFERRED",
+        "UNKNOWN",
+    }
+    assert "VERIFIED" not in EvidenceKind.__members__
+    assert serialize(Evidence(EvidenceKind.INFERRED, "x", "Java >= 17", "manifest", .8))["kind"] == "inferred"
 def test_capability_explains_missing():
     caps=capabilities({"tools":toolset(javac=True,adb=True,cmake=True)});assert caps["android.native.build"].status.value=="partial";assert "ninja" in caps["android.native.build"].reason
 def test_architecture_rules():

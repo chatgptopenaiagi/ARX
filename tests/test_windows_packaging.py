@@ -63,4 +63,7 @@ def test_installer_documentation_discloses_signing_limit_and_portable_option():
     assert "portable" in documentation.casefold()
     assert "not code-signed" in documentation
     assert "Do not place signing credentials" in documentation
+    assert "Code-signing release gate" in documentation
+    assert "the signing item is `BLOCKED`" in documentation
+    assert "cannot be reported as a valid signature" in documentation
     assert "do not constitute install, upgrade, or uninstall acceptance" in documentation

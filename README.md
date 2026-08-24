@@ -72,13 +72,13 @@ availability != resolution != compatibility != relevance
 relevance != satisfaction != severity != remediation
 ```
 
-### OBSERVED, INFERRED, and VERIFIED reasoning
+### Fact provenance and decision validation
 
-- **OBSERVED** facts come from bounded static reads or fixed, timeout-bound diagnostic probes.
-- **INFERRED** conclusions are produced by deterministic rules and retain the evidence references and confidence that support them.
-- **VERIFIED** relationships or decisions have passed ARX's semantic invariant checks and, where serialized, schema validation. VERIFIED does not mean guaranteed compatibility or a safety verdict.
+Every serialized fact uses exactly one `EvidenceKind`: **DECLARED**, **OBSERVED**, **INFERRED**, or **UNKNOWN**. `Evidence` also retains `source`, `value`, `method`, `confidence`, and an optional `note`, so a consumer can identify the value, provenance, and basis of the claim.
 
-Serialized evidence provenance remains explicit as `declared`, `observed`, `inferred`, or `unknown`. ARX does not turn missing or unsupported information into certainty.
+**VERIFIED is not an `EvidenceKind` and is not a peer per-fact provenance state.** Relations and decisions are validated separately by semantic invariants and, for serialized contracts, schema/composed-state checks. Validation does not rewrite a fact's provenance and does not imply guaranteed compatibility or a safety verdict.
+
+Existing numeric `confidence` values are bounded, hand-authored detector weights. They are not probabilities, measured accuracy, statistical confidence, or substitutes for provenance or validation. See the [confidence semantics and assignment audit](docs/confidence-semantics.md).
 
 ### GREEN, YELLOW, and RED
 
@@ -213,6 +213,9 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 |---|---|
 | [ARX 3.0 RC1 release notes](docs/release-notes-3.0.0-rc1.md) | Changes since ARX 2, compatibility, verification, and RC limitations |
 | [Architecture](docs/architecture.md) | Canonical domain, evidence boundaries, path identity, UI lifecycle, and packaging decisions |
+| [Confidence semantics](docs/confidence-semantics.md) | Numeric assignment inventory and explicit non-probabilistic meaning |
+| [ARX 4 baseline](docs/arx-4-baseline-report.md) | Verified checkout, toolchain, epistemic model, import graph, and baseline tests |
+| [ARX 3 final acceptance](docs/arx-3-final-acceptance.md) | Phase A evidence, blocked gates, artifacts, and release decision |
 | [Project-aware semantic engine](docs/project-semantic-engine.md) | Requirement/provider graphs, execution resolution, readiness, and planning rules |
 | [Security model](docs/security-model.md) | Local inspection, subprocess, privacy, remediation, and external trust boundaries |
 | [AI assistance security](docs/ai-assistance-security.md) | OpenAI, Codex CLI, web research, consent, redaction, and failure behavior |

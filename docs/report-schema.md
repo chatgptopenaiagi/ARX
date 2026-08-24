@@ -6,7 +6,7 @@ Application and data-contract versions are independent.
 - Project DNA and project preflight structured output use schema 0.2 wrappers.
 - `codex --project` uses the AI contract schema 0.2 described in [AI contract 0.2](ai-contract-0.2.md).
 
-Evidence remains declared, observed, inferred, or unknown and carries confidence from zero to one. Project-aware public output replaces the project root with `%PROJECT_ROOT%` and applies existing user-profile redaction.
+Evidence remains declared, observed, inferred, or unknown and carries a bounded confidence field from zero to one. `VERIFIED` is not a fact-provenance value; semantic invariants and schema/composed-state validation apply to relations and decisions without changing the supporting facts. Current confidence numbers are uncalibrated detector-author weights, not probabilities, measured accuracy, or statistical confidence. Project-aware public output replaces the project root with `%PROJECT_ROOT%` and applies existing user-profile redaction. See the [confidence assignment audit](confidence-semantics.md).
 
 Canonical JSON schemas are in `schemas/project-dna.schema.json`, `schemas/project-preflight.schema.json`, and `schemas/ai-contract.schema.json`. GUI widgets are not schemas.
 

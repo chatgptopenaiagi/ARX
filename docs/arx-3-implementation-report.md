@@ -1,8 +1,10 @@
 # ARX 3 implementation report
 
-This report closes the engineering implementation and audit requested by ARX 3 Points 1 through 27. The implementation is complete to the safe limit of this repository and workstation. Points 12, 13, 16, and 24 remain explicitly partial because visible Windows/DPI/accessibility acceptance and installer install/upgrade/uninstall actions were not exercised. No unchecked manual action is represented as tested.
+This report records the engineering implementation and audit requested by ARX 3 Points 1 through 27. The implementation is complete to the safe limit of the original release-candidate work. Points 12, 13, 16, and 24 remain explicitly partial because visible Windows/DPI/accessibility acceptance and installer install/upgrade/uninstall actions were not exercised. No unchecked manual action is represented as tested.
 
-The maintained working checklist and checkpoint history are in [ARX 3 implementation checklist](arx-3-implementation-checklist.md). The release acceptance procedure is in [ARX Desktop manual Windows acceptance checklist](windows-desktop-acceptance.md).
+The maintained working checklist and checkpoint history are in [ARX 3 implementation checklist](arx-3-implementation-checklist.md). The release acceptance procedure is in [ARX Desktop manual Windows acceptance checklist](windows-desktop-acceptance.md). The later authoritative Phase A disposition, including new RC artifact evidence and blocked signing/lifecycle gates, is in [ARX 3 final acceptance](arx-3-final-acceptance.md).
+
+Phase A did not approve or create stable `v3.0.0`. It confirmed that the fact-provenance enum remains `DECLARED / OBSERVED / INFERRED / UNKNOWN`, corrected documentation that treated `VERIFIED` like peer fact provenance, and documented all numeric confidence assignments as uncalibrated detector-author weights.
 
 ## UX problems found
 
@@ -77,16 +79,30 @@ Tests:
 - `tests/test_python_hardening.py`
 - `tests/test_windows_packaging.py`
 
+Phase A final-acceptance additions and corrections:
+
+- `CHANGELOG.md`
+- `docs/ARX_CODEX_MASTER_PROMPT.md`
+- `docs/architecture.md`
+- `docs/arx-3-final-acceptance.md`
+- `docs/arx-4-baseline-report.md`
+- `docs/confidence-semantics.md`
+- `docs/project-semantic-engine.md`
+- `docs/report-schema.md`
+- `src/arx/advisory/context.py`
+- `tests/test_arx.py`
+
 ## Tests and verification
 
 - Baseline before implementation: 105 tests passed on Windows with Python 3.10.8.
-- Final local suite: 170 tests passed on Windows with Python 3.10.8.
-- Windows-equivalent CI topology: 132 non-GUI tests passed together and all 38 GUI nodes passed in fresh Python interpreters; no GUI test was skipped.
+- Original RC final local suite: 170 tests passed on Windows with Python 3.10.8.
+- Phase A final local suite: 146 non-GUI tests passed together and all 38 GUI nodes passed in fresh Python interpreters, for 184 passing tests; no GUI test was skipped.
 - Portable payload: `scripts/build-desktop.ps1` produced `release/ARX-Desktop-win-x64/ARX.exe`.
-- Installer: Inno Setup 7.1.0 compiled `release/ARX-Desktop-Setup-win-x64-v2.0.0.exe` through both an explicit compiler path and automatic discovery.
-- Checksum: the independently calculated installer SHA-256 matched `release/SHA256SUMS-v2.0.0.txt`.
-- Packaging: all four packaging tests passed after the real build.
-- Package metadata: `python -m build` produced an sdist and wheel without warnings; the built wheel installed and imported in CI.
+- Packaged application: both software and project UI smoke workflows exited successfully from the final Phase A payload.
+- Installer: Inno Setup 7.1.0 compiled `release/ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe` through automatic discovery.
+- Checksums: independently calculated executable, ZIP, and installer SHA-256 values matched every entry in `release/SHA256SUMS-v3.0.0-rc1.txt`.
+- Packaging: all five packaging tests passed after the real build.
+- Package metadata: `python -m build` produced an sdist and wheel; strict Twine and wheel-content checks passed, and a fresh Python 3.10 environment outside the checkout installed and exercised the wheel and both entry points.
 - Hosted CI: Windows and Ubuntu jobs pass for Python 3.10, 3.12, and 3.14; Linux GUI coverage runs under Xvfb and Windows GUI nodes run in isolated interpreters because production ARX uses one Tk root per process.
 - CodeQL: Python and GitHub Actions analyses pass.
 - Compilation and diff checks pass.
@@ -113,23 +129,23 @@ Not manually exercised:
 
 | Condition | Result | Evidence or limitation |
 |---:|---|---|
-| 1. Core ARX behavior still works | VERIFIED | Canonical engines and cross-surface semantic tests pass; presentation does not own evidence decisions. |
-| 2. Existing tests pass | VERIFIED | Complete local and hosted suites pass. |
-| 3. New relevant tests pass | VERIFIED | Advisory, UX, packaging, workflow, documentation, and boundary tests pass. |
-| 4. JSON is easy to copy/save | VERIFIED STRUCTURALLY | Read-only JSON panels expose copy, copy-all, find, Ctrl+S, and UTF-8 save tests. |
-| 5. Important text is selectable | VERIFIED STRUCTURALLY | Meaningful report/error surfaces use selectable read-only text widgets. |
-| 6. Standard clipboard shortcuts work | VERIFIED STRUCTURALLY | Ctrl+C/Ctrl+A and exact Unicode clipboard helpers are tested. |
-| 7. Natural context menus exist | VERIFIED STRUCTURALLY | Text, JSON, result, path, evidence, and advisory actions are integration-tested. |
-| 8. Paths expose safe actions | VERIFIED | Existence checks, argument arrays, `shell=False`, and missing/injection-shaped paths are tested. |
-| 9. Colored rows are interactive | VERIFIED STRUCTURALLY | Rows support focus, selection, copy/details, activation, actions, and textual status. |
-| 10. Error details are copyable | VERIFIED STRUCTURALLY | Human summary and selectable technical-details behavior is tested. |
-| 11. File dialogs behave naturally | VERIFIED STRUCTURALLY | Parents, filters, cancellation, and session directory reuse are tested. |
+| 1. Core ARX behavior still works | PASS — AUTOMATED | Canonical engines and cross-surface semantic tests pass; presentation does not own evidence decisions. |
+| 2. Existing tests pass | PASS — AUTOMATED | Complete local and hosted suites pass. |
+| 3. New relevant tests pass | PASS — AUTOMATED | Advisory, UX, packaging, workflow, documentation, and boundary tests pass. |
+| 4. JSON is easy to copy/save | PASS — STRUCTURAL AUTOMATION | Read-only JSON panels expose copy, copy-all, find, Ctrl+S, and UTF-8 save tests. |
+| 5. Important text is selectable | PASS — STRUCTURAL AUTOMATION | Meaningful report/error surfaces use selectable read-only text widgets. |
+| 6. Standard clipboard shortcuts work | PASS — STRUCTURAL AUTOMATION | Ctrl+C/Ctrl+A and exact Unicode clipboard helpers are tested. |
+| 7. Natural context menus exist | PASS — STRUCTURAL AUTOMATION | Text, JSON, result, path, evidence, and advisory actions are integration-tested. |
+| 8. Paths expose safe actions | PASS — AUTOMATED | Existence checks, argument arrays, `shell=False`, and missing/injection-shaped paths are tested. |
+| 9. Colored rows are interactive | PASS — STRUCTURAL AUTOMATION | Rows support focus, selection, copy/details, activation, actions, and textual status. |
+| 10. Error details are copyable | PASS — STRUCTURAL AUTOMATION | Human summary and selectable technical-details behavior is tested. |
+| 11. File dialogs behave naturally | PASS — STRUCTURAL AUTOMATION | Parents, filters, cancellation, and session directory reuse are tested. |
 | 12. Resizing/scrolling work | PARTIAL | Layout, minimum sizes, panes, and scrollbars are structural; visible resize/maximize/DPI acceptance was not run. |
-| 13. Installer/release improved | VERIFIED WITH LIMITATION | Portable/installer/checksum builds pass; installer lifecycle actions were not run. |
-| 14. Manual acceptance documentation exists | VERIFIED | The complete unchecked Windows release checklist is versioned and structurally tested. |
-| 15. Security/redaction remain intact | VERIFIED | Boundary, redaction, path, subprocess, URL, export, workflow, and credential scans pass. |
+| 13. Installer/release improved | PASS — ARTIFACT CONSTRUCTION; LIFECYCLE/SIGNING BLOCKED | Portable/installer/checksum builds pass; isolated lifecycle actions and signing were not completed. |
+| 14. Manual acceptance documentation exists | PASS — AUTOMATED DOCUMENT CHECK | The complete unchecked Windows release checklist is versioned and structurally tested. |
+| 15. Security/redaction remain intact | PASS — AUTOMATED | Boundary, redaction, path, subprocess, URL, export, workflow, and credential scans pass. |
 
-Point 24 therefore remains `PARTIALLY IMPLEMENTED`: condition 12 cannot be truthfully closed without the documented visible Windows acceptance run.
+These labels report how the acceptance condition was checked; they are not `EvidenceKind` values. Point 24 remains `PARTIALLY IMPLEMENTED`: visible window/DPI and screen-reader checks, isolated installer lifecycle, and code signing cannot be truthfully closed from artifact or structural evidence.
 
 ## Point 27 final implementation report
 

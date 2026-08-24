@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — ARX 3 final acceptance
+- Correct the epistemic documentation and advisory prompt so `VERIFIED` is never presented as an `EvidenceKind`; fact provenance remains `DECLARED`, `OBSERVED`, `INFERRED`, or `UNKNOWN`, separate from decision validation.
+- Audit every numeric confidence assignment and document the current values as uncalibrated detector-author weights rather than probabilities, measured accuracy, or statistical confidence.
+- Record the ARX 4 baseline and Phase A acceptance evidence, including blocked visible DPI, screen-reader, isolated installer lifecycle, and code-signing gates.
+- Keep ARX at `3.0.0rc1`; stable `v3.0.0` is not approved while those acceptance gates remain incomplete.
+
 ## 3.0.0rc1 - 2026-08-24
 - Present ARX 3 as Project-Aware Compatibility Intelligence across package metadata, CLI text, the Windows application, portable resources, installer metadata, and public documentation.
 - Complete the Windows desktop interaction layer with reusable selectable reports, contextual evidence/path actions, keyboard behavior, responsive background work, cancellation, errors, state handling, and lifecycle cleanup.
