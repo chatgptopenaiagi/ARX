@@ -124,7 +124,8 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "draft" in workflow and "prerelease" in workflow
     assert "build-release.ps1" in workflow
     assert "-AllowMissingInstaller" not in workflow
-    assert 'python-version: "3.12.13"' in workflow
+    assert "python=3.12.13" in workflow
+    assert "Release Python identity mismatch" in workflow
     assert "packaging/release-build-requirements.txt" in workflow
     assert '"FILE_VERSION=$($Matches[\'base\']).$($Matches[\'number\'])"' in workflow
     assert "$Executable.VersionInfo.FileVersion -ne $env:FILE_VERSION" in workflow
@@ -139,7 +140,7 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert "twine upload" not in workflow.casefold()
     assert SECRET_CONTEXT.search(workflow) is None
-    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 5
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
 
 
 def test_trusted_preflight_attests_but_never_signs_or_publishes():
@@ -149,7 +150,8 @@ def test_trusted_preflight_attests_but_never_signs_or_publishes():
     assert "workflow_dispatch:" in workflow
     assert "pull_request_target" not in workflow
     assert "persist-credentials: false" in workflow
-    assert 'python-version: "3.12.13"' in workflow
+    assert "python=3.12.13" in workflow
+    assert "Release Python identity mismatch" in workflow
     assert "packaging/release-build-requirements.txt" in workflow
     assert "id-token: write" in workflow
     assert "attestations: write" in workflow
@@ -163,7 +165,7 @@ def test_trusted_preflight_attests_but_never_signs_or_publishes():
     assert "signtool sign" not in workflow.casefold()
     assert "contents: write" not in workflow
     assert SECRET_CONTEXT.search(workflow) is None
-    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3
 
 
 def test_codeql_analyzes_python_and_workflows_with_current_pinned_action():
@@ -253,7 +255,8 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "push:" not in workflow
     assert "pull_request" not in workflow
     assert "persist-credentials: false" in workflow
-    assert 'python-version: "3.12.13"' in workflow
+    assert "python=3.12.13" in workflow
+    assert "Release Python identity mismatch" in workflow
     assert "packaging/release-build-requirements.txt" in workflow
     assert "--require-security-bundle" in workflow
     assert "Core artifact is not bit-for-bit reproducible" in workflow
@@ -268,4 +271,4 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "signtool sign" not in workflow.casefold()
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert SECRET_CONTEXT.search(workflow) is None
-    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3

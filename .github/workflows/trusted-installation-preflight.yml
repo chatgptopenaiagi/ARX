@@ -42,12 +42,26 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12.13"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+      - name: Set up locked release Python
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Conda = Join-Path $env:CONDA 'Scripts\conda.exe'
+          if (-not (Test-Path -LiteralPath $Conda -PathType Leaf)) {
+              throw 'The documented GitHub Windows image Miniconda installation is unavailable.'
+          }
+          $PythonRoot = Join-Path $env:RUNNER_TEMP 'arx-release-python'
+          & $Conda create --yes --quiet --prefix $PythonRoot --override-channels --channel defaults python=3.12.13 pip=26.2.1
+          if ($LASTEXITCODE -ne 0) {
+              throw "Unable to provision the locked CPython 3.12.13 release environment (exit $LASTEXITCODE)."
+          }
+          $Python = Join-Path $PythonRoot 'python.exe'
+          $Identity = & $Python -c "import platform, struct; print(platform.python_version()); print(struct.calcsize('P') * 8)"
+          if ($LASTEXITCODE -ne 0 -or $Identity.Count -ne 2 -or $Identity[0] -ne '3.12.13' -or $Identity[1] -ne '64') {
+              throw "Release Python identity mismatch: $($Identity -join ' / ')."
+          }
+          $PythonRoot | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          (Join-Path $PythonRoot 'Scripts') | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
 
       - name: Install release and audit tooling
         shell: pwsh
