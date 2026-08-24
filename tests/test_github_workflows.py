@@ -1,7 +1,6 @@
 import re
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 FULL_SHA_ACTION = re.compile(r"^\s*uses:\s+[^\s@]+@[0-9a-f]{40}(?:\s+#.*)?$", re.MULTILINE)
@@ -147,5 +146,35 @@ def test_codeql_analyzes_python_and_workflows_with_current_pinned_action():
     assert "github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9" in workflow
     assert "github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9" in workflow
     assert "pull_request_target" not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3
+
+
+def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
+    workflow = _read("security-gate.yml")
+    actions = ANY_ACTION.findall(workflow)
+
+    assert "push:" in workflow
+    assert "pull_request:" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "pull_request_target" not in workflow
+    assert "permissions:\n  contents: read" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "pip-audit==2.10.1" in workflow
+    assert "--vulnerability-service pypi" in workflow
+    assert "--vulnerability-service osv" in workflow
+    assert "bandit==1.9.4" in workflow
+    assert "semgrep==1.174.0" in workflow
+    assert "cyclonedx-bom==7.3.1" in workflow
+    assert "detect-secrets==1.5.0" in workflow
+    assert "scan-tracked-secrets.py" in workflow
+    assert "output-reproducible" in workflow
+    assert "security-results/*" in workflow
+    assert "id-token: write" not in workflow
+    assert "contents: write" not in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert "gh release upload" not in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert "twine upload" not in workflow.casefold()
     assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3
