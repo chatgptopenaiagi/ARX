@@ -227,9 +227,11 @@ jobs:
           set -euo pipefail
           cd assets
           sha256sum --check SHA256SUMS.txt
-          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .draft)" = "true"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .prerelease)" = "true"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets | length')" = "0"
+          release_ids="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select(.tag_name == \"$RELEASE_TAG\" and .draft == true and .prerelease == true) | .id")"
+          test "$(printf '%s\n' "$release_ids" | sed '/^$/d' | wc -l)" = "1"
+          release_id="$(printf '%s\n' "$release_ids" | sed '/^$/d')"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" --jq '.assets | length')" = "0"
           mapfile -t files < <(find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print | sort)
           files+=(./SHA256SUMS.txt)
           gh release upload "$RELEASE_TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY"
