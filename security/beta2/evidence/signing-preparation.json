@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "record_type": "beta2_signing_preparation",
+  "scope": "provider-neutral production Authenticode architecture",
+  "authenticode_architecture": "READY_PRE_SIGNING",
+  "production_signing_certificate": "BLOCKED_NOT_CONFIGURED",
+  "signing_provider": "NOT_SELECTED",
+  "test_signing": "NOT_PERFORMED",
+  "production_signing": "NOT_PERFORMED",
+  "trust_store_modified": false,
+  "beta1_modified": false,
+  "verification_tools": [
+    "Get-AuthenticodeSignature",
+    "signtool verify /pa /all /tw /v"
+  ],
+  "policy_files": [
+    "security/signing/signing-policy.schema.json",
+    "security/signing/signing-policy.template.json"
+  ],
+  "limitations": [
+    "No production provider or Windows-trusted publisher identity is configured.",
+    "UNSIGNED_EXPECTED_PRE_SIGNING is not a signed or publisher-trusted result.",
+    "SmartScreen and Smart App Control behavior requires direct clean-machine observation."
+  ]
+}

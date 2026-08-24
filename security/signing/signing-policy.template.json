@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "state": "UNCONFIGURED",
+  "signing_provider": null,
+  "certificate_selector": null,
+  "timestamp_url": null,
+  "expected_publisher_subject": null,
+  "expected_issuer_subjects": [],
+  "signing_algorithm": "SHA256",
+  "timestamp_algorithm": "SHA256",
+  "verification_policy": {
+    "require_trusted_chain": true,
+    "require_rfc3161_timestamp": true,
+    "require_exact_publisher_subject": true,
+    "require_approved_issuer": true,
+    "require_signtool_policy_verification": true,
+    "fail_on_verification_warning": true
+  }
+}
