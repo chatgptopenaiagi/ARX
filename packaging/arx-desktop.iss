@@ -42,7 +42,10 @@ LicenseFile=..\LICENSE
 OutputDir={#MyOutputDir}
 OutputBaseFilename=ARX-Desktop-Setup-win-x64-v{#MyArtifactVersion}
 Compression=lzma2/max
+CompressionThreads=1
+LZMANumBlockThreads=1
 SolidCompression=yes
+TimeStampsInUTC=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppDisplayName} (Windows x64)
@@ -61,10 +64,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
 
 [Files]
-Source: "{#MyAppSourceDir}\ARX.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyAppSourceDir}\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyAppSourceDir}\README.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "{#MyAppSourceDir}\ARX.exe"; DestDir: "{app}"; Flags: ignoreversion notimestamp
+Source: "{#MyAppSourceDir}\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs notimestamp sortfilesbyname
+Source: "{#MyAppSourceDir}\README.txt"; DestDir: "{app}"; Flags: ignoreversion notimestamp
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion notimestamp
 
 [Icons]
 Name: "{group}\ARX 4"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"

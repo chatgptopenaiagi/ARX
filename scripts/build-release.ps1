@@ -2,6 +2,7 @@ param(
     [string]$PythonExecutable = 'python',
     [string]$Version = '4.0.0b1',
     [string]$ReleaseRoot,
+    [long]$SourceDateEpoch = 0,
     [switch]$AllowMissingInstaller
 )
 
@@ -17,6 +18,8 @@ $ArtifactVersion = if ($VersionMatch.Groups['kind'].Success) {
     $BaseVersion
 }
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
+$SourceDateEpoch = & (Join-Path $PSScriptRoot 'resolve-source-date-epoch.ps1') `
+    -ProjectRoot $ProjectRoot -RequestedEpoch $SourceDateEpoch
 $ReleaseBase = Join-Path $ProjectRoot 'release'
 if (-not $ReleaseRoot) {
     $ReleaseRoot = Join-Path $ReleaseBase "v$ArtifactVersion"
@@ -32,6 +35,13 @@ if (Test-Path -LiteralPath $ReleaseRoot) {
 New-Item -ItemType Directory -Path $ReleaseRoot -Force | Out-Null
 
 $PythonPath = (Get-Command $PythonExecutable -ErrorAction Stop).Source
+$PreviousSourceDateEpoch = [Environment]::GetEnvironmentVariable('SOURCE_DATE_EPOCH', 'Process')
+$PreviousPythonHashSeed = [Environment]::GetEnvironmentVariable('PYTHONHASHSEED', 'Process')
+$PreviousTimezone = [Environment]::GetEnvironmentVariable('TZ', 'Process')
+try {
+$env:SOURCE_DATE_EPOCH = [string]$SourceDateEpoch
+$env:PYTHONHASHSEED = '0'
+$env:TZ = 'UTC'
 $SourceVersion = & $PythonPath -c "import sys; sys.path.insert(0, 'src'); import arx; print(arx.__version__)"
 if ($LASTEXITCODE -ne 0 -or $SourceVersion -ne $Version) {
     throw "Source package version '$SourceVersion' does not match requested release version '$Version'."
@@ -40,11 +50,14 @@ if ($LASTEXITCODE -ne 0 -or $SourceVersion -ne $Version) {
 & $PythonPath -m build --outdir $ReleaseRoot
 if ($LASTEXITCODE -ne 0) { throw "Python distribution build failed with exit code $LASTEXITCODE." }
 
-& (Join-Path $PSScriptRoot 'build-desktop.ps1') -PythonExecutable $PythonPath -Version $Version -ReleaseRoot $ReleaseRoot
-& (Join-Path $PSScriptRoot 'package-desktop-release.ps1') -Version $Version -ReleaseRoot $ReleaseRoot
+& (Join-Path $PSScriptRoot 'build-desktop.ps1') -PythonExecutable $PythonPath -Version $Version `
+    -ReleaseRoot $ReleaseRoot -SourceDateEpoch $SourceDateEpoch
+& (Join-Path $PSScriptRoot 'package-desktop-release.ps1') -Version $Version `
+    -ReleaseRoot $ReleaseRoot -SourceDateEpoch $SourceDateEpoch
 
 try {
-    & (Join-Path $PSScriptRoot 'build-installer.ps1') -Version $Version -ReleaseRoot $ReleaseRoot
+    & (Join-Path $PSScriptRoot 'build-installer.ps1') -Version $Version `
+        -ReleaseRoot $ReleaseRoot -SourceDateEpoch $SourceDateEpoch
 } catch {
     if ($AllowMissingInstaller -and $_.Exception.Message -like '*ISCC.exe*was not found*') {
         Write-Warning 'Inno Setup is unavailable; the installer artifact was not built.'
@@ -57,4 +70,9 @@ try {
 & $PythonPath (Join-Path $PSScriptRoot 'verify-release-assets.py') --release-root $ReleaseRoot --version $Version --artifact-version $ArtifactVersion
 if ($LASTEXITCODE -ne 0) { throw "Release artifact verification failed with exit code $LASTEXITCODE." }
 
-Write-Host "ARX $Version release assets built and verified under $ReleaseRoot"
+Write-Output "ARX $Version release assets built and verified under $ReleaseRoot"
+} finally {
+    [Environment]::SetEnvironmentVariable('SOURCE_DATE_EPOCH', $PreviousSourceDateEpoch, 'Process')
+    [Environment]::SetEnvironmentVariable('PYTHONHASHSEED', $PreviousPythonHashSeed, 'Process')
+    [Environment]::SetEnvironmentVariable('TZ', $PreviousTimezone, 'Process')
+}

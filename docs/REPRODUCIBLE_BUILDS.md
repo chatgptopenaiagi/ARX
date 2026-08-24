@@ -1,0 +1,41 @@
+# ARX reproducible-build policy
+
+ARX distinguishes raw byte reproducibility from structural equivalence. A successful build is not automatically reproducible, and structural comparison must never be labeled bit-for-bit equality.
+
+## Controlled inputs
+
+Release builds derive `SOURCE_DATE_EPOCH` from the checked-out Git commit timestamp unless an explicit, validated epoch is supplied. This preserves source provenance; it does not invent or rewrite a timestamp. The build scripts also set `PYTHONHASHSEED=0` and `TZ=UTC` for child build tools, then restore the caller's environment.
+
+The release pipeline uses these controls:
+
+- Python wheel and sdist build under the controlled environment;
+- PyInstaller `SOURCE_DATE_EPOCH` support for PE build timestamps and `--noupx` to prevent an ambient UPX installation from changing output;
+- an ordinally sorted portable ZIP with every member timestamp normalized to the source commit time;
+- fixed checksum-manifest ordering;
+- Inno Setup single-threaded LZMA match finding and block compression;
+- Inno Setup `notimestamp` file flags and `TimeStampsInUTC=yes`.
+
+Inno Setup documents `notimestamp` specifically as a reproducible-build aid: <https://jrsoftware.org/ishelp/topic_filessection.htm>. Its compression-thread controls are documented at <https://jrsoftware.org/ishelp/topic_setup_compressionthreads.htm>.
+
+## Required experiment
+
+Before release publication, build the same exact candidate commit twice in independent clean worktrees and independent virtual environments with identical frozen tool versions. For every public artifact, record:
+
+- filename, byte length, and SHA-256 from each build;
+- whether the hashes are identical;
+- structural comparison method when hashes differ;
+- the precise remaining source of nondeterminism;
+- whether signing has changed the bytes.
+
+Allowed classifications are:
+
+- `BIT_FOR_BIT_REPRODUCIBLE`;
+- `STRUCTURALLY_EQUIVALENT`;
+- `NOT_REPRODUCIBLE`;
+- `UNRESOLVED`.
+
+The portable executable is also compared separately from its containing ZIP. `SHA256SUMS.txt` is classified independently even though its values necessarily follow the artifact bytes.
+
+## Signing boundary
+
+The reproducibility experiment applies to unsigned pre-signing candidates. Production Authenticode and RFC3161 timestamping intentionally change bytes. Final public hashes and attestations must therefore be generated only after signing, and must bind the actual signed bytes. ARX does not patch PE, ZIP, or installer metadata after a build merely to force hashes to match.
