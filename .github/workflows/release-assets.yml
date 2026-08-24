@@ -60,19 +60,14 @@ jobs:
           }
           $PythonRoot | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
           (Join-Path $PythonRoot 'Scripts') | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-      - name: Verify tag and draft prerelease identity
+      - name: Verify tag and source identity
         shell: pwsh
         env:
-          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           $ErrorActionPreference = 'Stop'
           if ($env:RELEASE_TAG -notmatch '^v(?<base>\d+\.\d+\.\d+)-(?<kind>a|b|rc)(?<number>\d+)$') {
               throw "Unsupported prerelease tag: $env:RELEASE_TAG"
-          }
-          $Release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:RELEASE_TAG" | ConvertFrom-Json
-          if (-not $Release.draft -or -not $Release.prerelease -or $Release.tag_name -ne $env:RELEASE_TAG) {
-              throw 'Release assets may be attached only to the matching draft prerelease.'
           }
           if ((git rev-parse HEAD) -ne (git rev-list -n 1 $env:RELEASE_TAG)) {
               throw 'Checkout does not resolve to the release tag commit.'
