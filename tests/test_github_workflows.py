@@ -154,6 +154,14 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 5
 
 
+def test_beta2_release_trigger_separates_attachment_from_reproduction():
+    workflow = _read("beta2-release-assets-trigger.yml")
+
+    assert "release-v4.0.0-b2-assets" in workflow
+    assert "release-v4.0.0-b2-repro-*" in workflow
+    assert "attach_assets: ${{ github.ref_name == 'release-v4.0.0-b2-assets' }}" in workflow
+
+
 def test_trusted_preflight_attests_but_never_signs_or_publishes():
     workflow = _read("trusted-installation-preflight.yml")
     actions = ANY_ACTION.findall(workflow)
