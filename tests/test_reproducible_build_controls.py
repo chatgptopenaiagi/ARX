@@ -51,6 +51,31 @@ def test_installer_uses_reproducibility_controls():
     assert "sortfilesbyname" in installer
 
 
+def test_windows_release_toolchain_is_exact_and_created_outside_checkout():
+    lock = (ROOT / "packaging" / "release-build-requirements.txt").read_text(encoding="utf-8")
+    environment = _read("new-release-environment.ps1")
+    requirements = [line for line in lock.splitlines() if line and not line.startswith("#")]
+
+    assert requirements == sorted(requirements, key=str.casefold)
+    assert len(requirements) == len(set(map(str.casefold, requirements)))
+    assert all("==" in requirement for requirement in requirements)
+    assert all(marker not in lock for marker in (">=", "~=", " -e ", "https://", "http://"))
+    for requirement in (
+        "build==1.5.0",
+        "cyclonedx-bom==7.3.1",
+        "pyinstaller==6.22.2",
+        "setuptools==84.0.0",
+        "twine==7.0.0",
+        "wheel==0.48.0",
+    ):
+        assert requirement in requirements
+    assert "3.12.13" in environment
+    assert "release virtual environment must be outside" in environment.casefold()
+    assert "Refusing to overwrite" in environment
+    assert "--requirement $Requirements" in environment
+    assert "-m pip check" in environment
+
+
 @pytest.mark.skipif(os.name != "nt", reason="PowerShell ZIP implementation is Windows release tooling")
 def test_deterministic_zip_ignores_source_creation_order_and_mtime(tmp_path):
     pwsh = shutil.which("pwsh") or shutil.which("powershell")

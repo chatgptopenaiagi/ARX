@@ -39,7 +39,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.12"
+          python-version: "3.12.13"
           cache: pip
           cache-dependency-path: pyproject.toml
 
@@ -47,9 +47,8 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -e ".[dev,build,release]"
-          python -m pip install pip-audit bandit cyclonedx-bom
+          python -m pip install --disable-pip-version-check --requirement packaging/release-build-requirements.txt
+          python -m pip install "pip-audit==2.10.1" "bandit==1.9.4"
 
       - name: Compile, architecture, tests, and tracked-secret scan
         shell: pwsh

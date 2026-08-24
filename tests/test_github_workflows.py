@@ -123,6 +123,8 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "persist-credentials: false" in workflow
     assert "draft" in workflow and "prerelease" in workflow
     assert "build-release.ps1" in workflow
+    assert 'python-version: "3.12.13"' in workflow
+    assert "packaging/release-build-requirements.txt" in workflow
     assert '"FILE_VERSION=$($Matches[\'base\']).$($Matches[\'number\'])"' in workflow
     assert "$Executable.VersionInfo.FileVersion -ne $env:FILE_VERSION" in workflow
     assert "scan-tracked-secrets.py" in workflow
@@ -146,6 +148,8 @@ def test_trusted_preflight_attests_but_never_signs_or_publishes():
     assert "workflow_dispatch:" in workflow
     assert "pull_request_target" not in workflow
     assert "persist-credentials: false" in workflow
+    assert 'python-version: "3.12.13"' in workflow
+    assert "packaging/release-build-requirements.txt" in workflow
     assert "id-token: write" in workflow
     assert "attestations: write" in workflow
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow

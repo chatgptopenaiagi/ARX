@@ -6,6 +6,8 @@ ARX distinguishes raw byte reproducibility from structural equivalence. A succes
 
 Release builds derive `SOURCE_DATE_EPOCH` from the checked-out Git commit timestamp unless an explicit, validated epoch is supplied. This preserves source provenance; it does not invent or rewrite a timestamp. The build scripts also set `PYTHONHASHSEED=0` and `TZ=UTC` for child build tools, then restore the caller's environment.
 
+Windows release builds use CPython 3.12.13 x64 and the exact tool versions in `packaging/release-build-requirements.txt`. `scripts/new-release-environment.ps1` refuses to overwrite an environment or create one inside the checkout, verifies the base interpreter identity, installs that lock, and runs `pip check`. The two-build evidence records the resolved versions independently; a toolchain mismatch blocks comparison rather than producing a reproducibility classification.
+
 The release pipeline uses these controls:
 
 - Python wheel and sdist build under the controlled environment;
