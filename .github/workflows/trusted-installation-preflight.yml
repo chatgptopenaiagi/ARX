@@ -1,0 +1,164 @@
+name: Trusted installation preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit, branch, or future prerelease tag to evaluate
+        required: true
+        default: arx4-trusted-installation
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: trusted-installation-preflight-${{ inputs.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Build, verify, and attest unsigned candidates
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Check out requested ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install release and audit tooling
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install -e ".[dev,build,release]"
+          python -m pip install pip-audit bandit cyclonedx-bom
+
+      - name: Compile, architecture, tests, and tracked-secret scan
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m compileall -q src tests scripts
+          python scripts/check-architecture.py
+          python -m pytest --ignore=tests/test_desktop.py --ignore=tests/test_desktop_advisory.py --ignore=tests/test_desktop_provider_settings.py --ignore=tests/test_desktop_ux.py
+          python scripts/run-isolated-gui-tests.py
+          python scripts/scan-tracked-secrets.py
+
+      - name: Dependency audit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          New-Item -ItemType Directory -Force security-results | Out-Null
+          python -m pip_audit -f json -o security-results/pip-audit.json
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "pip-audit reported findings. Preserve the report for review."
+          }
+          exit 0
+
+      - name: Bandit SAST
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          bandit -r src -f json -o security-results/bandit.json
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Bandit reported findings. Preserve the report for review."
+          }
+          exit 0
+
+      - name: Build unsigned release candidates
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Version = python -c "import sys; sys.path.insert(0, 'src'); import arx; print(arx.__version__)"
+          .\scripts\build-release.ps1 -Version $Version -AllowMissingInstaller
+          "PACKAGE_VERSION=$Version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Verify Python distributions
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Root = Get-ChildItem release -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          python -m twine check --strict "$($Root.FullName)\*.whl" "$($Root.FullName)\*.tar.gz"
+          python -m check_wheel_contents "$($Root.FullName)\*.whl"
+
+      - name: Verify candidates are unsigned before human signing gate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Root = Get-ChildItem release -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          $Exe = Get-Item -LiteralPath "$($Root.FullName)\ARX-Desktop-win-x64\ARX.exe"
+          $Status = (Get-AuthenticodeSignature -LiteralPath $Exe.FullName).Status
+          if ($Status -ne 'NotSigned') {
+            throw "Preflight expected an unsigned candidate but ARX.exe status is $Status"
+          }
+          $Installer = Get-ChildItem -LiteralPath $Root.FullName -File -Filter 'ARX-Desktop-Setup-win-x64-*.exe' | Select-Object -First 1
+          if ($Installer) {
+            $InstallerStatus = (Get-AuthenticodeSignature -LiteralPath $Installer.FullName).Status
+            if ($InstallerStatus -ne 'NotSigned') {
+              throw "Preflight expected an unsigned installer candidate but status is $InstallerStatus"
+            }
+          }
+
+      - name: Stage unsigned candidates for review
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Root = Get-ChildItem release -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          $Stage = Join-Path $env:RUNNER_TEMP 'trusted-installation-preflight'
+          New-Item -ItemType Directory -Force $Stage | Out-Null
+          Get-ChildItem -LiteralPath $Root.FullName -File | Copy-Item -Destination $Stage
+          if (Test-Path -LiteralPath "$($Root.FullName)\ARX-Desktop-win-x64") {
+            Compress-Archive -Path "$($Root.FullName)\ARX-Desktop-win-x64" -DestinationPath (Join-Path $Stage 'ARX-Desktop-win-x64-preflight.zip') -Force
+          }
+          Get-ChildItem -LiteralPath $Stage -File | ForEach-Object {
+            $h = Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
+            "$($h.Hash)  $($_.Name)"
+          } | Set-Content -LiteralPath (Join-Path $Stage 'PRE_SIGN_SHA256SUMS.txt') -Encoding ascii
+
+      - name: Upload unsigned preflight bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: trusted-installation-preflight-${{ github.run_id }}
+          path: ${{ runner.temp }}/trusted-installation-preflight/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Attest unsigned preflight subjects
+        uses: actions/attest-build-provenance@0f67c3f02c4d8a6b94f0a1f14eb3f479768fe227 # v4.1.1
+        with:
+          subject-path: ${{ runner.temp }}/trusted-installation-preflight/*
+
+      - name: Human signing gate reminder
+        shell: pwsh
+        run: |
+          @'
+          TRUSTED INSTALLATION PREFLIGHT COMPLETE.
+
+          This workflow intentionally DOES NOT:
+          - sign ARX.exe
+          - sign the installer
+          - modify a release
+          - publish GitHub release assets
+          - publish PyPI/TestPyPI
+          - install certificates into Windows trust stores
+
+          Production signing must occur only in a separate protected workflow/environment
+          after explicit human approval and after a real trusted signing identity is configured.
+          '@ | Write-Host
