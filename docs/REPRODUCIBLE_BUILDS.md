@@ -10,7 +10,8 @@ Windows release builds use CPython 3.12.13 x64 and the exact tool versions in `p
 
 The release pipeline uses these controls:
 
-- Python wheel and sdist build under the controlled environment;
+- Python wheel build under the controlled environment;
+- bounded sdist reconstruction with ordinal member ordering, source-commit timestamps, zeroed portable owner identity, preserved file bytes/modes, and rejection of traversal or unsupported member types;
 - PyInstaller `SOURCE_DATE_EPOCH` support for PE build timestamps and `--noupx` to prevent an ambient UPX installation from changing output;
 - an ordinally sorted portable ZIP with every member timestamp normalized to the source commit time;
 - fixed checksum-manifest ordering;
@@ -36,7 +37,7 @@ Allowed classifications are:
 - `NOT_REPRODUCIBLE`;
 - `UNRESOLVED`.
 
-The portable executable is also compared separately from its containing ZIP. `SHA256SUMS.txt` is classified independently even though its values necessarily follow the artifact bytes.
+The portable executable is also compared separately from its containing ZIP. `SHA256SUMS.txt` is classified independently even though its values necessarily follow the artifact bytes. Deterministic sdist reconstruction changes archive metadata only during the candidate build; it does not rewrite a published artifact or alter source-file content.
 
 ## Signing boundary
 

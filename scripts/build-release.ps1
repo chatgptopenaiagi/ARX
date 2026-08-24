@@ -49,6 +49,10 @@ if ($LASTEXITCODE -ne 0 -or $SourceVersion -ne $Version) {
 
 & $PythonPath -m build --outdir $ReleaseRoot
 if ($LASTEXITCODE -ne 0) { throw "Python distribution build failed with exit code $LASTEXITCODE." }
+& $PythonPath (Join-Path $PSScriptRoot 'normalize-sdist.py') `
+    --sdist (Join-Path $ReleaseRoot "arx_prescanner-$Version.tar.gz") `
+    --version $Version --source-date-epoch $SourceDateEpoch
+if ($LASTEXITCODE -ne 0) { throw "Deterministic sdist normalization failed with exit code $LASTEXITCODE." }
 
 & (Join-Path $PSScriptRoot 'build-desktop.ps1') -PythonExecutable $PythonPath -Version $Version `
     -ReleaseRoot $ReleaseRoot -SourceDateEpoch $SourceDateEpoch

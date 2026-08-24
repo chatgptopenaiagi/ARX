@@ -1,7 +1,10 @@
 import hashlib
+import io
 import os
 import shutil
 import subprocess
+import sys
+import tarfile
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,6 +31,94 @@ def test_release_build_controls_source_epoch_hash_seed_and_timezone():
     assert "--noupx" in desktop
     assert "SetEnvironmentVariable" in release
     assert "SetEnvironmentVariable" in desktop
+    assert "normalize-sdist.py" in release
+    assert "--source-date-epoch $SourceDateEpoch" in release
+
+
+def _write_sdist(path, *, version, epoch, reverse):
+    root = f"arx_prescanner-{version}"
+    entries = [(f"{root}/", None), (f"{root}/a.txt", b"a"), (f"{root}/z.txt", b"z")]
+    if reverse:
+        entries.reverse()
+    with tarfile.open(path, "w:gz", format=tarfile.PAX_FORMAT) as archive:
+        for name, content in entries:
+            info = tarfile.TarInfo(name)
+            info.mtime = epoch
+            info.mode = 0o755 if content is None else 0o644
+            if content is None:
+                info.type = tarfile.DIRTYPE
+                archive.addfile(info)
+            else:
+                info.size = len(content)
+                archive.addfile(info, io.BytesIO(content))
+
+
+def test_sdist_normalization_ignores_member_order_and_archive_timestamps(tmp_path):
+    version = "4.0.0b2"
+    source_epoch = 1_700_000_000
+    archives = []
+    for index in (1, 2):
+        directory = tmp_path / str(index)
+        directory.mkdir()
+        archive = directory / f"arx_prescanner-{version}.tar.gz"
+        _write_sdist(
+            archive,
+            version=version,
+            epoch=source_epoch + index * 100,
+            reverse=index == 2,
+        )
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPTS / "normalize-sdist.py"),
+                "--sdist",
+                str(archive),
+                "--version",
+                version,
+                "--source-date-epoch",
+                str(source_epoch),
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        archives.append(archive)
+
+    assert archives[0].read_bytes() == archives[1].read_bytes()
+    with tarfile.open(archives[0], "r:gz") as archive:
+        assert archive.getnames() == sorted(archive.getnames())
+        assert all(member.mtime == source_epoch for member in archive.getmembers())
+
+
+def test_sdist_normalization_rejects_traversal(tmp_path):
+    version = "4.0.0b2"
+    archive = tmp_path / f"arx_prescanner-{version}.tar.gz"
+    with tarfile.open(archive, "w:gz") as output:
+        info = tarfile.TarInfo(f"arx_prescanner-{version}/../escape.txt")
+        info.size = 1
+        output.addfile(info, io.BytesIO(b"x"))
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS / "normalize-sdist.py"),
+            "--sdist",
+            str(archive),
+            "--version",
+            version,
+            "--source-date-epoch",
+            "1700000000",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "traversing" in result.stderr
 
 
 def test_portable_packaging_uses_deterministic_zip_not_compress_archive():
