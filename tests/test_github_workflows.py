@@ -115,6 +115,8 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     actions = ANY_ACTION.findall(workflow)
 
     assert "workflow_dispatch:" in workflow
+    assert "attach_assets:" in workflow
+    assert "if: inputs.attach_assets" in workflow
     assert "release:\n" not in workflow
     assert "push:" not in workflow
     assert "pull_request" not in workflow
