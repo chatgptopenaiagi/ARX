@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 FULL_SHA_ACTION = re.compile(r"^\s*uses:\s+[^\s@]+@[0-9a-f]{40}(?:\s+#.*)?$", re.MULTILINE)
 ANY_ACTION = re.compile(r"^\s*uses:\s+(.+)$", re.MULTILINE)
+SECRET_CONTEXT = re.compile(r"\$\{\{\s*secrets\.", re.IGNORECASE)
 
 
 def _read(name):
@@ -20,7 +21,7 @@ def test_ci_uses_least_privilege_pinned_actions_and_safe_triggers():
     assert "workflow_run" not in workflow
     assert "contents: read" in workflow
     assert "persist-credentials: false" in workflow
-    assert "secrets." not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
 
 
@@ -52,7 +53,7 @@ def test_package_validation_builds_but_normal_ci_never_publishes():
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert "id-token: write" not in workflow
     assert "twine upload" not in workflow.casefold()
-    assert "secrets." not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
 
 
 def test_python_publish_workflow_is_manual_targeted_pinned_and_oidc_only():
@@ -78,7 +79,7 @@ def test_python_publish_workflow_is_manual_targeted_pinned_and_oidc_only():
     assert "environment:\n      name: pypi" in workflow
     assert "if: inputs.target == 'testpypi'" in workflow
     assert "if: inputs.target == 'production'" in workflow
-    assert "secrets." not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
     assert "password:" not in workflow
     assert "TWINE_PASSWORD" not in workflow
     assert "skip-existing" not in workflow
@@ -130,7 +131,7 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "id-token: write" not in workflow
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert "twine upload" not in workflow.casefold()
-    assert "${{ secrets." not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
 
 
@@ -146,5 +147,5 @@ def test_codeql_analyzes_python_and_workflows_with_current_pinned_action():
     assert "github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9" in workflow
     assert "github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9" in workflow
     assert "pull_request_target" not in workflow
-    assert "secrets." not in workflow
+    assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 3
