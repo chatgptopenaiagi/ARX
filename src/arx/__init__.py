@@ -1,7 +1,7 @@
 """ARX compatibility intelligence."""
 
-PRODUCT_NAME = "ARX 3"
-RELEASE_NAME = "ARX 3.0 Release Candidate"
-__version__ = "3.0.0rc1"
+PRODUCT_NAME = "ARX 4"
+RELEASE_NAME = "ARX 4.0.0 Beta 1"
+__version__ = "4.0.0b1"
 
 __all__ = ["PRODUCT_NAME", "RELEASE_NAME", "__version__"]

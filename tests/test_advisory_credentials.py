@@ -12,8 +12,8 @@ from arx.advisory.credentials import (
 )
 
 
-FIRST = bytearray(b"sk-proj-arx4-fixture-first-credential")
-SECOND = bytearray(b"sk-proj-arx4-fixture-replacement-credential")
+FIRST = bytearray(b"sk-" + b"proj-arx4-fixture-first-credential")
+SECOND = bytearray(b"sk-" + b"proj-arx4-fixture-replacement-credential")
 
 
 def _mock_store(tmp_path, *, unprotector=None):

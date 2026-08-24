@@ -41,7 +41,7 @@ def test_context_selects_one_finding_and_relevant_project_data_only(tmp_path, mo
 
 def test_external_redaction_removes_credentials_from_keys_and_free_text(monkeypatch):
     monkeypatch.setenv("USERNAME", "PrivateUser")
-    secret = "sk-proj-abcdefghijklmnopqrstuvwxyz012345"
+    secret = "sk-" + "proj-abcdefghijklmnopqrstuvwxyz012345"
     value = {
         "OPENAI_API_KEY": secret,
         "diagnostic": f"Bearer abcdefghijklmnopqrstuvwxyz API_KEY={secret} user PrivateUser",

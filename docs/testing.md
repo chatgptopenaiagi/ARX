@@ -40,6 +40,6 @@ The Python package gate keeps these claims separate:
 - `python -m twine check --strict` validates package metadata and PyPI README rendering compatibility;
 - installing the wheel into a fresh environment outside the checkout proves that its imports and console entry points do not depend on editable local source;
 - a TestPyPI upload plus a new TestPyPI environment proves the Trusted Publishing rehearsal and index installation path;
-- production publication is verified only by installing `arx-prescanner==3.0.0rc1` from production PyPI in another fresh environment.
+- production publication is verified only by comparing the production-index wheel and source distribution with the reviewed GitHub Release files and installing the exact approved version in another fresh environment.
 
-The dedicated publishing workflow builds once from the verified release tag and passes the same workflow artifact through TestPyPI and PyPI. Only its publishing jobs have OIDC permission. See [Python package publishing](python-package-publishing.md) for the trust boundary and release procedure.
+The manual publishing workflow consumes the reviewed GitHub Release wheel and source distribution. A TestPyPI-target dispatch publishes and verifies them first; a separate production-target dispatch requires the exact files to already exist on TestPyPI before it can reach the protected production environment. Only the mutually exclusive publishing jobs have OIDC permission. A GitHub Release event cannot trigger either index. See [Python package publishing](python-package-publishing.md) for the trust boundary and release procedure.

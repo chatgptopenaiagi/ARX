@@ -1,12 +1,35 @@
 param(
-    [string]$PythonExecutable = 'python'
+    [string]$PythonExecutable = 'python',
+    [string]$Version = '4.0.0b1',
+    [string]$ReleaseRoot
 )
 
 $ErrorActionPreference = 'Stop'
+$VersionMatch = [regex]::Match($Version, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:(?<kind>a|b|rc)(?<number>\d+))?$')
+if (-not $VersionMatch.Success) {
+    throw 'Version must use the package form X.Y.Z, X.Y.ZaN, X.Y.ZbN, or X.Y.ZrcN.'
+}
+$BaseVersion = "$($VersionMatch.Groups['major'].Value).$($VersionMatch.Groups['minor'].Value).$($VersionMatch.Groups['patch'].Value)"
+$ArtifactVersion = if ($VersionMatch.Groups['kind'].Success) {
+    "$BaseVersion-$($VersionMatch.Groups['kind'].Value)$($VersionMatch.Groups['number'].Value)"
+} else {
+    $BaseVersion
+}
+
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$ReleaseRoot = Join-Path $ProjectRoot 'release'
+$ReleaseBase = Join-Path $ProjectRoot 'release'
+if (-not $ReleaseRoot) {
+    $ReleaseRoot = Join-Path $ReleaseBase "v$ArtifactVersion"
+}
+$ReleaseBaseFullPath = [IO.Path]::GetFullPath($ReleaseBase).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+$ReleaseRoot = [IO.Path]::GetFullPath($ReleaseRoot).TrimEnd([IO.Path]::DirectorySeparatorChar)
+if (-not ($ReleaseRoot + [IO.Path]::DirectorySeparatorChar).StartsWith($ReleaseBaseFullPath, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "ReleaseRoot must be a version-specific directory under $ReleaseBase."
+}
+
 $Output = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
-$Work = Join-Path $ProjectRoot 'build\desktop'
+$Intermediate = Join-Path $ReleaseRoot 'ARX'
+$Work = Join-Path $ProjectRoot "build\desktop\$ArtifactVersion"
 $Entry = Join-Path $ProjectRoot 'packaging\arx_desktop_entry.py'
 $VersionInfo = Join-Path $ProjectRoot 'packaging\windows-version-info.txt'
 
@@ -17,12 +40,15 @@ if ($LASTEXITCODE -ne 0 -or $PythonArchitecture -ne '64') {
     throw 'Use a 64-bit Python interpreter to build ARX Desktop.'
 }
 
-$ReleaseFullPath = [IO.Path]::GetFullPath($ReleaseRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-$OutputFullPath = [IO.Path]::GetFullPath($Output)
-if (-not $OutputFullPath.StartsWith($ReleaseFullPath, [StringComparison]::OrdinalIgnoreCase)) {
-    throw "Refusing to replace output outside the release directory: $OutputFullPath"
+foreach ($target in @($Output, $Intermediate)) {
+    $TargetFullPath = [IO.Path]::GetFullPath($target)
+    if (-not ($TargetFullPath + [IO.Path]::DirectorySeparatorChar).StartsWith($ReleaseRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to replace desktop output outside the versioned release directory: $TargetFullPath"
+    }
+    if (Test-Path -LiteralPath $target) {
+        Remove-Item -LiteralPath $target -Recurse
+    }
 }
-if (Test-Path -LiteralPath $Output) { Remove-Item -LiteralPath $Output -Recurse }
 New-Item -ItemType Directory -Path $ReleaseRoot,$Work -Force | Out-Null
 
 & $PythonPath -m PyInstaller --noconfirm --clean --windowed --onedir --name ARX `
@@ -31,8 +57,9 @@ New-Item -ItemType Directory -Path $ReleaseRoot,$Work -Force | Out-Null
     --specpath $Work $Entry
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE." }
 
-Move-Item -LiteralPath (Join-Path $ReleaseRoot 'ARX') -Destination $Output
+Move-Item -LiteralPath $Intermediate -Destination $Output
 Copy-Item -LiteralPath (Join-Path $ProjectRoot 'packaging\README.txt') -Destination (Join-Path $Output 'README.txt')
+Copy-Item -LiteralPath (Join-Path $ProjectRoot 'LICENSE') -Destination (Join-Path $Output 'LICENSE.txt')
 
 if (-not (Test-Path -LiteralPath (Join-Path $Output 'ARX.exe') -PathType Leaf)) {
     throw 'PyInstaller did not produce ARX.exe.'

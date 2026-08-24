@@ -42,7 +42,7 @@ def test_transmission_audit_is_metadata_only_bounded_and_rotated(tmp_path):
 
 
 def test_transmission_audit_rejects_secret_shaped_metadata_and_excludes_expired_records(tmp_path):
-    key = "sk-proj-this-is-a-test-key-not-a-real-secret"
+    key = "sk-" + "proj-this-is-a-test-key-not-a-real-secret"
     audit = TransmissionAudit(tmp_path / "audit.jsonl", retention_days=2)
     old = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
 

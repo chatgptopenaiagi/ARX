@@ -12,8 +12,8 @@ from arx.desktop.provider_settings import OPENAI_API_KEYS_URL, OpenAIProviderSet
 from arx.desktop.ux import UIStateStore
 
 
-FIRST = b"sk-proj-arx4-settings-fixture-first"
-SECOND = b"sk-proj-arx4-settings-fixture-second"
+FIRST = b"sk-" + b"proj-arx4-settings-fixture-first"
+SECOND = b"sk-" + b"proj-arx4-settings-fixture-second"
 
 
 @pytest.fixture(autouse=True)

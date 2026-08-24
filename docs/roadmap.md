@@ -1,8 +1,17 @@
 # Roadmap
 
-ARX 3.0 Release Candidate establishes the Windows presentation, deterministic project-awareness, portable/installer packaging, external-advisory boundary, and CI/security-analysis foundation.
+ARX 4.0.0 Beta 1 establishes the Phase B trust foundation on top of the ARX deterministic compatibility engine: expanded fact provenance, dependency enforcement, provider-neutral credentials, Windows DPAPI storage, OpenAI provider health/transport, metadata-only transmission audit, and minimal provider settings.
 
-## Before ARX 3.0 final
+## Phase C and future ARX 4 work
+
+- Build the full Intelligence Console and expanded contextual multi-turn conversation architecture.
+- Add Ask Both as an explicit additional operation with flat, unranked provider responses.
+- Keep comparison limited to textual overlap, differences, and unresolved items without consensus, confidence boosts, or provenance upgrades.
+- Preserve independent OpenAI and Codex conversations and the one-way advisory boundary.
+
+Phase C is not part of ARX 4.0.0 Beta 1.
+
+## Manual release evidence still required
 
 - Complete visible DPI and multi-monitor acceptance on representative Windows 10/11 systems.
 - Complete screen-reader, keyboard, focus, contrast, and accessibility acceptance.
@@ -10,7 +19,7 @@ ARX 3.0 Release Candidate establishes the Windows presentation, deterministic pr
 - Resolve any defects found by those manual checks and repeat the deterministic release gate.
 - Establish an approved publisher identity, icon, and code-signing process if signed final artifacts are required.
 
-## Candidate extensions after the release gate
+## Candidate deterministic extensions after the release gate
 
 - pip-to-interpreter mismatch detection and richer PowerShell alias/function resolution evidence;
 - cross-source range intersection beyond exact `.python-version` selection conflicts;

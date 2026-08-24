@@ -1,4 +1,4 @@
-# ARX 3
+# ARX 4
 
 [![ARX CI](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml)
@@ -8,13 +8,13 @@
 
 **Project-Aware Compatibility Intelligence for Windows**
 
-ARX 3 correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
+ARX 4 correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-This branch presents **ARX 3.0 Release Candidate** (`3.0.0rc1`; planned tag `v3.0.0-rc1`). The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+This branch presents **ARX 4.0.0 Beta 1** (`4.0.0b1`; tag `v4.0.0-b1`). It contains the Phase B trust foundation, not ARX 4 stable or the completed Phase C Intelligence Console. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
-## Why ARX 3 is different
+## Why ARX 4 is different
 
 Many diagnostic tools primarily tell users what exists on a machine.
 
@@ -88,16 +88,16 @@ Existing numeric `confidence` values are bounded, hand-authored detector weights
 
 GREEN is deliberately scoped. The current Python readiness vertical verifies interpreter/toolchain requirements; it does not prove dependency installation, lock/site-packages synchronization, project imports, or complete application startup.
 
-## Install ARX 3
+## Install ARX 4
 
-ARX `3.0.0rc1` is a pre-release. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
+ARX `4.0.0b1` is a pre-release. The Python package keeps the existing `arx-prescanner` identity and history. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
 
 ### PyPI / Python developers
 
-Install this exact release candidate from PyPI:
+After the separately approved PyPI publication gate, install this exact beta from the existing `arx-prescanner` project:
 
 ```console
-python -m pip install arx-prescanner==3.0.0rc1
+python -m pip install arx-prescanner==4.0.0b1
 ```
 
 Alternatively, allow pip to discover the newest available ARX pre-release:
@@ -114,7 +114,7 @@ arx quick
 arx-desktop
 ```
 
-`arx-desktop` launches the Windows Tk desktop application. The CLI remains usable independently. Once stable `3.0.0` is published, the normal installation command becomes:
+`arx-desktop` launches the Windows Tk desktop application. The CLI remains usable independently. An unpinned install selects the newest stable version and does not opt into this beta:
 
 ```console
 python -m pip install arx-prescanner
@@ -122,19 +122,19 @@ python -m pip install arx-prescanner
 
 ### GitHub source / tag
 
-Install the immutable RC source directly from its Git tag:
+Install the immutable beta source directly from its Git tag:
 
 ```console
-python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v3.0.0-rc1"
+python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v4.0.0-b1"
 ```
 
 ### Windows installer
 
-Download `ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe` from the [GitHub pre-release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v3.0.0-rc1). It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The RC installer is currently unsigned.
+Download `ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe` from the [GitHub prerelease](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b1). It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The beta installer is unsigned.
 
 ### Portable Windows
 
-Download `ARX-Desktop-win-x64-v3.0.0-rc1.zip`, verify it with `SHA256SUMS-v3.0.0-rc1.txt`, extract the complete folder, and run `ARX.exe` without installation.
+Download `ARX-Desktop-win-x64-v4.0.0-b1.zip`, verify it with `SHA256SUMS.txt`, extract the complete folder, and run `ARX.exe` without installation.
 
 ### Editable source checkout
 
@@ -163,12 +163,12 @@ Unknown targets are never launched, imported, or extracted. Static inspection re
 
 ### Windows distribution
 
-ARX 3 RC can be built in two forms:
+ARX 4 Beta 1 can be built in two Windows forms:
 
 - a portable x64 folder and versioned ZIP containing `ARX.exe` and its private `_internal` runtime;
 - an optional Inno Setup installer with a stable application identity, x64 Program Files installation, Start Menu and uninstall entries, an optional desktop shortcut, and SHA-256 checksums.
 
-Generated release artifacts stay under the ignored `release/` directory and are not committed. Current RC builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md).
+Generated release artifacts stay under the ignored, version-specific `release/v4.0.0-b1/` directory and are not committed. Historical release artifacts are not overwritten. Current beta builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md).
 
 ## Optional advisory and safe research
 
@@ -182,28 +182,32 @@ Open the provider configuration with `Settings → Intelligence Providers → Op
 
 Provider health distinguishes missing, unreadable, authentication, network/TLS, rate-limit, quota, unavailable-model, timeout, cancellation, server, parse, and ready states. A protected blob that cannot be decrypted in the active Windows context is `CREDENTIAL_UNREADABLE`, not missing or rejected authentication.
 
+A minimum-data authentication/model check can be `READY` while a later advisory generation fails with `QUOTA_EXHAUSTED` because the API project has no generation quota. ARX keeps that billing/usage condition separate from authentication failure.
+
 Only the selected finding and relevant bounded context may cross an external boundary after consent. ARX removes recognizable credentials, tokens, usernames, private roots, user-profile paths, project paths, arbitrary absolute local paths, control characters, and unrelated evidence. Copy/save paths reapply redaction.
 
 AI and web outputs remain non-authoritative external advice. They cannot change an observed fact, assign GREEN/YELLOW/RED, mutate the evidence graph, or execute a recovery step. **The human remains the final decision-maker.**
+
+This beta does not include Phase C's Ask Both, AI consensus, synthesized or ranked provider answers, expanded contextual conversation architecture, or final Intelligence Console. The existing advisory entry points do not turn similar provider responses into verification.
 
 At the real provider boundary ARX writes only bounded local transmission metadata—never keys or prompt/response bodies—and distinguishes prepared, outbound, received, failed, and cancelled states. History rotates, expires after 30 days, has an explicit Clear History action, is not implicitly exported, and is never synchronized by ARX.
 
 Read the complete [AI assistance and external-boundary security model](docs/ai-assistance-security.md).
 
-## Build the Windows RC artifacts
+## Build the ARX 4 Beta 1 artifacts
 
 ```powershell
-python -m pip install -e ".[build]"
-.\scripts\build-desktop.ps1
-.\scripts\package-desktop-release.ps1 -Version 3.0.0rc1
-.\scripts\build-installer.ps1 -Version 3.0.0rc1
+python -m pip install -e ".[dev,build,release]"
+.\scripts\build-release.ps1 -Version 4.0.0b1
 ```
 
 Expected release filenames are:
 
-- `ARX-Desktop-win-x64-v3.0.0-rc1.zip`
-- `ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe`
-- `SHA256SUMS-v3.0.0-rc1.txt`
+- `arx_prescanner-4.0.0b1-py3-none-any.whl`
+- `arx_prescanner-4.0.0b1.tar.gz`
+- `ARX-Desktop-win-x64-v4.0.0-b1.zip`
+- `ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe`
+- `SHA256SUMS.txt`
 
 Building an installer is not install, upgrade, or uninstall acceptance. Those operating-system transitions remain explicit manual checks.
 
@@ -217,6 +221,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 
 | Document | Purpose |
 |---|---|
+| [ARX 4.0.0 Beta 1 release notes](docs/release-notes-4.0.0-b1.md) | Implemented Phase B trust foundation, distribution identity, Phase C exclusions, and beta limitations |
 | [ARX 3.0 RC1 release notes](docs/release-notes-3.0.0-rc1.md) | Changes since ARX 2, compatibility, verification, and RC limitations |
 | [Architecture](docs/architecture.md) | Canonical domain, evidence boundaries, path identity, UI lifecycle, and packaging decisions |
 | [Confidence semantics](docs/confidence-semantics.md) | Numeric assignment inventory and explicit non-probabilistic meaning |
@@ -245,7 +250,7 @@ python scripts/run-isolated-gui-tests.py
 
 GitHub Actions runs compilation and deterministic pytest coverage on Windows and Linux for Python 3.10, 3.12, and 3.14. Windows runs each Tk-backed GUI node in a fresh interpreter; Linux runs the full suite under Xvfb. A separate job builds and imports the source distribution and wheel without publishing. CodeQL analyzes Python and GitHub Actions with least-privilege workflow permissions and pinned action revisions.
 
-## Release-candidate limitations
+## Beta limitations
 
 - Real DPI and multi-monitor acceptance is incomplete.
 - Screen-reader and full accessibility acceptance is incomplete.
@@ -253,8 +258,10 @@ GitHub Actions runs compilation and deterministic pytest coverage on Windows and
 - The aggregate Definition of Done remains partial because those visible/manual checks are not complete.
 - The installer is unsigned and has no separately approved custom application icon.
 - Python is the implemented project-readiness ecosystem; other ecosystem adapters remain future work.
+- Phase C is not included: Ask Both, AI consensus, synthesized or ranked answers, expanded contextual conversation architecture, and the final Intelligence Console remain future work.
+- OpenAI provider health may be READY while advisory generation is unavailable because the API project has no generation quota; this is reported as quota exhaustion, not authentication failure.
 
-Unchecked manual items are not reported as tested. Review the [Windows acceptance checklist](docs/windows-desktop-acceptance.md) before promoting the release candidate to a final release.
+Unchecked manual items are not reported as tested. Review the [Windows acceptance checklist](docs/windows-desktop-acceptance.md) before promoting a future release beyond its demonstrated evidence.
 
 ## License
 

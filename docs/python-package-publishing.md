@@ -1,112 +1,109 @@
 # Python package publishing
 
-ARX publishes the Python distribution as `arx-prescanner`. Application version `3.0.0rc1` is a PEP 440 pre-release and is independent from ARX report schemas `0.1` and `0.2`.
+ARX publishes the Python distribution under the existing package identity `arx-prescanner`. ARX 4.0.0 Beta 1 is package version `4.0.0b1`; it is a new version of the same project already present on both PyPI and TestPyPI. Do not create or rename either project, delete historical files, or replace an existing version. Application versions remain independent from ARX report schemas `0.1` and `0.2`.
 
-The Python package requires Python 3.10 or newer and installs two console entry points:
+## Verified existing publication identity
 
-- `arx` for deterministic CLI inspection and project preflight;
-- `arx-desktop` for the Windows Tk desktop application.
+The release-engineering audit on 2026-08-24 confirmed:
 
-The PyPI package, portable Windows ZIP, and Inno Setup installer are separate delivery formats. PyPI serves Python-managed environments. The portable package provides a self-contained `ARX.exe` folder, while the installer integrates that portable payload with Windows Program Files, Start Menu, and uninstall infrastructure.
+- PyPI and TestPyPI both expose the existing `arx-prescanner` project and historical `3.0.0rc1` version;
+- GitHub environments are named `testpypi` and `pypi`, and both require a reviewer;
+- the prior `Publish Python package` run completed TestPyPI publication, TestPyPI installation verification, production PyPI publication, and production installation verification through Trusted Publishing;
+- the workflow contains no PyPI username, password, long-lived API token, or stored publishing secret;
+- the same workflow filename, repository identity, package identity, and environment names are retained so the existing Trusted Publisher configuration is not replaced unnecessarily.
+
+This evidence verifies that the configured OIDC identities worked for the prior version. It does not authorize another upload. The remote workflow is deliberately disabled during ARX 4 Beta 1 release preparation and must remain disabled until an explicit publication decision.
+
+## Separation from GitHub releases
+
+GitHub artifacts and Python-index publication are separate operations:
+
+```text
+reviewed tag
+   |
+   +--> manual release-assets workflow --> draft GitHub prerelease assets
+   |
+   +--> separate manual publish-pypi workflow
+             |
+             +--> explicit target: testpypi
+             |      publish with OIDC -> compare exact files -> isolated install
+             |
+             +--> explicit target: production
+                    first require exact files on TestPyPI
+                    -> protected pypi environment approval
+                    -> publish the same reviewed files with OIDC
+                    -> compare exact production files
+```
+
+Creating or publishing a GitHub Release does not trigger `.github/workflows/publish-pypi.yml`. The workflow has only `workflow_dispatch`; it has no `release`, `push`, `pull_request`, `pull_request_target`, or `workflow_run` publication trigger. Publishing the ARX 4 GitHub prerelease therefore cannot silently publish to either Python index.
+
+The release-assets workflow has no OIDC permission and cannot publish a Python package. Its build job has only `contents: read`; only the final attachment job receives `contents: write`, and then only to attach already verified artifacts to an existing empty draft prerelease.
 
 ## Trusted Publishing boundary
 
-`.github/workflows/publish-pypi.yml` is the only workflow authorized to publish Python distributions. It uses GitHub OIDC and the official PyPA publishing action without a stored PyPI username, password, or long-lived API token. A short-lived OIDC identity is exchanged for an index-scoped credential during the publishing job and is never stored in the repository.
+Both index-publishing jobs use the existing PyPI Trusted Publisher configuration:
 
-The workflow follows this sequence:
+| GitHub environment | Existing project | Index | OIDC audience selected by the publishing action |
+|---|---|---|---|
+| `testpypi` | `arx-prescanner` | TestPyPI | TestPyPI |
+| `pypi` | `arx-prescanner` | production PyPI | PyPI |
 
-```text
-published release tag / explicit existing release tag
-                    |
-                    v
-       unprivileged build and metadata checks
-                    |
-                    v
-         immutable GitHub Actions artifact
-                    |
-                    v
-    OIDC publish to TestPyPI (testpypi environment)
-                    |
-                    v
- fresh TestPyPI install and entry-point verification
-                    |
-                    v
-       protected pypi environment approval
-                    |
-                    v
-      OIDC publish of the same files to PyPI
-                    |
-                    v
- fresh production install and entry-point verification
-```
+Only the mutually exclusive publishing jobs receive job-scoped `id-token: write`. Build, release download, checksum, package validation, index verification, and installation jobs receive no OIDC permission. `actions/checkout` uses `persist-credentials: false`, and every third-party action is pinned to a reviewed full commit SHA.
 
-Only the two publishing jobs receive `id-token: write`. The build and verification jobs do not. Normal CI has no publishing permission. The publishing jobs download an already built workflow artifact and invoke the publishing action once; they do not check out or build project source while holding OIDC permission.
+The publishing action exchanges GitHub's short-lived OIDC identity for a short-lived index credential. ARX does not use `PYPI_TOKEN`, `TEST_PYPI_TOKEN`, `TWINE_PASSWORD`, or another stored API-token secret. The `testpypi` and `pypi` environments remain the human review gates for their respective existing publishers.
 
-Every third-party action is pinned to a full commit SHA. Pull requests, arbitrary branches, `pull_request_target`, reusable workflows, stored publishing credentials, and `skip-existing` are not part of the publishing path.
+## Reviewed distribution invariant
 
-The public `v3.0.0-rc1` tag predates this publishing workflow and the expanded installation section on `main`. The tag remains immutable: the workflow definition runs from the default branch but checks out and builds the exact tagged source. Consequently, the RC package's PyPI long description is the already verified README stored in that tag; later documentation is not injected into or used to rebuild the tagged source. Future release tags must include their final installation documentation before the tag is published.
+The manual publication workflow consumes the wheel and source distribution attached to an existing reviewed, published GitHub release. It does not rebuild source while holding publishing authority. Before either target can run, it:
 
-## Publisher registration
+1. checks out the exact tag with full history and no persisted checkout credential;
+2. proves the checkout commit equals the annotated tag target;
+3. requires an existing non-draft GitHub Release for that tag;
+4. verifies tag, package name, and PEP 440 version identity;
+5. downloads the release assets;
+6. verifies `SHA256SUMS.txt`, package metadata, console entry points, wheel contents, portable payload shape, and release privacy scan;
+7. passes the reviewed wheel and source distribution through an immutable, short-retention GitHub Actions artifact.
 
-PyPI and TestPyPI are separate services and require separate publisher registrations. For a new project, register a pending GitHub publisher on each index with these exact claims:
+The TestPyPI verification job compares the SHA-256 digest and downloaded bytes of both published files with the reviewed GitHub Release files, then installs the exact version in a fresh environment outside the checkout and exercises `import arx`, `arx --help`, `arx quick`, and the `arx-desktop` entry point.
 
-| Field | PyPI | TestPyPI |
-|---|---|---|
-| Project | `arx-prescanner` | `arx-prescanner` |
-| Owner | `chatgptopenaiagi` | `chatgptopenaiagi` |
-| Repository | `ARX` | `ARX` |
-| Workflow | `publish-pypi.yml` | `publish-pypi.yml` |
-| Environment | `pypi` | `testpypi` |
+A production-target dispatch does not republish to TestPyPI. It first requires the exact reviewed wheel and source distribution to already exist on TestPyPI, then reaches the separately protected `pypi` environment. The production verification job compares both production files with the reviewed release assets.
 
-The `pypi` GitHub environment should require a maintainer approval. TestPyPI is the mandatory rehearsal and uses its own `testpypi` environment. A public-index 404 is not proof that a project name is available; pending-publisher registration and the first trusted upload are the authoritative creation boundary.
+## Explicit publication procedure
 
-## Release identity and artifact invariants
+Neither command below is part of ARX 4 Beta 1 draft-release preparation. Production PyPI remains blocked until explicit user approval. Run one only after explicit authorization, after this workflow has reached the default branch, and after the deliberately disabled workflow has been reviewed and re-enabled.
 
-Automatic runs accept only a published GitHub Release. A manual run is available for an already published release, such as the RC release that predates the workflow. In either case the workflow:
-
-1. accepts only a `vX.Y.Z`, `vX.Y.Z-aN`, `vX.Y.Z-bN`, or `vX.Y.Z-rcN` tag;
-2. checks out that tag with full history and verifies that `HEAD` is the tag target;
-3. verifies that a non-draft GitHub Release exists for the tag;
-4. converts the package's PEP 440 version to tag form and requires an exact match;
-5. requires package name `arx-prescanner`;
-6. builds exactly one wheel and one source distribution;
-7. requires strict Twine metadata and README rendering checks;
-8. passes the same preserved artifact files through TestPyPI and production PyPI.
-
-PyPI versions and filenames are immutable. A failed or partial upload must be investigated; the workflow does not silently accept duplicates or rebuild a different distribution under an existing version.
-
-## Release gate
-
-Before dispatching publication, run:
-
-```powershell
-python -m pip install -e ".[release]"
-python -m pytest
-python scripts/run-isolated-gui-tests.py
-python -m build
-python -m twine check --strict dist\*
-python -m check_wheel_contents dist\*.whl
-git diff --check
-```
-
-Inspect the wheel metadata, entry points, contents, and credential scan. Install the wheel in a fresh environment outside the checkout and run `arx --help` and `arx quick`. The automated workflow repeats package construction, strict metadata checks, and clean index installation on GitHub-hosted runners.
-
-For the existing RC release, dispatch from the default branch with:
+TestPyPI gate:
 
 ```console
-gh workflow run publish-pypi.yml -f tag=v3.0.0-rc1
+gh workflow run publish-pypi.yml --ref main -f tag=v4.0.0-b1 -f target=testpypi
 ```
 
-Do not approve the `pypi` environment until the TestPyPI publish and clean-install verification jobs have passed.
-
-## Installation semantics
-
-Install this exact pre-release from PyPI with:
+Review its build, TestPyPI publication, digest comparison, and isolated-install jobs. Only after that evidence and a separate production authorization may production be selected:
 
 ```console
-python -m pip install arx-prescanner==3.0.0rc1
+gh workflow run publish-pypi.yml --ref main -f tag=v4.0.0-b1 -f target=production
 ```
 
-`python -m pip install --pre arx-prescanner` opts into pre-release discovery. A normal unpinned `python -m pip install arx-prescanner` becomes the recommended command after stable `3.0.0` exists.
+The `pypi` environment review is an additional production gate, not a substitute for the explicit dispatch target or TestPyPI evidence.
 
-Index installation verification must run outside the source checkout with `PYTHONPATH` unset so the result cannot accidentally import local source.
+## Installation after publication
+
+Install this exact prerelease only after its index publication is confirmed:
+
+```console
+python -m pip install arx-prescanner==4.0.0b1
+```
+
+`python -m pip install --pre arx-prescanner` opts into prerelease discovery. A normal unpinned install selects the newest stable version and does not opt into Beta 1.
+
+## Security rules
+
+- Never place PyPI/TestPyPI credentials in source, workflow variables, release assets, command-line arguments, or logs.
+- Never use a GitHub Release publication event as index-publishing authority.
+- Never introduce `pull_request_target` or allow untrusted pull-request code to reach OIDC publication jobs.
+- Never enable `skip-existing`; immutable-version collisions are release failures.
+- Never delete or replace historical PyPI/TestPyPI releases.
+- Never report a successful GitHub Release, TestPyPI upload, or build as production PyPI publication.
+- Keep production PyPI blocked until the user explicitly authorizes it.
+
+PyPI's official [Trusted Publishing documentation](https://docs.pypi.org/trusted-publishers/using-a-publisher/) describes the OIDC boundary and recommends job-scoped `id-token: write`. GitHub documents that a published draft prerelease emits the general `published` release event, which is why ARX does not subscribe the PyPI workflow to release events.

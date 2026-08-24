@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — ARX 4 Phase B trust foundation
+## 4.0.0b1 - 2026-08-24
 - Extend `EvidenceKind` with ESTIMATED, SIMULATED, and STRUCTURAL while keeping VERIFIED out of fact provenance and preserving separate decision validation.
 - Enforce the reviewed ARX dependency graph and cycle rejection in CI, including a forbidden-import FAIL → discard mutation → PASS regression proof.
 - Add a provider-neutral credential resolver, developer `OPENAI_API_KEY` support, and native current-user Windows DPAPI storage with distinct `CREDENTIAL_UNREADABLE` handling.
@@ -8,8 +8,12 @@
 - Harden the OpenAI Responses API transport with exact HTTPS endpoint validation, transport-boundary redaction, request/response bounds, timeout/cancellation, sanitized health categories, and no-secret request/audit behavior.
 - Add bounded, rotating, local-only metadata transmission events for the real OpenAI HTTPS and Codex standard-input boundaries without prompt/response bodies or credentials.
 - Keep OpenAI and Codex advisory output non-authoritative and one-way; no provider response can mutate deterministic ARX evidence, compatibility, readiness, or semantic validation.
+- Preserve the existing `arx-prescanner` package identity while introducing the ARX 4 Beta 1 package, Windows, installer, artifact, and release-note identity.
+- Separate GitHub release-asset construction from manual TestPyPI and production PyPI publication; preserve the existing Trusted Publisher environments and require a distinct explicit production target.
+- Build into a clean version-scoped output directory, hash every public artifact, and scan tracked files and release artifacts without printing any matched secret material.
+- Keep Phase C explicitly out of this beta: Ask Both, consensus, synthesis, ranking, expanded contextual conversation architecture, and the final Intelligence Console are not claimed.
 
-## Unreleased — ARX 3 final acceptance baseline
+## ARX 3 final acceptance baseline - 2026-08-24
 - Correct the Phase A epistemic documentation and advisory prompt so `VERIFIED` is never presented as an `EvidenceKind`; baseline fact provenance was `DECLARED`, `OBSERVED`, `INFERRED`, or `UNKNOWN`, separate from decision validation.
 - Audit every numeric confidence assignment and document the current values as uncalibrated detector-author weights rather than probabilities, measured accuracy, or statistical confidence.
 - Record the ARX 4 baseline and Phase A acceptance evidence, including blocked visible DPI, screen-reader, isolated installer lifecycle, and code-signing gates.

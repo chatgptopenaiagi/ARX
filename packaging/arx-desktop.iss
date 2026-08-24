@@ -1,22 +1,27 @@
 ; ARX Desktop x64 installer. Build through scripts/build-installer.ps1.
 
 #ifndef MyAppVersion
-  #define MyAppVersion "3.0.0rc1"
+  #define MyAppVersion "4.0.0b1"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "3.0.0.1"
+  #define MyAppFileVersion "4.0.0.1"
 #endif
 #ifndef MyArtifactVersion
-  #define MyArtifactVersion "3.0.0-rc1"
+  #define MyArtifactVersion "4.0.0-b1"
+#endif
+#ifndef MyAppSourceDir
+  #define MyAppSourceDir "..\release\v4.0.0-b1\ARX-Desktop-win-x64"
+#endif
+#ifndef MyOutputDir
+  #define MyOutputDir "..\release\v4.0.0-b1"
 #endif
 
 #define MyAppName "ARX"
-#define MyAppProductName "ARX 3"
-#define MyAppDisplayName "ARX 3.0 Release Candidate"
+#define MyAppProductName "ARX 4"
+#define MyAppDisplayName "ARX 4.0.0 Beta 1"
 #define MyAppPublisher "chatgptopenaiagi"
 #define MyAppURL "https://github.com/chatgptopenaiagi/ARX"
 #define MyAppExeName "ARX.exe"
-#define MyAppSourceDir "..\release\ARX-Desktop-win-x64"
 
 [Setup]
 AppId={{1BC9E705-070A-42B4-9378-45E2DD7C416A}
@@ -34,7 +39,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 LicenseFile=..\LICENSE
-OutputDir=..\release
+OutputDir={#MyOutputDir}
 OutputBaseFilename=ARX-Desktop-Setup-win-x64-v{#MyArtifactVersion}
 Compression=lzma2/max
 SolidCompression=yes
@@ -62,9 +67,9 @@ Source: "{#MyAppSourceDir}\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\ARX 3"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
+Name: "{group}\ARX 4"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{group}\Uninstall ARX"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\ARX 3"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autodesktop}\ARX 4"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch ARX 3"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch ARX 4"; Flags: nowait postinstall skipifsilent

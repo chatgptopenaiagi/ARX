@@ -1,23 +1,21 @@
-# ARX 3 Desktop installer
+# ARX 4 Desktop installer
 
-ARX 3 retains its portable PyInstaller distribution and adds an optional Inno Setup 6 or 7 installer for Windows 10/11 x64.
+ARX 4.0.0 Beta 1 retains the complete portable PyInstaller distribution and its optional Inno Setup 6 or 7 installer for Windows 10/11 x64.
 
-This installer is distinct from the `arx-prescanner` Python package. Python developers can use `python -m pip install arx-prescanner==3.0.0rc1` to install the `arx` and `arx-desktop` entry points into a managed Python environment. The installer instead deploys the self-contained portable Windows payload and does not require a separately managed Python installation.
+This installer is distinct from the existing `arx-prescanner` Python package. Python developers can use `python -m pip install arx-prescanner==4.0.0b1` to install the `arx` and `arx-desktop` entry points into a managed Python environment. The installer instead deploys the self-contained portable Windows payload and does not require a separately managed Python installation.
 
 Build the validated portable application first, then compile the installer:
 
 ```powershell
-python -m pip install -e .[build]
-.\scripts\build-desktop.ps1
-.\scripts\package-desktop-release.ps1 -Version 3.0.0rc1
-.\scripts\build-installer.ps1 -Version 3.0.0rc1
+python -m pip install -e ".[dev,build,release]"
+.\scripts\build-release.ps1 -Version 4.0.0b1
 ```
 
-The release-candidate outputs are `ARX-Desktop-win-x64-v3.0.0-rc1.zip`, `ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe`, and `SHA256SUMS-v3.0.0-rc1.txt`. `build-installer.ps1` locates `ISCC.exe` from `PATH` or standard per-user and Program Files locations for Inno Setup 7 and 6. Use `-IsccPath` for another installation. Output remains under `release/`; generated binaries and checksums are not committed.
+The release outputs are `arx_prescanner-4.0.0b1-py3-none-any.whl`, `arx_prescanner-4.0.0b1.tar.gz`, `ARX-Desktop-win-x64-v4.0.0-b1.zip`, `ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe`, and `SHA256SUMS.txt`. They are isolated under `release/v4.0.0-b1/`; historical release directories are not overwritten. `build-installer.ps1` locates `ISCC.exe` from `PATH` or standard per-user and Program Files locations for Inno Setup 7 and 6. Use `-IsccPath` for another installation. Generated binaries and checksums are not committed.
 
 The installer has a stable application identifier for in-place upgrades, installs in 64-bit Program Files, displays the repository's actual MIT license, creates Start Menu launch/uninstall entries, offers an unchecked desktop-shortcut task, registers uninstall metadata, and offers to launch ARX when an interactive installation finishes. Silent installs do not launch ARX.
 
-The current installer is not code-signed and uses the executable's ARX 3 version metadata rather than a custom project icon. Compilation and checksum verification do not constitute install, upgrade, or uninstall acceptance. They also do not constitute signing acceptance; those actions remain on the manual Windows checklist.
+The ARX 4.0.0 Beta 1 installer and portable executable are not code-signed and use ARX 4 version metadata rather than a custom signed project icon. Compilation and checksum verification do not constitute install, upgrade, or uninstall acceptance. They also do not constitute signing acceptance; those actions remain on the manual Windows checklist.
 
 ## Code-signing release gate
 
@@ -30,9 +28,9 @@ Code signing is an explicit release item, not an implied property of a successfu
 
 Do not place signing credentials in this repository or pass them through ordinary build logs.
 
-If an approved certificate or signing service is unavailable, the signing item is `BLOCKED`. `Get-FileHash`, Inno Setup verification, and an unsigned executable cannot be reported as a valid signature. The current Phase A workstation result is recorded in [ARX 3 final acceptance](../docs/arx-3-final-acceptance.md).
+If an approved certificate or signing service is unavailable, the signing item is `BLOCKED`. `Get-FileHash`, Inno Setup verification, and an unsigned executable cannot be reported as a valid signature. The inherited Phase A workstation result is recorded in [ARX 3 final acceptance](../docs/arx-3-final-acceptance.md); this beta does not silently close those historical manual acceptance blockers.
 
-Python distribution publishing uses the separately documented [Trusted Publishing process](../docs/python-package-publishing.md). Installer compilation does not upload to PyPI, and Python package publication does not establish Windows installer lifecycle acceptance.
+Python distribution publishing uses the separately documented, manual-only [Trusted Publishing process](../docs/python-package-publishing.md). Installer compilation and GitHub Release publication do not upload to either TestPyPI or production PyPI, and Python package publication does not establish Windows installer lifecycle acceptance.
 
 ## Per-user OpenAI provider data on uninstall
 

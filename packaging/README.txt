@@ -1,6 +1,6 @@
-ARX 3
-ARX 3.0 Release Candidate
-Package version 3.0.0rc1
+ARX 4
+ARX 4.0.0 Beta 1
+Package version 4.0.0b1
 
 PURPOSE
 ARX is a read-only project-aware compatibility and resolution engine. It scans
@@ -9,15 +9,15 @@ compares requirements, and explains a GREEN/YELLOW/RED decision and advisory
 path to GREEN. ARX is not a malware scanner and does not certify software as safe.
 
 SUPPORTED OPERATING SYSTEM
-Windows 10/11 x64. This experimental build has been validated on Windows 10
-x64. Windows Server and ARM64 have not been validated.
+Windows 10/11 x64. Windows Server and ARM64 have not been validated for this
+beta.
 
 START
 Extract the complete folder, then double-click ARX.exe. Keep the _internal
 folder beside ARX.exe; it contains the standalone Python/Tk runtime.
 
 INSTALLER DISTRIBUTION
-When ARX is distributed as ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe, the installer provides
+When ARX is distributed as ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe, the installer provides
 Start Menu and uninstall entries, offers an optional desktop shortcut, and can
 launch ARX after an interactive install. The portable extracted-folder workflow
 remains supported. Installer builds are currently unsigned; verify the published
@@ -61,6 +61,18 @@ protected with Windows DPAPI for the current user and is never displayed again.
 Use Remove Credential and Clear History before uninstall if you want to remove
 the ARX-owned per-user provider data; the uninstaller does not silently delete
 data under %LOCALAPPDATA%\ARX or the user's temporary plaintext import file.
+
+OpenAI authentication/model health can be READY while an advisory generation
+still fails with QUOTA_EXHAUSTED when the API project lacks generation quota.
+That condition is not reported as an authentication failure. AI output remains
+non-authoritative and cannot modify deterministic ARX evidence, compatibility,
+readiness, or EvidenceKind.
+
+BETA SCOPE
+ARX 4.0.0 Beta 1 contains the Phase B trust foundation. Phase C and the final
+Intelligence Console are not included. Ask Both, AI consensus, synthesized or
+ranked provider answers, and the expanded contextual conversation architecture
+are not claimed by this build.
 
 SOURCE AND ISSUES
 https://github.com/chatgptopenaiagi/ARX

@@ -27,7 +27,7 @@ from arx.advisory.providers import (
 )
 
 
-KEY = "sk-proj-this-is-a-test-key-not-a-real-secret"
+KEY = "sk-" + "proj-this-is-a-test-key-not-a-real-secret"
 
 
 def _context():

@@ -1,56 +1,57 @@
 param(
-    [string]$Version = '3.0.0rc1'
+    [string]$Version = '4.0.0b1',
+    [string]$ReleaseRoot
 )
 
 $ErrorActionPreference = 'Stop'
-$VersionMatch = [regex]::Match($Version, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:rc(?<rc>\d+))?$')
+$VersionMatch = [regex]::Match($Version, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:(?<kind>a|b|rc)(?<number>\d+))?$')
 if (-not $VersionMatch.Success) {
-    throw 'Version must use the package form X.Y.Z or X.Y.ZrcN.'
+    throw 'Version must use the package form X.Y.Z, X.Y.ZaN, X.Y.ZbN, or X.Y.ZrcN.'
 }
 $BaseVersion = "$($VersionMatch.Groups['major'].Value).$($VersionMatch.Groups['minor'].Value).$($VersionMatch.Groups['patch'].Value)"
-$ArtifactVersion = if ($VersionMatch.Groups['rc'].Success) {
-    "$BaseVersion-rc$($VersionMatch.Groups['rc'].Value)"
+$ArtifactVersion = if ($VersionMatch.Groups['kind'].Success) {
+    "$BaseVersion-$($VersionMatch.Groups['kind'].Value)$($VersionMatch.Groups['number'].Value)"
 } else {
     $BaseVersion
 }
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$ReleaseRoot = Join-Path $ProjectRoot 'release'
+$ReleaseBase = Join-Path $ProjectRoot 'release'
+if (-not $ReleaseRoot) {
+    $ReleaseRoot = Join-Path $ReleaseBase "v$ArtifactVersion"
+}
+$ReleaseBaseFullPath = [IO.Path]::GetFullPath($ReleaseBase).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+$ReleaseRoot = [IO.Path]::GetFullPath($ReleaseRoot).TrimEnd([IO.Path]::DirectorySeparatorChar)
+if (-not ($ReleaseRoot + [IO.Path]::DirectorySeparatorChar).StartsWith($ReleaseBaseFullPath, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "ReleaseRoot must be a version-specific directory under $ReleaseBase."
+}
+
 $DesktopDirectory = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
 $Executable = Join-Path $DesktopDirectory 'ARX.exe'
 $Archive = Join-Path $ReleaseRoot "ARX-Desktop-win-x64-v$ArtifactVersion.zip"
-$ChecksumFile = Join-Path $ReleaseRoot "SHA256SUMS-v$ArtifactVersion.txt"
 
-$ReleaseFullPath = [IO.Path]::GetFullPath($ReleaseRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-foreach ($target in @($DesktopDirectory,$Archive,$ChecksumFile)) {
+foreach ($target in @($DesktopDirectory,$Archive)) {
     $targetFullPath = [IO.Path]::GetFullPath($target)
-    if (-not $targetFullPath.StartsWith($ReleaseFullPath,[StringComparison]::OrdinalIgnoreCase)) {
-        throw "Refusing to package a target outside the release directory: $targetFullPath"
+    if (-not ($targetFullPath + [IO.Path]::DirectorySeparatorChar).StartsWith($ReleaseRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to package a target outside the versioned release directory: $targetFullPath"
     }
 }
 
 if (-not (Test-Path -LiteralPath $Executable -PathType Leaf)) { throw "Missing desktop executable: $Executable" }
 if (-not (Test-Path -LiteralPath (Join-Path $DesktopDirectory '_internal') -PathType Container)) { throw 'Missing _internal runtime directory.' }
+if (-not (Test-Path -LiteralPath (Join-Path $DesktopDirectory 'README.txt') -PathType Leaf)) { throw 'Missing portable README.txt.' }
+if (-not (Test-Path -LiteralPath (Join-Path $DesktopDirectory 'LICENSE.txt') -PathType Leaf)) { throw 'Missing portable LICENSE.txt.' }
 
 $forbiddenDirectories = @('.git','.venv','tests','__pycache__','.pytest_cache')
 $forbiddenFiles = Get-ChildItem -LiteralPath $DesktopDirectory -Recurse -Force | Where-Object {
     ($_.PSIsContainer -and $_.Name -in $forbiddenDirectories) -or
-    (-not $_.PSIsContainer -and ($_.Extension -in @('.py','.pyc','.spec','.key','.pem') -or $_.Name -in @('.env','credentials.json')))
+    (-not $_.PSIsContainer -and ($_.Extension -in @('.py','.pyc','.spec','.key','.pem','.dpapi') -or $_.Name -in @('.env','credentials.json','secrets.json','external-transmissions.jsonl')))
 }
 if ($forbiddenFiles) {
     throw "Forbidden development or private files found in release payload: $($forbiddenFiles.FullName -join ', ')"
 }
 
 if (Test-Path -LiteralPath $Archive) { Remove-Item -LiteralPath $Archive }
-if (Test-Path -LiteralPath $ChecksumFile) { Remove-Item -LiteralPath $ChecksumFile }
 Compress-Archive -LiteralPath $DesktopDirectory -DestinationPath $Archive -CompressionLevel Optimal
 
-$ExecutableHash = (Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash.ToLowerInvariant()
-$ArchiveHash = (Get-FileHash -LiteralPath $Archive -Algorithm SHA256).Hash.ToLowerInvariant()
-$lines = @(
-    "$ExecutableHash  ARX-Desktop-win-x64\ARX.exe",
-    "$ArchiveHash  $(Split-Path -Leaf $Archive)"
-)
-[IO.File]::WriteAllLines($ChecksumFile,$lines,[Text.UTF8Encoding]::new($false))
-
+& (Join-Path $PSScriptRoot 'write-release-checksums.ps1') -Version $Version -ReleaseRoot $ReleaseRoot
 Write-Host "Desktop archive created at $Archive"
-Write-Host "Checksums created at $ChecksumFile"

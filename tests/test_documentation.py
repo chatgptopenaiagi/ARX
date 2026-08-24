@@ -122,14 +122,14 @@ def test_phase_b_security_document_covers_credentials_health_audit_and_uninstall
     assert "%LOCALAPPDATA%\\ARX" in installer
 
 
-def test_readme_is_the_complete_arx3_release_candidate_landing_page():
+def test_readme_is_the_complete_arx4_beta_landing_page():
     readme = _read("README.md")
 
     for phrase in (
-        "# ARX 3",
-        "ARX 3.0 Release Candidate",
+        "# ARX 4",
+        "ARX 4.0.0 Beta 1",
         "Project-Aware Compatibility Intelligence",
-        "## Why ARX 3 is different",
+        "## Why ARX 4 is different",
         "Machine DNA",
         "Software DNA",
         "Project DNA",
@@ -142,8 +142,10 @@ def test_readme_is_the_complete_arx3_release_candidate_landing_page():
         "shortest trusted path to GREEN",
         "There is no return path from external advice into ARX evidence",
         "The human remains the final decision-maker",
-        "ARX-Desktop-win-x64-v3.0.0-rc1.zip",
-        "ARX-Desktop-Setup-win-x64-v3.0.0-rc1.exe",
+        "ARX-Desktop-win-x64-v4.0.0-b1.zip",
+        "ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe",
+        "SHA256SUMS.txt",
+        "Phase C",
         "Real DPI and multi-monitor acceptance is incomplete",
         "aggregate Definition of Done remains partial",
     ):
@@ -151,6 +153,7 @@ def test_readme_is_the_complete_arx3_release_candidate_landing_page():
     for workflow in ("actions/workflows/ci.yml", "actions/workflows/codeql.yml"):
         assert workflow in readme
     for document in (
+        "docs/release-notes-4.0.0-b1.md",
         "docs/architecture.md",
         "docs/arx-4-phase-b-trust-foundation.md",
         "docs/confidence-semantics.md",
@@ -211,25 +214,63 @@ def test_rc_release_notes_preserve_history_and_disclose_manual_limits():
     assert historical.startswith("# ARX 2.0.0")
 
 
+def test_arx4_beta_release_notes_define_phase_b_and_exclude_phase_c():
+    notes = _read("docs/release-notes-4.0.0-b1.md")
+
+    for phrase in (
+        "# ARX 4.0.0 Beta 1",
+        "Package version: `4.0.0b1`",
+        "Git tag: `v4.0.0-b1`",
+        "DECLARED",
+        "OBSERVED",
+        "INFERRED",
+        "UNKNOWN",
+        "ESTIMATED",
+        "SIMULATED",
+        "STRUCTURAL",
+        "`VERIFIED` remains outside `EvidenceKind`",
+        "Windows per-user DPAPI",
+        "CREDENTIAL_UNREADABLE",
+        "Responses API",
+        "rejects redirects",
+        "metadata-only transmission audit",
+        "Settings -> Intelligence Providers -> OpenAI API",
+        "Test Connection",
+        "Codex CLI advisory provider remains",
+        "NON-AUTHORITATIVE",
+        "Phase C is **NOT included**",
+        "Ask Both",
+        "QUOTA_EXHAUSTED",
+        "not relabel those failures as invalid authentication",
+        "unsigned",
+    ):
+        assert phrase in notes
+
+
 def test_python_publishing_document_preserves_release_and_credential_boundaries():
     publishing = _read("docs/python-package-publishing.md")
 
     for phrase in (
         "arx-prescanner",
-        "Python 3.10 or newer",
+        "existing package identity",
+        "both PyPI and TestPyPI",
         "TestPyPI",
         "Trusted Publishing",
         "id-token: write",
         "short-lived OIDC",
         "publish-pypi.yml",
-        "environment | `pypi` | `testpypi`",
-        "same preserved artifact files",
-        "outside the source checkout",
-        "python -m pip install arx-prescanner==3.0.0rc1",
+        "`testpypi` and `pypi`",
+        "reviewed wheel and source distribution",
+        "outside the checkout",
+        "target=testpypi",
+        "target=production",
+        "python -m pip install arx-prescanner==4.0.0b1",
     ):
         assert phrase.casefold() in publishing.casefold()
     assert "long-lived API token" in publishing
     assert "pull_request_target" in publishing
+    assert "Creating or publishing a GitHub Release does not trigger" in publishing
+    assert "production pypi remains blocked" in publishing.casefold()
 
 
 def test_final_report_contains_every_point_and_required_engineering_sections():
