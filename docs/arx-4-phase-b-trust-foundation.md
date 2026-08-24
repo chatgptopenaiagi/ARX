@@ -87,3 +87,38 @@ Uninstall does not silently delete `%LOCALAPPDATA%\ARX` because a machine-wide u
 The Phase B report must distinguish controlled/mock tests from live connectivity. A provider may be reported `READY` only if a real successful API request occurred with a securely resolved credential. The temporary plaintext import source must not be deleted without explicit user confirmation after protected import and live verification.
 
 Phase C remains blocked until human approval. This phase does not add Ask Both, comparison, consensus, response ranking, synthesized answers, or any mechanism that feeds AI output into deterministic ARX conclusions.
+
+## Verification record — 2026-08-24
+
+Local deterministic verification on Windows 10 x64 with Python 3.10.8:
+
+- source/test/script compilation: PASS;
+- dependency graph and forbidden-import mutation gate: PASS;
+- non-GUI regression/security suite: 174 passed;
+- runtime-shaped GUI suite: 41 isolated test nodes passed;
+- focused credential, provider, audit, redaction, health, and settings checks are included in those totals, including a real current-user Windows DPAPI round trip;
+- sdist and wheel build: PASS;
+- strict Twine metadata/rendering validation: PASS;
+- wheel-content inspection: PASS;
+- fresh wheel-environment import and `arx` / `arx-desktop` entry-point checks: PASS;
+- isolated PyInstaller portable executable build plus controller and UI smoke modes: PASS; the Phase A release artifacts under `release/` were not overwritten;
+- tracked-file credential/private-key/blob scan: PASS, with only allowlisted artificial key-shaped test fixtures;
+- working-tree diff check and Git object integrity check: PASS.
+
+Live OpenAI gate, using the dedicated credential after status-only import into the ARX DPAPI store:
+
+```text
+Credential: CONFIGURED
+Credential source: SECURE_WINDOWS_STORE
+Authentication: READY
+API: READY
+Model: READY
+Overall: READY
+Model ID: gpt-5.4
+Latency: 828 ms
+Checked: 2026-08-24T02:16:55.069442+00:00
+```
+
+This live claim is limited to the explicit authenticated model-retrieval health request. No machine/project evidence, prompt, conversation, or advisory body was sent. A live Responses API advisory generation was not performed, so controlled transport tests—not a live response—support that path at this gate.
+
+The local transmission audit recorded the health sequence `REQUEST_PREPARED → OUTBOUND_REQUEST_INITIATED → RESPONSE_RECEIVED`; its schema and credential-shape scan passed. The temporary plaintext key source remains in Documents pending the user's explicit deletion confirmation. It was not committed, copied into the checkout, logged, displayed, or deleted.
