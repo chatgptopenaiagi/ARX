@@ -2,7 +2,7 @@ name: ARX Beta 2 provenance trigger
 
 on:
   push:
-    branches: [release-v4.0.0-b2-provenance]
+    branches: [release-v4.0.0-b2-provenance-*]
 
 permissions:
   contents: read
