@@ -183,8 +183,31 @@ jobs:
           if scan.returncode:
               raise SystemExit("detect-secrets failed; stderr was intentionally not persisted.")
           report = json.loads(scan.stdout)
-          if report.get("results"):
-              raise SystemExit("detect-secrets reported tracked-file candidates; review the preserved report.")
+          classification = json.loads(
+              Path("security/beta2/evidence/detect-secrets-classification.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          observed = {
+              (path.replace("\\", "/"), item["line_number"], item["type"])
+              for path, items in report.get("results", {}).items()
+              for item in items
+          }
+          reviewed = {
+              (item["path"].replace("\\", "/"), item["line"], item["type"])
+              for item in classification["reviewed_candidates"]
+          }
+          summary = {
+              "observed": len(observed),
+              "reviewed": len(observed & reviewed),
+              "unreviewed": sorted(observed - reviewed),
+              "stale_reviews": sorted(reviewed - observed),
+          }
+          Path("security-results/detect-secrets-summary.json").write_text(
+              json.dumps(summary, indent=2) + "\n", encoding="utf-8"
+          )
+          if summary["unreviewed"] or summary["stale_reviews"]:
+              raise SystemExit("detect-secrets candidate identities require renewed review.")
           PY
 
       - name: Build and validate Python distributions
