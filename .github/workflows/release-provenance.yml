@@ -60,8 +60,16 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $Identity.Count -ne 2 -or $Identity[0] -ne '3.12.13' -or $Identity[1] -ne '64') {
               throw "Release Python identity mismatch: $($Identity -join ' / ')."
           }
+          $RuntimeBin = Join-Path $PythonRoot 'Library\bin'
+          foreach ($Runtime in @('ffi.dll', 'tcl86t.dll', 'tk86t.dll')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $RuntimeBin $Runtime) -PathType Leaf)) {
+                  throw "The locked release Python is missing required desktop runtime $Runtime."
+              }
+          }
           $PythonRoot | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
           (Join-Path $PythonRoot 'Scripts') | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          $RuntimeBin | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          "CONDA_PREFIX=$PythonRoot" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Verify release and source identity
         shell: pwsh
@@ -115,6 +123,43 @@ jobs:
             -PythonExecutable python `
             -Version $env:PACKAGE_VERSION `
             -ReleaseRoot "$env:GITHUB_WORKSPACE\release\reproduced"
+
+      - name: Require complete reproduced desktop runtime and smoke-test it
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Portable = "$env:GITHUB_WORKSPACE\release\reproduced\ARX-Desktop-win-x64"
+          $Executable = Join-Path $Portable 'ARX.exe'
+          $Internal = Join-Path $Portable '_internal'
+          foreach ($Runtime in @('ffi.dll', 'tcl86t.dll', 'tk86t.dll')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $Internal $Runtime) -PathType Leaf)) {
+                  throw "Reproduced portable runtime is incomplete: missing $Runtime."
+              }
+          }
+          $Target = Join-Path $env:SystemRoot 'System32\notepad.exe'
+          $Cases = @(
+              @{ Mode = '--smoke-test'; Name = 'controller' },
+              @{ Mode = '--ui-smoke-test'; Name = 'ui' }
+          )
+          foreach ($Case in $Cases) {
+              $Output = Join-Path $env:RUNNER_TEMP "reproduced-$($Case.Name)-smoke.json"
+              $Process = Start-Process -FilePath $Executable `
+                  -ArgumentList @($Case.Mode, $Target, $Output) `
+                  -WindowStyle Hidden -PassThru
+              if (-not $Process.WaitForExit(240000)) {
+                  Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+                  throw "Reproduced portable $($Case.Name) smoke test timed out."
+              }
+              $Process.Refresh()
+              if ($Process.ExitCode -ne 0) {
+                  throw "Reproduced portable $($Case.Name) smoke test exited $($Process.ExitCode)."
+              }
+              foreach ($Expected in @($Output, "$Output.result.json")) {
+                  if (-not (Test-Path -LiteralPath $Expected -PathType Leaf)) {
+                      throw "Reproduced portable $($Case.Name) smoke test did not produce $Expected."
+                  }
+              }
+          }
 
       - name: Require bit-for-bit equality for every core release artifact
         shell: pwsh

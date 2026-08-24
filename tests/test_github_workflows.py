@@ -128,6 +128,8 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "-AllowMissingInstaller" not in workflow
     assert "python=3.12.13" in workflow
     assert "Release Python identity mismatch" in workflow
+    assert "Library\\bin" in workflow
+    assert all(runtime in workflow for runtime in ("ffi.dll", "tcl86t.dll", "tk86t.dll"))
     assert "packaging/release-build-requirements.txt" in workflow
     assert "write-build-environment.py" in workflow
     assert "release-build-environment-${{ github.run_id }}" in workflow
@@ -136,6 +138,8 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "$InstallerItem.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION" in workflow
     assert "scan-tracked-secrets.py" in workflow
     assert "Get-AuthenticodeSignature" in workflow
+    assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
+    assert "Portable desktop runtime is incomplete" in workflow
     assert "gh release upload" in workflow
     assert workflow.count("contents: write") == 1
     assert workflow.count("id-token: write") == 2
@@ -157,12 +161,16 @@ def test_trusted_preflight_attests_but_never_signs_or_publishes():
     assert "persist-credentials: false" in workflow
     assert "python=3.12.13" in workflow
     assert "Release Python identity mismatch" in workflow
+    assert "Library\\bin" in workflow
+    assert all(runtime in workflow for runtime in ("ffi.dll", "tcl86t.dll", "tk86t.dll"))
     assert "packaging/release-build-requirements.txt" in workflow
     assert "write-build-environment.py" in workflow
     assert "id-token: write" in workflow
     assert "attestations: write" in workflow
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
     assert "unsigned preflight" in workflow.casefold()
+    assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
+    assert "Unsigned portable runtime is incomplete" in workflow
     assert "does not:" in workflow.casefold()
     assert "sign ARX.exe" in workflow
     assert "publish GitHub release assets" in workflow
@@ -263,9 +271,13 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "persist-credentials: false" in workflow
     assert "python=3.12.13" in workflow
     assert "Release Python identity mismatch" in workflow
+    assert "Library\\bin" in workflow
+    assert all(runtime in workflow for runtime in ("ffi.dll", "tcl86t.dll", "tk86t.dll"))
     assert "packaging/release-build-requirements.txt" in workflow
     assert "--require-security-bundle" in workflow
     assert "Core artifact is not bit-for-bit reproducible" in workflow
+    assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
+    assert "Reproduced portable runtime is incomplete" in workflow
     assert "Published CycloneDX SBOM is not bit-for-bit reproducible" in workflow
     assert "Published checksum manifest is not exactly reproducible" in workflow
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
