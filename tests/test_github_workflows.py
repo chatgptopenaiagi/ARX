@@ -127,9 +127,34 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "Get-AuthenticodeSignature" in workflow
     assert "gh release upload" in workflow
     assert workflow.count("contents: write") == 1
-    assert "id-token: write" not in workflow
+    assert workflow.count("id-token: write") == 2
+    assert workflow.count("attestations: write") == 2
+    assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
+    assert "subject-path: ${{ runner.temp }}/release-assets/*" in workflow
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert "twine upload" not in workflow.casefold()
+    assert SECRET_CONTEXT.search(workflow) is None
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 5
+
+
+def test_trusted_preflight_attests_but_never_signs_or_publishes():
+    workflow = _read("trusted-installation-preflight.yml")
+    actions = ANY_ACTION.findall(workflow)
+
+    assert "workflow_dispatch:" in workflow
+    assert "pull_request_target" not in workflow
+    assert "persist-credentials: false" in workflow
+    assert "id-token: write" in workflow
+    assert "attestations: write" in workflow
+    assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
+    assert "unsigned preflight" in workflow.casefold()
+    assert "does not:" in workflow.casefold()
+    assert "sign ARX.exe" in workflow
+    assert "publish GitHub release assets" in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert "gh release upload" not in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert "contents: write" not in workflow
     assert SECRET_CONTEXT.search(workflow) is None
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
 
