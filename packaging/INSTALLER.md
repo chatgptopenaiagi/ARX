@@ -33,3 +33,9 @@ Do not place signing credentials in this repository or pass them through ordinar
 If an approved certificate or signing service is unavailable, the signing item is `BLOCKED`. `Get-FileHash`, Inno Setup verification, and an unsigned executable cannot be reported as a valid signature. The current Phase A workstation result is recorded in [ARX 3 final acceptance](../docs/arx-3-final-acceptance.md).
 
 Python distribution publishing uses the separately documented [Trusted Publishing process](../docs/python-package-publishing.md). Installer compilation does not upload to PyPI, and Python package publication does not establish Windows installer lifecycle acceptance.
+
+## Per-user OpenAI provider data on uninstall
+
+The optional OpenAI API provider stores its current-user DPAPI blob and bounded metadata-only transmission audit under `%LOCALAPPDATA%\ARX`, outside the machine-wide Program Files installation. The uninstaller deliberately does not enumerate Windows profiles or silently delete this per-user data.
+
+Before uninstalling, a user who wants complete provider-data cleanup should open `Settings → Intelligence Providers → OpenAI API`, choose `Remove Credential`, and choose `Clear History`. After uninstall, the same user may deliberately remove any remaining `%LOCALAPPDATA%\ARX` provider-data directory. The installer never removes a temporary plaintext key file selected for import; that source remains under the user's control and should be deleted intentionally after protected import and a successful connection test.

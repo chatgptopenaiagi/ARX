@@ -91,7 +91,35 @@ def test_external_boundary_document_preserves_three_separate_trust_domains():
     assert "shell=False" in security
     assert "cannot modify the workstation or become ARX evidence" in security
     assert "%PROJECT_ROOT%" in security and "%USERPROFILE%" in security and "%LOCAL_PATH%" in security
-    assert "does not enable PyPI publishing" in security
+    assert "does not grant publishing" in security
+
+
+def test_phase_b_security_document_covers_credentials_health_audit_and_uninstall():
+    security = _read("docs/ai-assistance-security.md")
+    phase_b = _read("docs/arx-4-phase-b-trust-foundation.md")
+    installer = _read("packaging/INSTALLER.md")
+
+    for phrase in (
+        "Settings → Intelligence Providers → OpenAI API",
+        "Windows DPAPI",
+        "CREDENTIAL_UNREADABLE",
+        "configured credential is not provider readiness",
+        "GET /v1/models/{model}",
+        "REQUEST_PREPARED",
+        "OUTBOUND_REQUEST_INITIATED",
+        "RESPONSE_RECEIVED",
+        "REQUEST_FAILED",
+        "CANCELLED",
+        "never stores the API key",
+        "no implicit export",
+        "automatic ARX cloud synchronization",
+        "30 days",
+        "Clear History",
+    ):
+        assert phrase.casefold() in security.casefold()
+    assert "Phase C remains blocked" in phase_b
+    assert "does not silently delete `%LOCALAPPDATA%\\ARX`" in phase_b
+    assert "%LOCALAPPDATA%\\ARX" in installer
 
 
 def test_readme_is_the_complete_arx3_release_candidate_landing_page():
@@ -124,6 +152,7 @@ def test_readme_is_the_complete_arx3_release_candidate_landing_page():
         assert workflow in readme
     for document in (
         "docs/architecture.md",
+        "docs/arx-4-phase-b-trust-foundation.md",
         "docs/confidence-semantics.md",
         "docs/security-model.md",
         "docs/testing.md",

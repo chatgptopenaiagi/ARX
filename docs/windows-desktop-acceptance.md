@@ -54,8 +54,15 @@ Use this checklist for a release candidate on a visible Windows 10 or Windows 11
 
 ## Optional AI and web investigation
 
-- [ ] Right-click a relevant finding and confirm ChatGPT/OpenAI, Codex, safe-fix, project-comparison, web/Google, exact-error, official-documentation, evidence, and raw-data commands appear only where applicable.
-- [ ] Open the advisory panel and verify the selected project/finding/status, provider availability, analysis modes, and `AI ADVISORY — UNVERIFIED AI ANALYSIS` label are visible.
+- [ ] Open `Settings → Intelligence Providers → OpenAI API`. Confirm Configure OpenAI API Key, Import OpenAI API Key, Replace Credential, Remove Credential, Test Connection, and Open OpenAI Chat are reachable with ordinary mouse clicks.
+- [ ] Open OpenAI API Settings and confirm no network request or ARX evidence transmission occurs merely from opening the window. Confirm Credential, Credential source, Authentication, API, Model, Overall, and Last check remain separate safe fields.
+- [ ] Choose Configure OpenAI API Key and confirm only the fixed official OpenAI Platform API-key page opens; ARX must not invent a key or automate the ChatGPT desktop application or website.
+- [ ] With a dedicated non-production test key in a temporary file, choose Import. Confirm `Credential: CONFIGURED` and `Credential source: Secure Windows Store` appear and no plaintext key or show-key action appears anywhere. Confirm the plaintext source file remains until the user deliberately deletes it.
+- [ ] Replace the protected test credential, then remove it. Confirm the prior key is never redisplayed and the safe state returns to `NOT_CONFIGURED`. If an unreadable protected-blob fixture is available, confirm `CREDENTIAL_UNREADABLE` is distinct from missing and rejected authentication.
+- [ ] Run Test Connection with a permitted non-production API project. Confirm it sends no machine/project evidence and reports sanitized authentication/API/model/overall state. Record `READY` only after a real successful API response; otherwise record the exact safe failure category.
+- [ ] Use Clear History and confirm the metadata-only local transmission history is removed without changing deterministic ARX reports. Confirm no audit record contains a key, prompt/response body, URL, full local path, or `SENT` boolean.
+- [ ] Right-click a relevant finding and confirm OpenAI, Codex, safe-fix, project-comparison, web/Google, exact-error, official-documentation, evidence, and raw-data commands appear only where applicable.
+- [ ] Open the advisory panel and verify the selected project/finding/status, provider availability, analysis modes, and `AI ADVISORY — NON-AUTHORITATIVE` label are visible.
 - [ ] Choose `Preview What Will Be Sent`; confirm no request occurs and the prompt contains bounded redacted context rather than the complete machine scan.
 - [ ] On first send to each provider, decline consent. Confirm no provider call occurs. Reopen, accept, and confirm consent is remembered only for that provider during the current process.
 - [ ] With OpenAI unconfigured and with Codex unavailable, confirm a clear provider-specific explanation appears while core ARX remains usable.
@@ -75,6 +82,7 @@ These items change Windows application state. Exercise them only on an approved 
 - [ ] Run a silent install and confirm it does not launch ARX unexpectedly.
 - [ ] Install a newer test version over an older build with the same stable AppId. Confirm one product entry remains, expected files update, launch still works, and user-visible behavior is preserved.
 - [ ] Uninstall from Windows Installed Apps and from the Start Menu uninstall entry. Confirm installed ARX files and shortcuts are removed without deleting unrelated files or portable copies.
+- [ ] Verify uninstall does not silently enumerate profiles or remove `%LOCALAPPDATA%\ARX`. If complete provider-data cleanup is desired, use Remove Credential and Clear History before uninstall, then deliberately remove any remaining per-user ARX provider-data directory.
 
 ## Acceptance summary
 

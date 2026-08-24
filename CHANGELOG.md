@@ -1,7 +1,16 @@
 # Changelog
 
-## Unreleased — ARX 3 final acceptance
-- Correct the epistemic documentation and advisory prompt so `VERIFIED` is never presented as an `EvidenceKind`; fact provenance remains `DECLARED`, `OBSERVED`, `INFERRED`, or `UNKNOWN`, separate from decision validation.
+## Unreleased — ARX 4 Phase B trust foundation
+- Extend `EvidenceKind` with ESTIMATED, SIMULATED, and STRUCTURAL while keeping VERIFIED out of fact provenance and preserving separate decision validation.
+- Enforce the reviewed ARX dependency graph and cycle rejection in CI, including a forbidden-import FAIL → discard mutation → PASS regression proof.
+- Add a provider-neutral credential resolver, developer `OPENAI_API_KEY` support, and native current-user Windows DPAPI storage with distinct `CREDENTIAL_UNREADABLE` handling.
+- Add the visible `Settings → Intelligence Providers → OpenAI API` configuration/status surface with official Platform configuration, import, replace, remove, minimum-data connection test, existing-assistant launch, and explicit audit clearing.
+- Harden the OpenAI Responses API transport with exact HTTPS endpoint validation, transport-boundary redaction, request/response bounds, timeout/cancellation, sanitized health categories, and no-secret request/audit behavior.
+- Add bounded, rotating, local-only metadata transmission events for the real OpenAI HTTPS and Codex standard-input boundaries without prompt/response bodies or credentials.
+- Keep OpenAI and Codex advisory output non-authoritative and one-way; no provider response can mutate deterministic ARX evidence, compatibility, readiness, or semantic validation.
+
+## Unreleased — ARX 3 final acceptance baseline
+- Correct the Phase A epistemic documentation and advisory prompt so `VERIFIED` is never presented as an `EvidenceKind`; baseline fact provenance was `DECLARED`, `OBSERVED`, `INFERRED`, or `UNKNOWN`, separate from decision validation.
 - Audit every numeric confidence assignment and document the current values as uncalibrated detector-author weights rather than probabilities, measured accuracy, or statistical confidence.
 - Record the ARX 4 baseline and Phase A acceptance evidence, including blocked visible DPI, screen-reader, isolated installer lifecycle, and code-signing gates.
 - Keep ARX at `3.0.0rc1`; stable `v3.0.0` is not approved while those acceptance gates remain incomplete.

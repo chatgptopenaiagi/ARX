@@ -54,5 +54,13 @@ Reports redact the current user-profile path and allowlist environment data.
 ARX does not collect passwords, tokens, cookies, private keys, Wi-Fi secrets,
 or credential-manager contents. Review reports before sharing them.
 
+OPTIONAL OPENAI API
+Open Settings, Intelligence Providers, OpenAI API to configure the supported
+OpenAI API provider. ARX never creates an API key. A key selected for import is
+protected with Windows DPAPI for the current user and is never displayed again.
+Use Remove Credential and Clear History before uninstall if you want to remove
+the ARX-owned per-user provider data; the uninstaller does not silently delete
+data under %LOCALAPPDATA%\ARX or the user's temporary plaintext import file.
+
 SOURCE AND ISSUES
 https://github.com/chatgptopenaiagi/ARX

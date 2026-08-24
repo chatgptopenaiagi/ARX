@@ -47,10 +47,10 @@ ARX deterministic evidence
         |
         | explicit user action + bounded redacted context
         v
-optional ChatGPT/OpenAI | Codex CLI | safe web research
+optional OpenAI API | Codex CLI | safe web research
         |
         v
-unverified advisory output --> Human decision
+non-authoritative advisory output --> Human decision
 
 There is no return path from external advice into ARX evidence.
 ```
@@ -174,13 +174,19 @@ Generated release artifacts stay under the ignored `release/` directory and are 
 
 External assistance is always optional, explicitly user-triggered, cancellable where the provider permits, visibly labeled, and separate from deterministic ARX evidence.
 
-- **ChatGPT/OpenAI advisory** uses the OpenAI Responses API when `OPENAI_API_KEY` is present in the ARX process environment. A ChatGPT subscription is not treated as an API credential.
+- **OpenAI API advisory** uses the supported OpenAI Responses API. Developer sessions may use `OPENAI_API_KEY`; the packaged Windows application can import a dedicated key into an ARX-owned, per-user Windows DPAPI store. A ChatGPT subscription is not treated as an API credential.
 - **Codex CLI advisory** detects the official CLI and sends the bounded prompt through standard input to a read-only, ephemeral process in an empty temporary directory.
 - **Safe web research** creates a short redacted, URL-encoded query and opens an allowlisted HTTPS search URL in the user's browser. ARX does not scrape or import results.
 
+Open the provider configuration with `Settings → Intelligence Providers → OpenAI API`. The window provides Configure, Import, Replace, Remove, Test Connection, and Open OpenAI Chat actions. Configure opens the official OpenAI Platform API-key page; ARX never generates a key. Import immediately protects the selected key with DPAPI and never displays it again. Opening Settings performs no network request and finding a credential reports only `CONFIGURED`; an explicit successful authentication/API/model check is required for `READY`.
+
+Provider health distinguishes missing, unreadable, authentication, network/TLS, rate-limit, quota, unavailable-model, timeout, cancellation, server, parse, and ready states. A protected blob that cannot be decrypted in the active Windows context is `CREDENTIAL_UNREADABLE`, not missing or rejected authentication.
+
 Only the selected finding and relevant bounded context may cross an external boundary after consent. ARX removes recognizable credentials, tokens, usernames, private roots, user-profile paths, project paths, arbitrary absolute local paths, control characters, and unrelated evidence. Copy/save paths reapply redaction.
 
-AI and web outputs remain unverified advice. They cannot change an observed fact, assign GREEN/YELLOW/RED, mutate the evidence graph, or execute a recovery step. **The human remains the final decision-maker.**
+AI and web outputs remain non-authoritative external advice. They cannot change an observed fact, assign GREEN/YELLOW/RED, mutate the evidence graph, or execute a recovery step. **The human remains the final decision-maker.**
+
+At the real provider boundary ARX writes only bounded local transmission metadata—never keys or prompt/response bodies—and distinguishes prepared, outbound, received, failed, and cancelled states. History rotates, expires after 30 days, has an explicit Clear History action, is not implicitly exported, and is never synchronized by ARX.
 
 Read the complete [AI assistance and external-boundary security model](docs/ai-assistance-security.md).
 
@@ -203,7 +209,7 @@ Building an installer is not install, upgrade, or uninstall acceptance. Those op
 
 ## Security and privacy
 
-ARX treats inspected targets and project contents as untrusted. Recognized files are size-bounded, encoding-checked, and symlink-safe; archives are listed without extraction; unknown executables and project scripts are never run. Reports redact profile/project paths and expose only allowlisted or fingerprinted environment state. ARX does not read credential stores, browser data, Wi-Fi secrets, private keys, or password/token variables.
+ARX treats inspected targets and project contents as untrusted. Recognized files are size-bounded, encoding-checked, and symlink-safe; archives are listed without extraction; unknown executables and project scripts are never run. Reports redact profile/project paths and expose only allowlisted or fingerprinted environment state. Deterministic scanning does not read unrelated credential stores, browser data, Wi-Fi secrets, private keys, or password/token variables. The optional OpenAI provider can access only its explicitly configured process credential or ARX-owned DPAPI blob inside the credential boundary.
 
 The Resolution Planner only recommends actions. Normal analysis does not install or uninstall software, edit PATH or the registry, change execution aliases, weaken security controls, or apply remediation. See the [security model](docs/security-model.md) and [security policy](SECURITY.md).
 
@@ -215,6 +221,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 | [Architecture](docs/architecture.md) | Canonical domain, evidence boundaries, path identity, UI lifecycle, and packaging decisions |
 | [Confidence semantics](docs/confidence-semantics.md) | Numeric assignment inventory and explicit non-probabilistic meaning |
 | [ARX 4 baseline](docs/arx-4-baseline-report.md) | Verified checkout, toolchain, epistemic model, import graph, and baseline tests |
+| [ARX 4 Phase B trust foundation](docs/arx-4-phase-b-trust-foundation.md) | Provenance, dependency enforcement, DPAPI credentials, provider health, OpenAI transport, and audit boundaries |
 | [ARX 3 final acceptance](docs/arx-3-final-acceptance.md) | Phase A evidence, blocked gates, artifacts, and release decision |
 | [Project-aware semantic engine](docs/project-semantic-engine.md) | Requirement/provider graphs, execution resolution, readiness, and planning rules |
 | [Security model](docs/security-model.md) | Local inspection, subprocess, privacy, remediation, and external trust boundaries |
