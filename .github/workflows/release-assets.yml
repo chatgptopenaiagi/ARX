@@ -103,10 +103,10 @@ jobs:
         run: |
           $Root = "release\v$env:ARTIFACT_VERSION"
           $Executable = Get-Item -LiteralPath "$Root\ARX-Desktop-win-x64\ARX.exe"
-          if ($Executable.VersionInfo.ProductName -ne 'ARX 4' -or $Executable.VersionInfo.ProductVersion -ne $env:PACKAGE_VERSION) {
+          if ($Executable.VersionInfo.ProductName.Trim() -ne 'ARX 4' -or $Executable.VersionInfo.ProductVersion.Trim() -ne $env:PACKAGE_VERSION) {
               throw 'ARX.exe product identity does not match the release.'
           }
-          if ($Executable.VersionInfo.FileVersion -ne $env:FILE_VERSION) {
+          if ($Executable.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION) {
               throw "ARX.exe numeric file version is not $env:FILE_VERSION."
           }
           if ((Get-AuthenticodeSignature -LiteralPath $Executable.FullName).Status -ne 'NotSigned') {
@@ -115,7 +115,7 @@ jobs:
           $Installer = "$Root\ARX-Desktop-Setup-win-x64-v$env:ARTIFACT_VERSION.exe"
           if (Test-Path -LiteralPath $Installer) {
               $InstallerItem = Get-Item -LiteralPath $Installer
-              if ($InstallerItem.VersionInfo.ProductName -ne 'ARX 4' -or $InstallerItem.VersionInfo.FileVersion -ne $env:FILE_VERSION) {
+              if ($InstallerItem.VersionInfo.ProductName.Trim() -ne 'ARX 4' -or $InstallerItem.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION) {
                   throw 'Installer version identity does not match the release.'
               }
               if ((Get-AuthenticodeSignature -LiteralPath $Installer).Status -ne 'NotSigned') {

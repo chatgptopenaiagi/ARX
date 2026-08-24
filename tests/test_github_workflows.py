@@ -128,7 +128,8 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "Release Python identity mismatch" in workflow
     assert "packaging/release-build-requirements.txt" in workflow
     assert '"FILE_VERSION=$($Matches[\'base\']).$($Matches[\'number\'])"' in workflow
-    assert "$Executable.VersionInfo.FileVersion -ne $env:FILE_VERSION" in workflow
+    assert "$Executable.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION" in workflow
+    assert "$InstallerItem.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION" in workflow
     assert "scan-tracked-secrets.py" in workflow
     assert "Get-AuthenticodeSignature" in workflow
     assert "gh release upload" in workflow
