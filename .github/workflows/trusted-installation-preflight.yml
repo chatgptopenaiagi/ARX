@@ -70,6 +70,49 @@ jobs:
           python -m pip install --disable-pip-version-check --requirement packaging/release-build-requirements.txt
           python -m pip install "pip-audit==2.10.1" "bandit==1.9.4"
 
+      - name: Record path-free build environment
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Candidates = @(
+              (Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue).Source,
+              (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe'),
+              (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
+              (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),
+              (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+              (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
+          ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) }
+          $Iscc = $Candidates | Select-Object -First 1
+          if (-not $Iscc) {
+              throw 'Inno Setup compiler identity cannot be recorded.'
+          }
+          $Products = @()
+          foreach ($Root in @(
+              'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+              'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+              'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+          )) {
+              if (Test-Path -LiteralPath $Root) {
+                  foreach ($Key in Get-ChildItem -LiteralPath $Root) {
+                      $Product = Get-ItemProperty -LiteralPath $Key.PSPath
+                      if ($Product.DisplayName -like 'Inno Setup *' -and $Product.DisplayVersion -match '^\d+\.\d+\.\d+$') {
+                          $Products += $Product
+                      }
+                  }
+              }
+          }
+          $InnoVersions = @($Products | Select-Object -ExpandProperty DisplayVersion -Unique)
+          if ($InnoVersions.Count -ne 1) {
+              throw "Unable to establish one Inno Setup version: $($InnoVersions -join ', ')"
+          }
+          $Epoch = .\scripts\resolve-source-date-epoch.ps1 -ProjectRoot $env:GITHUB_WORKSPACE
+          python scripts/write-build-environment.py `
+            --output "$env:RUNNER_TEMP\release-build-environment.json" `
+            --builder-label "github-independent-preflight-$env:GITHUB_RUN_ID" `
+            --source-commit (git rev-parse HEAD) `
+            --source-date-epoch $Epoch `
+            --inno-setup-version $InnoVersions[0]
+
       - name: Compile, architecture, tests, and tracked-secret scan
         shell: pwsh
         run: |
@@ -143,6 +186,7 @@ jobs:
           $Stage = Join-Path $env:RUNNER_TEMP 'trusted-installation-preflight'
           New-Item -ItemType Directory -Force $Stage | Out-Null
           Get-ChildItem -LiteralPath $Root.FullName -File | Copy-Item -Destination $Stage
+          Copy-Item -LiteralPath "$env:RUNNER_TEMP\release-build-environment.json" -Destination $Stage
           if (Test-Path -LiteralPath "$($Root.FullName)\ARX-Desktop-win-x64") {
             Compress-Archive -Path "$($Root.FullName)\ARX-Desktop-win-x64" -DestinationPath (Join-Path $Stage 'ARX-Desktop-win-x64-preflight.zip') -Force
           }

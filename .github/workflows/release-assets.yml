@@ -82,6 +82,48 @@ jobs:
           "FILE_VERSION=$($Matches['base']).$($Matches['number'])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Install release tooling
         run: python -m pip install --disable-pip-version-check --requirement packaging/release-build-requirements.txt
+      - name: Record path-free build environment
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Candidates = @(
+              (Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue).Source,
+              (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe'),
+              (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
+              (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),
+              (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+              (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
+          ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) }
+          $Iscc = $Candidates | Select-Object -First 1
+          if (-not $Iscc) {
+              throw 'Inno Setup compiler identity cannot be recorded.'
+          }
+          $Products = @()
+          foreach ($Root in @(
+              'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+              'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall',
+              'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+          )) {
+              if (Test-Path -LiteralPath $Root) {
+                  foreach ($Key in Get-ChildItem -LiteralPath $Root) {
+                      $Product = Get-ItemProperty -LiteralPath $Key.PSPath
+                      if ($Product.DisplayName -like 'Inno Setup *' -and $Product.DisplayVersion -match '^\d+\.\d+\.\d+$') {
+                          $Products += $Product
+                      }
+                  }
+              }
+          }
+          $InnoVersions = @($Products | Select-Object -ExpandProperty DisplayVersion -Unique)
+          if ($InnoVersions.Count -ne 1) {
+              throw "Unable to establish one Inno Setup version: $($InnoVersions -join ', ')"
+          }
+          $Epoch = .\scripts\resolve-source-date-epoch.ps1 -ProjectRoot $env:GITHUB_WORKSPACE
+          python scripts/write-build-environment.py `
+            --output "$env:RUNNER_TEMP\release-build-environment.json" `
+            --builder-label "github-release-assets-$env:GITHUB_RUN_ID" `
+            --source-commit (git rev-parse HEAD) `
+            --source-date-epoch $Epoch `
+            --inno-setup-version $InnoVersions[0]
       - name: Compile and verify source
         run: |
           python -m compileall -q src tests scripts
@@ -148,6 +190,14 @@ jobs:
           path: ${{ runner.temp }}/release-assets/*
           if-no-files-found: error
           retention-days: 7
+
+      - name: Preserve path-free build environment
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-build-environment-${{ github.run_id }}
+          path: ${{ runner.temp }}/release-build-environment.json
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Attest exact staged release bytes
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2

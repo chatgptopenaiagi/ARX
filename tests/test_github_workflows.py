@@ -127,6 +127,8 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "python=3.12.13" in workflow
     assert "Release Python identity mismatch" in workflow
     assert "packaging/release-build-requirements.txt" in workflow
+    assert "write-build-environment.py" in workflow
+    assert "release-build-environment-${{ github.run_id }}" in workflow
     assert '"FILE_VERSION=$($Matches[\'base\']).$($Matches[\'number\'])"' in workflow
     assert "$Executable.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION" in workflow
     assert "$InstallerItem.VersionInfo.FileVersion.Trim() -ne $env:FILE_VERSION" in workflow
@@ -141,7 +143,7 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "pypa/gh-action-pypi-publish" not in workflow
     assert "twine upload" not in workflow.casefold()
     assert SECRET_CONTEXT.search(workflow) is None
-    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 4
+    assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 5
 
 
 def test_trusted_preflight_attests_but_never_signs_or_publishes():
@@ -154,6 +156,7 @@ def test_trusted_preflight_attests_but_never_signs_or_publishes():
     assert "python=3.12.13" in workflow
     assert "Release Python identity mismatch" in workflow
     assert "packaging/release-build-requirements.txt" in workflow
+    assert "write-build-environment.py" in workflow
     assert "id-token: write" in workflow
     assert "attestations: write" in workflow
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
