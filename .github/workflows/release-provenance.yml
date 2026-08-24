@@ -190,9 +190,33 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $Python = (Get-Command python -ErrorAction Stop).Source
           $Wheel = "$env:GITHUB_WORKSPACE\release\reproduced\arx_prescanner-$env:PACKAGE_VERSION-py3-none-any.whl"
           $Sbom = "$env:RUNNER_TEMP\ARX-$env:ARTIFACT_VERSION-SBOM.cdx.json"
-          .\scripts\generate-release-sbom.ps1 -WheelPath $Wheel -OutputPath $Sbom -PythonExecutable python
+          $Scratch = Join-Path $env:RUNNER_TEMP 'arx-provenance-sbom'
+          if (Test-Path -LiteralPath $Scratch) {
+              throw 'Refusing to reuse provenance SBOM scratch storage.'
+          }
+          & $Python -m venv --without-pip $Scratch
+          if ($LASTEXITCODE -ne 0) {
+              throw "Provenance SBOM virtual environment creation failed with exit code $LASTEXITCODE."
+          }
+          $ScratchPython = Join-Path $Scratch 'Scripts\python.exe'
+          $SiteDirectory = & $ScratchPython -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"
+          if ($LASTEXITCODE -ne 0 -or -not $SiteDirectory) {
+              throw 'Unable to resolve the isolated provenance SBOM site-packages directory.'
+          }
+          & $Python -m pip install --disable-pip-version-check --no-deps --target $SiteDirectory $Wheel
+          if ($LASTEXITCODE -ne 0) {
+              throw "Isolated wheel installation for provenance SBOM failed with exit code $LASTEXITCODE."
+          }
+          & $Python -m cyclonedx_py environment $ScratchPython `
+              --pyproject "$env:GITHUB_WORKSPACE\pyproject.toml" `
+              --mc-type application --spec-version 1.6 --output-reproducible `
+              --output-format JSON --output-file $Sbom --validate
+          if ($LASTEXITCODE -ne 0) {
+              throw "Provenance CycloneDX generation or validation failed with exit code $LASTEXITCODE."
+          }
           $Published = "$env:RUNNER_TEMP\published\ARX-$env:ARTIFACT_VERSION-SBOM.cdx.json"
           if ((Get-FileHash $Sbom -Algorithm SHA256).Hash -ne (Get-FileHash $Published -Algorithm SHA256).Hash) {
               throw 'Published CycloneDX SBOM is not bit-for-bit reproducible.'

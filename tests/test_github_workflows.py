@@ -288,6 +288,9 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "Core artifact is not bit-for-bit reproducible" in workflow
     assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
     assert "Reproduced portable runtime is incomplete" in workflow
+    assert "-m cyclonedx_py" in workflow
+    assert "--without-pip" in workflow
+    assert "--output-reproducible" in workflow
     assert "Published CycloneDX SBOM is not bit-for-bit reproducible" in workflow
     assert "Published checksum manifest is not exactly reproducible" in workflow
     assert "Stage complete validated release subjects" in workflow
