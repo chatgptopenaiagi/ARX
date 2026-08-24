@@ -1,6 +1,12 @@
 name: Build GitHub release assets
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Existing draft prerelease tag to build and attach
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:

@@ -1,6 +1,12 @@
 name: Verify and attest GitHub release provenance
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Existing ARX 4 draft or public prerelease tag
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:

@@ -1,6 +1,12 @@
 name: Trusted installation preflight
 
 on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit, branch, or future prerelease tag to evaluate
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       ref:

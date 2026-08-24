@@ -1,0 +1,20 @@
+name: ARX Beta 2 release-assets trigger
+
+on:
+  push:
+    branches: [release-v4.0.0-b2-assets]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release-assets:
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/release-assets.yml
+    with:
+      tag: v4.0.0-b2
