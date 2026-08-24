@@ -41,6 +41,7 @@ jobs:
             "bandit==1.9.4" \
             "cyclonedx-bom==7.3.1" \
             "detect-secrets==1.5.0" \
+            "hypothesis==6.165.10" \
             "pip-audit==2.10.1" \
             "semgrep==1.174.0"
 

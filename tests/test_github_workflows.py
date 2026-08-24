@@ -203,6 +203,7 @@ def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
     assert 'item.get("level") == "error"' in workflow
     assert "cyclonedx-bom==7.3.1" in workflow
     assert "detect-secrets==1.5.0" in workflow
+    assert "hypothesis==6.165.10" in workflow
     assert "detect-secrets-classification.json" in workflow
     assert "detect-secrets-summary.json" in workflow
     assert "stale_reviews" in workflow
