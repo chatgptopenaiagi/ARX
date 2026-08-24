@@ -107,4 +107,4 @@ def test_prompt_preserves_advisory_identity_and_redacts_question(monkeypatch):
     assert r"C:\Users\Alice" not in prompt
     assert "abcdefghijklmnop" not in prompt
     assert "should-not-leak" not in prompt
-    assert prompt.endswith("Begin the response with: AI ADVISORY")
+    assert prompt.endswith("Return advisory analysis only; ARX supplies the trust label in its UI.")

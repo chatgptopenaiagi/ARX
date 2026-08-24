@@ -48,7 +48,12 @@ ANALYSIS_MODES: Mapping[str, str] = {
 }
 
 
-def _redact_text(value: str, private_roots: Sequence[str | os.PathLike[str]] = ()) -> str:
+def _redact_text(
+    value: str,
+    private_roots: Sequence[str | os.PathLike[str]] = (),
+    *,
+    max_chars: int = MAX_FIELD_CHARS,
+) -> str:
     result = redact_path(value, private_roots)
     username = os.environ.get("USERNAME")
     if username:
@@ -62,45 +67,68 @@ def _redact_text(value: str, private_roots: Sequence[str | os.PathLike[str]] = (
     result = _GITHUB_KEY.sub("<redacted-github-token>", result)
     result = _JWT.sub("<redacted-token>", result)
     result = _CONTROL.sub("", result)
-    if len(result) > MAX_FIELD_CHARS:
-        omitted = len(result) - MAX_FIELD_CHARS
-        result = f"{result[:MAX_FIELD_CHARS]}\n… <{omitted} characters omitted by ARX>"
+    if len(result) > max_chars:
+        omitted = len(result) - max_chars
+        result = f"{result[:max_chars]}\n… <{omitted} characters omitted by ARX>"
     return result
 
 
-def _redact_path_field(value: str, private_roots: Sequence[str | os.PathLike[str]]) -> str:
+def _redact_path_field(
+    value: str,
+    private_roots: Sequence[str | os.PathLike[str]],
+    *,
+    max_chars: int = MAX_FIELD_CHARS,
+) -> str:
     conventional = redact_path(value, private_roots)
     if conventional != value and ("%USERPROFILE%" in conventional or "%PROJECT_ROOT%" in conventional):
-        return _redact_text(conventional, private_roots)
+        return _redact_text(conventional, private_roots, max_chars=max_chars)
     try:
         windows_path = PureWindowsPath(value)
         if windows_path.drive and windows_path.root:
-            return f"%LOCAL_PATH%/{_redact_text(windows_path.name or '<root>', private_roots)}"
+            return f"%LOCAL_PATH%/{_redact_text(windows_path.name or '<root>', private_roots, max_chars=max_chars)}"
         path = Path(value)
         if path.is_absolute():
-            return f"%LOCAL_PATH%{os.sep}{_redact_text(path.name or '<root>', private_roots)}"
+            return f"%LOCAL_PATH%{os.sep}{_redact_text(path.name or '<root>', private_roots, max_chars=max_chars)}"
     except (OSError, TypeError, ValueError):
         pass
-    return _redact_text(value, private_roots)
+    return _redact_text(value, private_roots, max_chars=max_chars)
 
 
-def redact_external(value: Any, private_roots: Sequence[str | os.PathLike[str]] = (), *, key: str = "") -> Any:
+def redact_external(
+    value: Any,
+    private_roots: Sequence[str | os.PathLike[str]] = (),
+    *,
+    key: str = "",
+    max_text_chars: int = MAX_FIELD_CHARS,
+) -> Any:
     """Redact data before it crosses the AI or public-web trust boundary."""
 
     if SENSITIVE.search(str(key)):
         return "<redacted>"
     if isinstance(value, str):
-        return _redact_path_field(value, private_roots) if _PATH_KEY.search(key) else _redact_text(value, private_roots)
+        return (
+            _redact_path_field(value, private_roots, max_chars=max_text_chars)
+            if _PATH_KEY.search(key)
+            else _redact_text(value, private_roots, max_chars=max_text_chars)
+        )
     if isinstance(value, Mapping):
         return {
-            str(item_key): redact_external(item_value, private_roots, key=str(item_key))
+            str(item_key): redact_external(
+                item_value,
+                private_roots,
+                key=str(item_key),
+                max_text_chars=max_text_chars,
+            )
             for item_key, item_value in value.items()
         }
     if isinstance(value, (list, tuple)):
-        return [redact_external(item, private_roots, key=key) for item in value]
+        return [
+            redact_external(item, private_roots, key=key, max_text_chars=max_text_chars)
+            for item in value
+        ]
     if value is None or isinstance(value, (bool, int, float)):
         return value
-    return _redact_text(str(value), private_roots)
+    return _redact_text(str(value), private_roots, max_chars=max_text_chars)
 
 
 def _bounded_mapping(value: Mapping[str, Any], budget: int) -> dict[str, Any]:
@@ -238,5 +266,5 @@ def build_advisory_prompt(
     )
     if safe_turns:
         prompt += f"RECENT REDACTED CONVERSATION\n{json.dumps(safe_turns, ensure_ascii=False)}\n\n"
-    prompt += f"USER QUESTION\n{safe_question}\n\nBegin the response with: AI ADVISORY"
+    prompt += f"USER QUESTION\n{safe_question}\n\nReturn advisory analysis only; ARX supplies the trust label in its UI."
     return prompt[:MAX_CONTEXT_CHARS + 8_000]
