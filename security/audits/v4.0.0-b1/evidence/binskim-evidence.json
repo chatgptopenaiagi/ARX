@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 published-executable BinSkim attempt",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "tool": {
+    "name": "BinSkim PE/MSIL Analysis Driver",
+    "version": "4.4.9.11",
+    "path": "C:/Security-Tools/BinSkim/package/tools/net9.0/win-x64/BinSkim.exe",
+    "telemetry_disabled": true,
+    "archive_extraction_disabled": true
+  },
+  "target": {
+    "artifact": "ARX.exe",
+    "container": "ARX-Desktop-win-x64-v4.0.0-b1.zip",
+    "container_sha256": "8fde54f9c1ebb2fb1ed37fac2612693fbf07300e7114862f48206730245c2394",
+    "authoritative_file_sha256": "c904c009889abd47df2af21dc806edcdca71903c8a5399425fb061e8376b08fc",
+    "identity_method": "Fresh extraction from the exact checksum-verified published portable ZIP followed by Get-FileHash comparison.",
+    "published_artifact_modified": false
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "result": "HARNESS_ARGUMENT_ERROR",
+      "evidence": "This BinSkim build requires explicit true values for boolean command options; argument parsing stopped before scanning and produced no SARIF."
+    },
+    {
+      "attempt": 2,
+      "result": "NOT_EVALUATED",
+      "exit_code": 1,
+      "execution_successful": false,
+      "notification": "ERR997.ExceptionLoadingPdb",
+      "reason": "The executable was not evaluated because its PDB could not be loaded (E_PDB_NO_DEBUG_INFO)."
+    },
+    {
+      "attempt": 3,
+      "result": "NOT_EVALUATED",
+      "option": "ignorePdbLoadError=true",
+      "exit_code": 0,
+      "execution_successful": false,
+      "rule_results": 0,
+      "notification": "ERR997.ExceptionLoadingPdb",
+      "reason": "The ignore option prevented a failing process exit but did not cause the target to be evaluated. Zero results must not be described as a clean scan."
+    }
+  ],
+  "raw_evidence": {
+    "local_path": "security/audits/v4.0.0-b1/sast/binskim-published-arx.sarif",
+    "committed": false,
+    "reason": "The SARIF embeds a local temporary extraction path.",
+    "bytes": 2092,
+    "sha256": "d2bfb921788b8d84245ee02307925b6b88ca558f7118b967b0dd269b8cff7bc2"
+  },
+  "digest_observation": {
+    "binskim_sarif_sha256_field": "cb3d98a5c334520a01a8906e83d143ecf494e6f2c727775a5052a08dd7d7e959",
+    "authoritative_file_sha256": "c904c009889abd47df2af21dc806edcdca71903c8a5399425fb061e8376b08fc",
+    "equal": false,
+    "classification": "UNEXPLAINED_TOOL_METADATA_DIFFERENCE",
+    "disposition": "Do not use the BinSkim SARIF digest as distribution identity. GitHub release SHA-256, container reconciliation, Get-FileHash, and Sigcheck independently identify the published executable. No equivalence is inferred."
+  },
+  "finding": {
+    "id": "BINSKIM-001",
+    "title": "BinSkim could not evaluate the published PyInstaller executable without a loadable PDB",
+    "classification": "TOOL_COVERAGE_GAP",
+    "severity": "LOW",
+    "release_blocking": false,
+    "security_relevance": "BinSkim-specific PE/MSIL rule coverage was not obtained; other PE identity, manifest, version, signature, and structural checks do not substitute for those rules.",
+    "recommendation": "For a future build, determine whether a reviewed matching PyInstaller bootloader PDB can be produced/preserved or select documented BinSkim rules and binary inputs that can be evaluated without symbols. Continue to treat zero results from an unsuccessful invocation as no evidence."
+  },
+  "gate": {
+    "result": "PARTIAL_NOT_EVALUATED",
+    "clean_scan_claim": false,
+    "critical_findings": 0,
+    "high_findings": 0,
+    "medium_findings": 0,
+    "low_findings": 1,
+    "release_blocking_items": 0
+  }
+}

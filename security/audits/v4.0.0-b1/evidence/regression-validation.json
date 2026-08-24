@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 final local regression validation",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "runs": [
+    {
+      "name": "Complete local pytest suite",
+      "command": "python -m pytest -q",
+      "result": "PASS",
+      "passed": 221,
+      "failed": 0,
+      "duration_seconds": 13.67,
+      "scope": "Repository regression tests plus audit-only localhost transport tests"
+    },
+    {
+      "name": "Isolated Windows GUI tests",
+      "command": "python scripts/run-isolated-gui-tests.py",
+      "result": "PASS",
+      "passed": 41,
+      "failed": 0,
+      "scope": "Each GUI test executed in its own Windows process"
+    }
+  ],
+  "external_targets_scanned": false,
+  "paid_openai_generation": false,
+  "dpapi_credential_accessed_by_audit": false,
+  "published_release_modified": false,
+  "gate": {
+    "result": "PASS_DEFINED_GATE",
+    "critical_findings": 0,
+    "high_findings": 0,
+    "release_blocking_items": 0
+  }
+}

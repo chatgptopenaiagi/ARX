@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 defensive privilege and elevation boundary review",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "scope": [
+    "ARX source and packaging definitions",
+    "fresh temporary copies of the published portable ZIP and installer",
+    "existing local installation and per-user ARX path ACL metadata",
+    "focused mocked permission-failure regression test"
+  ],
+  "excluded": [
+    "privilege-escalation exploit development",
+    "installer lifecycle execution on the host",
+    "credential-content access",
+    "external targets",
+    "published artifact mutation"
+  ],
+  "host_context": {
+    "observation_timestamp": "2026-08-24T11:50:55.6569438+02:00",
+    "current_process_is_administrator": true,
+    "integrity_level": "HIGH",
+    "integrity_sid": "S-1-16-12288",
+    "limitation": "The active audit process is elevated. A direct normal-user Windows launch and installer lifecycle could not be demonstrated on this host, and no verified disposable Windows Sandbox or Hyper-V target was available. WSL cannot validate Windows access tokens."
+  },
+  "artifact_identity": {
+    "portable_zip_sha256": "8fde54f9c1ebb2fb1ed37fac2612693fbf07300e7114862f48206730245c2394",
+    "published_arx_exe_sha256": "c904c009889abd47df2af21dc806edcdca71903c8a5399425fb061e8376b08fc",
+    "installer_sha256": "633b9e8d2266fd019f7c9bfcddf03abb7564fa4ae3d07d4ab50829fd3e6d19e0",
+    "source": "Fresh copies downloaded from the public GitHub Release and accepted only after exact SHA-256 comparison."
+  },
+  "observations": [
+    {
+      "id": "PRIV-OBS-001",
+      "result": "PASS",
+      "claim": "The published ARX application does not request elevation.",
+      "evidence": "Windows SDK mt.exe 10.0.26100.8249 extracted the manifest from the c904c0... published executable: requestedExecutionLevel=asInvoker and uiAccess=false.",
+      "provenance": "Fresh executable extracted from the exact published portable ZIP; manifest SHA-256 0ee298c1b1fe6d499988b60309dbc208e90c53c061fdeea39e63f6ffcf153d79."
+    },
+    {
+      "id": "PRIV-OBS-002",
+      "result": "PASS_STATIC",
+      "claim": "Normal ARX runtime source contains no administrator-role check, runas request, ShellExecute elevation call, sudo invocation, or requireAdministrator application manifest request.",
+      "evidence": "Repository-wide static search plus manual review of subprocess call sites. Runtime child processes use argument vectors with shell=false; the Python command resolver enforces the fixed allowlist python/python3/py before constructing its PowerShell query.",
+      "provenance": "src/arx, packaging/arx-desktop.iss, and the published ARX.exe manifest."
+    },
+    {
+      "id": "PRIV-OBS-003",
+      "result": "PASS",
+      "claim": "The machine-wide installed ARX directory is not broadly writable by standard Users, Authenticated Users, or Everyone on the observed host.",
+      "evidence": "The existing %PROGRAMFILES%/ARX ACL grants BUILTIN/Users ReadAndExecute/Synchronize and no write-capable allow mask. The Program Files root likewise exposes no broad write-capable allow mask.",
+      "provenance": "Read-only Get-Acl inspection using well-known SIDs; identities and local paths were normalized."
+    },
+    {
+      "id": "PRIV-OBS-004",
+      "result": "PASS",
+      "claim": "Observed per-user ARX credential storage is not broadly accessible on this host.",
+      "evidence": "The %LOCALAPPDATA%/ARX root, credentials directory, and OpenAI DPAPI blob expose no allow ACE to Everyone, Authenticated Users, or BUILTIN/Users. No credential bytes were read.",
+      "provenance": "Read-only Get-Acl metadata inspection. The product additionally protects the blob with native current-user Windows DPAPI."
+    },
+    {
+      "id": "PRIV-OBS-005",
+      "result": "EXPECTED_BOUNDARY",
+      "claim": "A portable extraction is user-writable by design and must not be treated as a privileged installation path.",
+      "evidence": "The audit extraction under %SYSTEMDRIVE%/ARX-Audit-Temp inherited Authenticated Users Modify. The embedded ARX manifest is asInvoker, so normal launch does not convert this writable path into a privileged execution boundary.",
+      "provenance": "Read-only ACL and manifest inspection of the fresh published portable copy."
+    },
+    {
+      "id": "PRIV-OBS-006",
+      "result": "PASS_STATIC",
+      "claim": "Machine-wide installation requests administrator privileges explicitly and the ordinary optional post-install launch defaults to the original, normally non-elevated user.",
+      "evidence": "packaging/arx-desktop.iss specifies PrivilegesRequired=admin, installs to {autopf}/ARX, and marks the optional launch with postinstall. Official Inno Setup documentation states that postinstall uses original-user credentials by default. If Setup was itself launched from an already-elevated process, Windows cannot recover a lower original token.",
+      "provenance": "packaging/arx-desktop.iss:35-40 and :74-75; official Inno Setup [Run] documentation at https://jrsoftware.org/ishelp/topic_runsection.htm, retrieved document SHA-256 734db2cab5b058410454bf72f36221121ed0ddd11c848bc0618a6bf32a4ea128."
+    },
+    {
+      "id": "PRIV-OBS-007",
+      "result": "PASS",
+      "claim": "Permission failures during discovered-Python probing preserve an unknown health state instead of crashing or falsely reporting readiness.",
+      "evidence": "python -m pytest -q tests/test_python_hardening.py::test_probe_failures_preserve_exists_health_and_reason completed 2 passed in 2.35 seconds, including the PermissionError case.",
+      "provenance": "Focused local regression test with mocked access denial; no external executable or privileged operation was invoked."
+    }
+  ],
+  "findings": [
+    {
+      "id": "PRIV-001",
+      "title": "Direct standard-user and installed-lifecycle behavior remains unverified in a disposable Windows target",
+      "classification": "TEST_COVERAGE_GAP",
+      "severity": "LOW",
+      "release_blocking": true,
+      "scope_of_block": "Blocks claiming that the privilege/elevation security gate is complete for a future production-ready Windows release; it is not a confirmed product defect and does not alter immutable Beta 1.",
+      "evidence": "The current process is High-integrity administrator. Windows Sandbox and Hyper-V feature queries returned no available target, and WSL cannot exercise Windows tokens.",
+      "recommendation": "Run normal scan, denied-path behavior, install, optional launch, upgrade, and uninstall from a disposable Windows VM using separate standard-user and administrator accounts. Capture UAC prompts and effective tokens without testing generic escalation techniques."
+    },
+    {
+      "id": "PRIV-002",
+      "title": "Portable deployments remain writable by their containing user/location",
+      "classification": "EXPECTED_DEPLOYMENT_PROPERTY",
+      "severity": "INFORMATIONAL",
+      "release_blocking": false,
+      "evidence": "The controlled portable extraction was broadly writable, while the application requests asInvoker and the Program Files installation is protected.",
+      "recommendation": "Continue documenting portable builds as user-controlled; do not instruct users to run a portable copy elevated or place it in a directory writable by less-trusted principals."
+    },
+    {
+      "id": "PRIV-003",
+      "title": "An already-elevated installer launch cannot guarantee a de-elevated post-install application token",
+      "classification": "PLATFORM_LIMITATION",
+      "severity": "INFORMATIONAL",
+      "release_blocking": false,
+      "evidence": "Official Inno Setup semantics use the original user for postinstall by default but cannot recover an original non-elevated token when Setup was started from an already-elevated process.",
+      "recommendation": "Retain the explicit optional launch and document that administrators who start Setup from an elevated shell should close Setup and launch ARX normally afterward. Validate the ordinary UAC flow in the disposable lifecycle test."
+    }
+  ],
+  "gate": {
+    "result": "PARTIAL",
+    "confirmed_product_defects": 0,
+    "critical_findings": 0,
+    "high_findings": 0,
+    "release_blocking_items": 1,
+    "reason": "Static privilege boundaries, manifests, ACLs, and mocked permission handling are consistent with least privilege, but the required direct standard-user and installer lifecycle evidence was not obtainable on this elevated non-disposable host."
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 Authenticode inspection",
+  "observation_timestamp": "2026-08-24T12:00:36.9582555+02:00",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "inspection_only": true,
+  "artifacts_modified": false,
+  "tools": [
+    {
+      "name": "Get-AuthenticodeSignature",
+      "source": "Windows PowerShell"
+    },
+    {
+      "name": "signtool.exe",
+      "version": "10.0.26100.8249",
+      "source": "Windows SDK 10.0.26100.0 x64"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "ARX.exe",
+      "container": "ARX-Desktop-win-x64-v4.0.0-b1.zip",
+      "sha256": "c904c009889abd47df2af21dc806edcdca71903c8a5399425fb061e8376b08fc",
+      "get_authenticode_signature": {
+        "status": "NotSigned",
+        "signature_type": "None",
+        "signer_certificate_present": false,
+        "timestamp_certificate_present": false
+      },
+      "signtool_verify": {
+        "exit_code": 1,
+        "successfully_verified": 0,
+        "errors": 1,
+        "result": "No signature found"
+      }
+    },
+    {
+      "name": "ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe",
+      "sha256": "633b9e8d2266fd019f7c9bfcddf03abb7564fa4ae3d07d4ab50829fd3e6d19e0",
+      "get_authenticode_signature": {
+        "status": "NotSigned",
+        "signature_type": "None",
+        "signer_certificate_present": false,
+        "timestamp_certificate_present": false
+      },
+      "signtool_verify": {
+        "exit_code": 1,
+        "successfully_verified": 0,
+        "errors": 1,
+        "result": "No signature found"
+      }
+    }
+  ],
+  "certificate_inventory": {
+    "current_user_personal_code_signing_certificates": 0,
+    "local_machine_personal_code_signing_certificates": 0,
+    "certificates_with_private_key": 0,
+    "trusted_production_certificate_available": false,
+    "self_signed_certificate_created": false
+  },
+  "finding": {
+    "id": "SIGN-001",
+    "title": "Beta 1 Windows binaries are unsigned and no production signing identity is available",
+    "classification": "RELEASE_READINESS_BLOCKER",
+    "severity": "MEDIUM",
+    "release_blocking": true,
+    "scope_of_block": "Blocks claiming signed Windows distribution and should be resolved before a future stable/production-ready Windows release. Beta 1 already discloses this state and remains immutable.",
+    "evidence": "Both independent Windows signature mechanisms report no signature. Certificate inventory found no code-signing certificate in CurrentUser/My or LocalMachine/My.",
+    "documentation": "README.md:133, README.md:171, README.md:259, packaging/README.txt:23-24, and docs/release-notes-4.0.0-b1.md:59 disclose that the beta is unsigned."
+  },
+  "future_signing_gate": [
+    {
+      "order": 1,
+      "requirement": "Select and approve a publicly trusted production code-signing identity or managed signing service. Keep private key material in an HSM/service boundary; do not store a PFX or password in Git or ordinary Actions secrets."
+    },
+    {
+      "order": 2,
+      "requirement": "Use a protected, manually approved release environment. If the selected signing service supports GitHub OIDC, grant id-token:write only to the signing job and bind trust to the repository, reviewed workflow, tag, and environment."
+    },
+    {
+      "order": 3,
+      "requirement": "Build from the reviewed immutable tag. Sign ARX.exe before creating the portable ZIP and installer, then sign the completed installer. Use SHA-256 file and digest algorithms plus an approved RFC 3161 timestamp service."
+    },
+    {
+      "order": 4,
+      "requirement": "Verify each signed PE independently with Get-AuthenticodeSignature and signtool verify /pa /all /tw. Require the intended publisher identity, a trusted chain, a valid timestamp, and zero verification errors."
+    },
+    {
+      "order": 5,
+      "requirement": "Run malware, package-content, secret, identity, and installer smoke checks after signing. Generate final checksums only after all signing operations are complete."
+    },
+    {
+      "order": 6,
+      "requirement": "Create OIDC-backed artifact provenance for the final wheel, sdist, portable ZIP, installer, checksum manifest, and associated SBOM. Human approval remains required before public attachment or publication."
+    },
+    {
+      "order": 7,
+      "requirement": "Exercise signing only on future release candidates or disposable test binaries. Never sign, replace, or relabel the published Beta 1 artifacts."
+    }
+  ],
+  "gate": {
+    "beta1_status": "CONFIRMED_UNSIGNED",
+    "future_production_signing_status": "BLOCKED_NO_TRUSTED_CERTIFICATE",
+    "critical_findings": 0,
+    "high_findings": 0,
+    "medium_findings": 1
+  }
+}

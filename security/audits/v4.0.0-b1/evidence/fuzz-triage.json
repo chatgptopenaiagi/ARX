@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 bounded Hypothesis fuzz triage",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "triage_timestamp": "2026-08-24T11:45:18.5135561+02:00",
+  "source_evidence": {
+    "junit": "security/audits/v4.0.0-b1/evidence/fuzz-results.xml",
+    "junit_sha256": "f88c4aea491170bf7d3708e990e0907deb2644176dcc64afde575b511cee77e5",
+    "harness": "security/audits/v4.0.0-b1/fuzz/test_bounded_fuzz.py",
+    "campaign_exit": 1,
+    "tests": 10,
+    "passed": 5,
+    "failed": 5,
+    "errors": 0,
+    "skipped": 0,
+    "pytest_duration_seconds": 67.012
+  },
+  "classification_vocabulary": [
+    "PRODUCT_DEFECT",
+    "TEST_ASSUMPTION_ERROR",
+    "HARNESS_DEFECT",
+    "ENVIRONMENTAL",
+    "UNRESOLVED"
+  ],
+  "release_blocking_definition": "A release-blocking item prevents this fuzz gate from being accepted for a future production-publication review. It does not alter or retroactively withdraw the immutable Beta 1 artifacts.",
+  "failures": [
+    {
+      "test_name": "test_openai_response_parser_has_only_documented_outcomes",
+      "intended_property": "Every bounded OpenAI response payload either yields non-empty advisory text or a ProviderError carrying a documented PARSE_FAILURE or SERVER_FAILURE status.",
+      "minimal_counterexample_category": "Empty provider error object, empty response object, and non-object null response.",
+      "observed_behavior": "The product parser raised the documented ProviderError categories SERVER_FAILURE and PARSE_FAILURE. The property then failed because it compared the uppercase enum values against lowercase string literals.",
+      "expected_behavior": "The property should compare against the actual documented enum values, or compare enum members directly. The product behavior represented by these counterexamples already conforms to the intended outcome set.",
+      "classification": "TEST_ASSUMPTION_ERROR",
+      "security_relevance": "Provider response parsing must fail closed and preserve a sanitized operational category for malformed or server-error responses.",
+      "severity": "INFORMATIONAL",
+      "release_blocking": false,
+      "audit_gate_impact": "The generated cases exercised the product parser; the failure was confined to an incorrect case-sensitive assertion in the audit property.",
+      "evidence_location": [
+        "security/audits/v4.0.0-b1/evidence/fuzz-results.xml",
+        "security/audits/v4.0.0-b1/fuzz/test_bounded_fuzz.py:46"
+      ]
+    },
+    {
+      "test_name": "test_truncated_pe_optional_header_is_reported_not_raised",
+      "intended_property": "A bounded, truncated PE optional header is classified as a Windows PE and produces an inspection error without an unhandled exception or mutation of the input file.",
+      "minimal_counterexample_category": "No generated product counterexample; Hypothesis stopped at collection/execution setup because the property used a function-scoped tmp_path fixture.",
+      "observed_behavior": "Hypothesis raised FailedHealthCheck.function_scoped_fixture before the product scanner was exercised.",
+      "expected_behavior": "The harness must provide fresh per-example temporary storage so all generated malformed PE inputs reach the scanner under the stated bounds.",
+      "classification": "HARNESS_DEFECT",
+      "security_relevance": "Malformed executable metadata is an untrusted parsing boundary; the intended robustness property remains untested by this campaign.",
+      "severity": "LOW",
+      "release_blocking": true,
+      "audit_gate_impact": "Blocks acceptance of the fuzz gate for production review because this property did not execute; it is not evidence of an ARX product defect.",
+      "evidence_location": [
+        "security/audits/v4.0.0-b1/evidence/fuzz-results.xml",
+        "security/audits/v4.0.0-b1/fuzz/test_bounded_fuzz.py:174"
+      ]
+    },
+    {
+      "test_name": "test_external_redaction_removes_secret_value_and_stays_json_serializable",
+      "intended_property": "Sensitive assignments are redacted at the external boundary and the resulting bounded context remains JSON-serializable without NUL characters.",
+      "minimal_counterexample_category": "A generated credential token also appeared independently as an ordinary background mapping key; the actual credential and labeled assignment were redacted.",
+      "observed_behavior": "The product replaced the credential field and the labeled api_key assignment with redaction markers. The assertion searched the entire serialization for the generated token and found the independent background key, which the generator had not designated as a sensitive field.",
+      "expected_behavior": "The property must avoid independently aliasing the chosen token into non-sensitive generated data, or explicitly define a cross-field taint-tracking requirement before asserting global token absence. The present implementation is context/pattern based, not cross-field taint tracking.",
+      "classification": "TEST_ASSUMPTION_ERROR",
+      "security_relevance": "External-boundary redaction protects credentials and other sensitive values, but an over-broad oracle can incorrectly report leakage when unrelated data happens to equal a generated token.",
+      "severity": "INFORMATIONAL",
+      "release_blocking": false,
+      "audit_gate_impact": "The minimal example demonstrates generator aliasing and an over-broad oracle, not failure to redact the credential-bearing positions.",
+      "evidence_location": [
+        "security/audits/v4.0.0-b1/evidence/fuzz-results.xml",
+        "security/audits/v4.0.0-b1/fuzz/test_bounded_fuzz.py:86"
+      ]
+    },
+    {
+      "test_name": "test_directory_package_metadata_is_handled_without_execution",
+      "intended_property": "Bounded package.json metadata in a directory is parsed without executing content and without removing the source file.",
+      "minimal_counterexample_category": "No generated product counterexample; Hypothesis stopped at setup because the property used a function-scoped tmp_path fixture.",
+      "observed_behavior": "Hypothesis raised FailedHealthCheck.function_scoped_fixture before scan_software was called.",
+      "expected_behavior": "The harness must create isolated per-example directories inside the property before generated metadata is passed to the scanner.",
+      "classification": "HARNESS_DEFECT",
+      "security_relevance": "Project/package metadata is an untrusted local input boundary and must be parsed without code execution.",
+      "severity": "LOW",
+      "release_blocking": true,
+      "audit_gate_impact": "Blocks acceptance of the fuzz gate for production review because this property did not execute; it is not evidence of an ARX product defect.",
+      "evidence_location": [
+        "security/audits/v4.0.0-b1/evidence/fuzz-results.xml",
+        "security/audits/v4.0.0-b1/fuzz/test_bounded_fuzz.py:164"
+      ]
+    },
+    {
+      "test_name": "test_archive_inspection_is_bounded_and_never_extracts",
+      "intended_property": "A bounded ZIP with generated metadata and entries is inspected without extraction, reports stable archive metadata, and does not create additional files.",
+      "minimal_counterexample_category": "No generated product counterexample; Hypothesis stopped at setup because the property used a function-scoped tmp_path fixture.",
+      "observed_behavior": "Hypothesis raised FailedHealthCheck.function_scoped_fixture before an archive was generated or scan_software was called.",
+      "expected_behavior": "The harness must create fresh per-example temporary storage inside the property so bounded archives reach the scanner and extraction side effects can be measured.",
+      "classification": "HARNESS_DEFECT",
+      "security_relevance": "Archive metadata and member names are attacker-controlled local inputs; bounded non-extracting inspection is a material parser-security property.",
+      "severity": "LOW",
+      "release_blocking": true,
+      "audit_gate_impact": "Blocks acceptance of the fuzz gate for production review because this property did not execute; it is not evidence of an ARX product defect.",
+      "evidence_location": [
+        "security/audits/v4.0.0-b1/evidence/fuzz-results.xml",
+        "security/audits/v4.0.0-b1/fuzz/test_bounded_fuzz.py:145"
+      ]
+    }
+  ],
+  "classification_summary": {
+    "PRODUCT_DEFECT": 0,
+    "TEST_ASSUMPTION_ERROR": 2,
+    "HARNESS_DEFECT": 3,
+    "ENVIRONMENTAL": 0,
+    "UNRESOLVED": 0,
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 3,
+    "INFORMATIONAL": 2
+  },
+  "gate": {
+    "result": "FAIL_INCOMPLETE",
+    "pass": false,
+    "confirmed_product_defects": 0,
+    "release_blocking_items": 3,
+    "reason": "Three security-relevant properties never reached ARX product code because of a harness fixture defect. Two other failures are demonstrably incorrect test assumptions. The campaign therefore cannot be reported as passed, even though its recorded failures establish no ARX product defect.",
+    "remediation_scope": "Correct and independently review the audit harness in a future audit change, then rerun the bounded campaign. No Beta 1 product code or immutable release artifact is to be changed as part of this triage."
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "root_package": {
+    "name": "arx-prescanner",
+    "version": "4.0.0b1",
+    "wheel": "arx_prescanner-4.0.0b1-py3-none-any.whl",
+    "sha256": "44ec015db141fd14eec411dc6fd6b4f40f989f256e2404c2be0fb8684ee5dbc4"
+  },
+  "declared_runtime_requirements": [
+    "tomli>=2; python_version < '3.11'"
+  ],
+  "resolved_environments": [
+    {
+      "python": "3.10.8",
+      "dependencies": [
+        {"name": "tomli", "version": "2.4.1", "relationship": "DIRECT_CONDITIONAL"}
+      ]
+    },
+    {
+      "python": "3.14.7 (representative of >=3.11 marker branch)",
+      "dependencies": []
+    }
+  ],
+  "resolution_method": "Fresh temporary Python 3.10 and Python 3.14 virtual environments outside the checkout. Python 3.10 installed the immutable reviewed wheel and resolved tomli 2.4.1; Python 3.14 installed the same wheel with --no-index, proving the active runtime dependency closure is empty for that marker branch.",
+  "root_package_audit_note": "The unreleased-to-production-PyPI ARX 4.0.0b1 root package is assessed through source, binary, secret, fuzz, and integrity gates; dependency CVE tools assess the resolved third-party runtime closure."
+}

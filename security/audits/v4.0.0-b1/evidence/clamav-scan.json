@@ -1,0 +1,30 @@
+{
+  "result": "PASS_DEFINED_GATE",
+  "tool": {
+    "name": "ClamAV clamscan",
+    "engine_version": "1.5.3",
+    "daily_database_version": 28102,
+    "known_signatures": 3628027,
+    "environment": "WSL2 Ubuntu 24.04.4 LTS",
+    "mode": "On-demand only; clamav-daemon was not installed"
+  },
+  "database_update": {
+    "daily": {"version": 28102, "signatures": 355622, "self_test": "PASS"},
+    "main": {"version": 63, "signatures": 3287027, "self_test": "PASS"},
+    "bytecode": {"version": 339, "signatures": 80, "self_test": "PASS"},
+    "note": "freshclam reported that clamd.conf was absent after successful database updates. This is expected because the scan used the on-demand CLI and no clamd daemon was installed."
+  },
+  "input_identity": {
+    "result": "PASS",
+    "method": "WSL sha256sum immediately before scanning",
+    "note": "The first WSL path check contained a misspelled temporary-directory name and performed no scan. The corrected path was hash-verified before use."
+  },
+  "targets": [
+    {"filename": "arx_prescanner-4.0.0b1-py3-none-any.whl", "sha256": "44ec015db141fd14eec411dc6fd6b4f40f989f256e2404c2be0fb8684ee5dbc4", "start": "2026-08-24T11:18:59+02:00", "end": "2026-08-24T11:19:14+02:00", "exit_code": 0, "infected_files": 0, "result": "OK"},
+    {"filename": "arx_prescanner-4.0.0b1.tar.gz", "sha256": "ac95e7ec679c626ac641608151d0951353e83d36c9df307904dda120db86a790", "start": "2026-08-24T11:19:19+02:00", "end": "2026-08-24T11:19:34+02:00", "exit_code": 0, "infected_files": 0, "result": "OK"},
+    {"filename": "ARX-Desktop-win-x64-v4.0.0-b1.zip", "sha256": "8fde54f9c1ebb2fb1ed37fac2612693fbf07300e7114862f48206730245c2394", "start": "2026-08-24T11:19:40+02:00", "end": "2026-08-24T11:21:00+02:00", "exit_code": 0, "infected_files": 0, "result": "OK"},
+    {"filename": "ARX.exe", "sha256": "c904c009889abd47df2af21dc806edcdca71903c8a5399425fb061e8376b08fc", "start": "2026-08-24T11:21:08+02:00", "end": "2026-08-24T11:21:24+02:00", "exit_code": 0, "infected_files": 0, "result": "OK", "identity": "Published portable ZIP executable confirmed by artifact-identity-reconciliation.json"},
+    {"filename": "ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe", "sha256": "633b9e8d2266fd019f7c9bfcddf03abb7564fa4ae3d07d4ab50829fd3e6d19e0", "start": "2026-08-24T11:21:31+02:00", "end": "2026-08-24T11:21:52+02:00", "exit_code": 0, "infected_files": 0, "result": "OK"}
+  ],
+  "scope_note": "Only local temporary copies of the reviewed Beta 1 artifacts were scanned. No files were uploaded, removed, quarantined, signed, rebuilt, or published."
+}

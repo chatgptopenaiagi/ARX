@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 dynamic network-security scope and mocked transport checks",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "observed_at": "2026-08-24T12:33:11+02:00",
+  "scope": {
+    "listener_search_roots": ["src", "tests"],
+    "listener_patterns": ["HTTPServer", "socketserver", "serve_forever", "listen(", "Flask(", "FastAPI(", "uvicorn", "aiohttp.web", "127.0.0.1", "localhost"],
+    "listener_candidates_found": 0,
+    "local_network_service_exposed_by_arx": false,
+    "conventional_dast": "NOT_APPLICABLE",
+    "outbound_surface": "ARX has an HTTPS client boundary for the OpenAI API and explicit browser-search URLs; it does not expose an inbound HTTP service.",
+    "external_targets_contacted_by_dynamic_tests": 0,
+    "paid_openai_generation_performed": false
+  },
+  "dynamic_evidence": [
+    {
+      "test_set": "Existing provider, context, credential, audit, and web security regression tests",
+      "execution": "Injected transports and local filesystem mocks only",
+      "tests": 48,
+      "passed": 48,
+      "failed": 0,
+      "duration_seconds": 1.28,
+      "junit_local_evidence": "security/audits/v4.0.0-b1/evidence/provider-mock-tests.xml",
+      "junit_sha256": "39eeac97c2c8d184e12236f7c7744ceca5b10221c28703119cf4888b3bd92397",
+      "coverage": [
+        "malformed provider responses",
+        "wrong model metadata",
+        "TLS and network error categorization",
+        "timeout and cancellation",
+        "request/context bounds",
+        "redaction at the provider boundary",
+        "metadata-only audit controls",
+        "credential failure states",
+        "browser URL allowlisting"
+      ]
+    },
+    {
+      "test_set": "Audit-only bounded localhost transport tests",
+      "execution": "Ephemeral ThreadingHTTPServer bound to 127.0.0.1 on an OS-assigned port",
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "duration_seconds": 1.42,
+      "junit_local_evidence": "security/audits/v4.0.0-b1/evidence/provider-localhost-tests.xml",
+      "junit_sha256": "8cb605aa900b7780dc93745bea3107918991e966b26171928c742948ece1c0ee",
+      "coverage": [
+        "redirect rejection at the real urllib transport boundary",
+        "rejection of a response larger than MAX_PROVIDER_RESPONSE_BYTES"
+      ]
+    }
+  ],
+  "source_controls": [
+    {
+      "control": "Exact OpenAI endpoint allowlist",
+      "evidence": "src/arx/advisory/providers.py:45-51,309-321",
+      "status": "PRESENT"
+    },
+    {
+      "control": "Authenticated redirect rejection",
+      "evidence": "src/arx/advisory/providers.py:123-127,299-304",
+      "status": "PRESENT_AND_LOCALHOST_TESTED"
+    },
+    {
+      "control": "Response-size bound",
+      "evidence": "src/arx/advisory/providers.py:48-50,299-304,540-548",
+      "status": "PRESENT_AND_LOCALHOST_TESTED"
+    }
+  ],
+  "privacy": {
+    "raw_junit_commit_policy": "EXCLUDED_FROM_GIT",
+    "reason": "pytest JUnit metadata contains the local host name; durable evidence records only test identities, counts, timing, and hashes.",
+    "secrets_observed": false
+  },
+  "gate": {
+    "result": "PASS_DEFINED_OUTBOUND_BOUNDARY_TESTS",
+    "conventional_dast": "NOT_APPLICABLE",
+    "critical_findings": 0,
+    "high_findings": 0,
+    "release_blocking_items": 0
+  }
+}

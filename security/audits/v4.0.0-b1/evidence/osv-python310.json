@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "source": {
+        "path": "security/audits/v4.0.0-b1/evidence/osv-input/python310/requirements.txt",
+        "type": "lockfile"
+      },
+      "packages": [
+        {
+          "package": {
+            "name": "tomli",
+            "version": "2.4.1",
+            "ecosystem": "PyPI"
+          }
+        }
+      ]
+    }
+  ],
+  "experimental_config": {
+    "licenses": {
+      "summary": false,
+      "allowlist": null
+    }
+  }
+}

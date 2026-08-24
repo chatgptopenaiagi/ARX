@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "audience": "technical",
+  "delivery_mode": "portable HTML",
+  "reporting_job": {
+    "question": "Which defined security gates did immutable ARX 4.0.0 Beta 1 pass, which findings or evidence gaps remain, and what blocks a future production-readiness review?",
+    "decision_supported": "Whether the evidence is sufficient to proceed to a separately authorized production-publication review.",
+    "scope": "Exact release commit, published artifacts, ARX source, copied artifacts, localhost/mocks, temporary environments, and disposable WSL tooling.",
+    "time_frame": "Point-in-time audit on 2026-08-24.",
+    "comparison_baseline": "The published GitHub Release hashes and exact release commit; independent build A and build B for reproducibility.",
+    "success_criteria": "Every requested gate has an evidence-backed result; failures and limitations remain explicit; no Beta 1 byte, tag, asset, credential, or publication state is changed."
+  },
+  "required_structure_mapping": [
+    {"required_role": "Title", "visible_section": "ARX 4.0.0 Beta 1 Security Audit"},
+    {"required_role": "Technical summary", "visible_section": "Technical summary"},
+    {"required_role": "Key findings with visual evidence", "visible_sections": ["Defined controls passed, but production readiness remains blocked", "Four medium findings and four lower-severity gaps need explicit review"], "adaptation": "One bounded severity chart shows the eight non-informational remediation items; exact tables carry identities, provenance, and exceptions."},
+    {"required_role": "Scope, data, and definitions", "visible_section": "Scope and trust anchors"},
+    {"required_role": "Methodology", "visible_section": "Methodology was read-only, bounded, and release-anchored"},
+    {"required_role": "Limitations and robustness", "visible_section": "Limitations and robustness checks"},
+    {"required_role": "Recommended next steps", "visible_section": "Recommended next steps before any production-publication review"},
+    {"required_role": "Further questions", "visible_section": "Further questions for the next gate"}
+  ],
+  "chart_map": {
+    "charts_included": 1,
+    "section": "Four medium findings and four lower-severity gaps need explicit review",
+    "analytical_question": "How are the eight reviewed non-informational remediation items distributed by severity?",
+    "takeaway": "Four are MEDIUM and four are LOW; no confirmed HIGH or CRITICAL item was established.",
+    "family": "Comparison",
+    "type": "bar",
+    "fields": ["severity", "count"],
+    "source": "In-memory SQLite aggregation over evidence/security-gate-summary.json:findings_requiring_review; exact query in the chart source metadata",
+    "palette_policy": "single-root preferred; category labels and values carry meaning without a legend",
+    "constraint": "This is not a risk score. Informational observations are excluded, and exact finding identity remains in the adjacent table.",
+    "table_first_reason_for_other_sections": "Hashes, categorical gate states, provenance, and exception text require exact lookup. Additional charts would obscure distinctions such as policy versus product blockers and structural versus bit-for-bit reproducibility."
+  },
+  "privacy": {
+    "raw_junit_files_committed": false,
+    "reason": "Raw pytest JUnit metadata contains the local host name. Durable JSON records retain test identities, results, durations, and raw evidence hashes without embedding host identity.",
+    "credentials_accessed": false,
+    "external_artifact_uploads": false
+  }
+}

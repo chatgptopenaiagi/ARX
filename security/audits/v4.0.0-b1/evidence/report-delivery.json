@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "report": "ARX 4.0.0 Beta 1 Security Audit",
+  "delivery_mode": "portable self-contained HTML",
+  "canonical_input": {
+    "path": "security/audits/v4.0.0-b1/artifact.json",
+    "bytes": 83774,
+    "sha256": "8f2df8143d195d325129d495d85d35260b6b6fe2498f4b3f3b145a7ea0cd83d6"
+  },
+  "output": {
+    "path": "security/audits/v4.0.0-b1/report.html",
+    "bytes": 469270,
+    "sha256": "5c910f94f993138e704efee3b1180ed94d2896f30809a4ba7e67ea9965e905ed",
+    "self_contained": true
+  },
+  "builder_result": {
+    "ok": true,
+    "validation": "passed",
+    "package": "passed",
+    "verification": "structural_only",
+    "blocks": 24,
+    "charts": 1,
+    "tables": 8,
+    "metrics": 0,
+    "html_blocks": 0
+  },
+  "browser_qa": {
+    "status": "NOT_VERIFIED",
+    "automatic_detection": "No compatible Chromium headless-shell was detected.",
+    "existing_browser_attempt": "An already-installed Google Chrome executable was supplied without downloading a browser; the verifier returned browser_environment_mismatch.",
+    "source_dialog": "not_verified",
+    "source_interaction": "not_verified",
+    "viewports": [],
+    "impact": "Exact payload equality, validation, packaging, runtime roots, and semantic fallback passed. Enhanced-reader chart geometry, responsive viewports, and source-dialog interaction were not certified."
+  },
+  "failed_validation_history": [
+    {
+      "stage": "package",
+      "reason": "The initial table-only artifact lacked the chart block required by the canonical report contract.",
+      "disposition": "Added one bounded reviewed-severity bar chart with an adjacent interpretation and source query."
+    },
+    {
+      "stage": "package",
+      "reason": "Native chart/table sources initially named reviewed JSON evidence but did not expose an actually executed SQL query.",
+      "disposition": "The report generator now executes in-memory SQLite SELECT statements and attaches their exact text plus upstream evidence identity."
+    }
+  ],
+  "release_impact": "No Beta 1 release artifact, tag, GitHub asset, TestPyPI file, credential, signing state, or production publication state was changed."
+}

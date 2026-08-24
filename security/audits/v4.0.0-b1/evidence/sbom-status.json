@@ -1,0 +1,50 @@
+{
+  "result": "PASS_DEFINED_GATE",
+  "generator_primary": "cyclonedx-bom 7.3.1",
+  "generator_optional": "Syft 1.45.1",
+  "artifacts": [
+    {
+      "filename": "arx-prescanner-4.0.0b1-python310.cdx.json",
+      "format": "CycloneDX 1.6 JSON",
+      "sha256": "33519c961ae82f24097a0f4493405bf34356fbcc2e23c0eabea08eb5afbd9497",
+      "root": "arx-prescanner@4.0.0b1",
+      "dependencies": ["tomli@2.4.1"],
+      "validation": ["cyclonedx-py --validate: PASS", "JSON parse: PASS", "OSV-Scanner parse: PASS"]
+    },
+    {
+      "filename": "arx-prescanner-4.0.0b1-python314.cdx.json",
+      "format": "CycloneDX 1.6 JSON",
+      "sha256": "9009cb6f9482af47e617cfdbd0408b8364dc12f0a5a53021407fb15b0f45d348",
+      "root": "arx-prescanner@4.0.0b1",
+      "dependencies": [],
+      "validation": ["cyclonedx-py --validate: PASS", "JSON parse: PASS"],
+      "consumer_note": "OSV-Scanner parsed the document but returned no package sources because this valid no-dependency BOM has only metadata.component and no components array."
+    },
+    {
+      "filename": "arx-prescanner-4.0.0b1-python310.spdx.json",
+      "format": "SPDX 2.3 JSON",
+      "sha256": "e6470cee762f483793dfea8d4b2cec336808986ef03518ab05b807740add28e0",
+      "root": "arx-prescanner@4.0.0b1",
+      "dependencies": ["tomli@2.4.1"],
+      "validation": ["Syft generation: PASS", "JSON parse: PASS", "OSV-Scanner parse: PASS"]
+    },
+    {
+      "filename": "arx-prescanner-4.0.0b1-python314.spdx.json",
+      "format": "SPDX 2.3 JSON",
+      "sha256": "5f811c4e128fa28499851d32a424067d76a46aa95247c3202ccfca090637df93",
+      "root": "arx-prescanner@4.0.0b1",
+      "dependencies": [],
+      "validation": ["Syft generation: PASS", "JSON parse: PASS", "OSV-Scanner parse: PASS"]
+    }
+  ],
+  "privacy_scan": {
+    "result": "PASS",
+    "forbidden_markers": ["API-key shapes", "DPAPI blob names", "transmission audit names", "user-profile paths", "checkout paths"],
+    "finding_count": 0
+  },
+  "notes": [
+    "The two environment variants preserve the conditional Python 3.10 tomli dependency instead of silently merging incompatible dependency closures.",
+    "Reproducible CycloneDX output omits timestamps and random serial identifiers.",
+    "SPDX output is optional supporting evidence; the CycloneDX documents are the primary SBOMs."
+  ]
+}

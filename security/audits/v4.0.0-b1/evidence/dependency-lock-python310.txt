@@ -1,0 +1,3 @@
+# Resolved from the reviewed ARX 4.0.0b1 wheel on CPython 3.10.8.
+# The wheel declares: tomli>=2; python_version < "3.11".
+tomli==2.4.1

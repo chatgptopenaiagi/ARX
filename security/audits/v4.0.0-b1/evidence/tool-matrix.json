@@ -1,0 +1,73 @@
+{
+  "audit_target": {
+    "product": "ARX 4.0.0 Beta 1",
+    "tag": "v4.0.0-b1",
+    "commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b"
+  },
+  "observed_on": "2026-08-24",
+  "environments": [
+    {
+      "name": "Windows host",
+      "purpose": "Native release, Windows security, packaging, and signature inspection"
+    },
+    {
+      "name": "Conda arx-sec",
+      "purpose": "Existing isolated Python security-tool environment",
+      "python": "3.12.13"
+    },
+    {
+      "name": "WSL2 Ubuntu",
+      "purpose": "Disposable Linux-only or second-engine audit tooling",
+      "version": "Ubuntu 24.04.4 LTS; WSL 2.7.12.0; kernel 6.18.33.2"
+    },
+    {
+      "name": "Isolated PyPI attestation verifier",
+      "purpose": "Cryptographic verification of the exact TestPyPI distribution provenance without altering ARX runtime environments",
+      "python": "3.10.8",
+      "location_policy": "Temporary virtual environment outside the source tree"
+    }
+  ],
+  "tools": [
+    {"tool": "Python (PATH)", "version": "3.10.8", "source": "Windows host installation", "purpose": "ARX-supported Python and release scripts", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Python Launcher default", "version": "3.14.7", "source": "Windows py launcher", "purpose": "Inventory only", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "pip", "version": "26.2.1 (Python 3.10)", "source": "Windows Python installation", "purpose": "Package resolution and isolated installation", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "PowerShell", "version": "7.6.5", "source": "Windows host installation", "purpose": "Audit orchestration and native checks", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Windows PowerShell", "version": "5.1.19041.7663", "source": "Windows component", "purpose": "Native Defender status queries", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Git", "version": "2.55.0.windows.3", "source": "Windows host installation", "purpose": "Immutable-tag and worktree verification", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "GitHub CLI", "version": "2.98.0", "source": "Windows host installation", "purpose": "Read-only GitHub workflow, release, and attestation evidence", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Microsoft Defender Antivirus", "version": "4.18.26070.9; signatures 1.457.316.0", "source": "Windows component", "purpose": "Primary malware scan", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Windows SDK signtool", "version": "10.0.26100.8249", "source": "Windows SDK 10.0.26100.0", "purpose": "Authenticode verification", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Inno Setup", "version": "7.1.0", "source": "Per-user Windows installation", "purpose": "Installer rebuild experiment", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Conda", "version": "26.7.1", "source": "Anaconda installation", "purpose": "Isolated security-tool execution", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Python", "version": "3.12.13", "source": "Conda arx-sec", "purpose": "Security tool runtime", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "pip-audit", "version": "2.10.1", "source": "PyPI package in Conda arx-sec", "purpose": "Python dependency vulnerability audit", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "CycloneDX BOM", "version": "7.3.1", "source": "PyPI package in Conda arx-sec", "purpose": "CycloneDX SBOM generation", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "Bandit", "version": "1.9.4", "source": "PyPI package in Conda arx-sec", "purpose": "Python SAST", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "Semgrep", "version": "1.174.0", "source": "PyPI package in Conda arx-sec", "purpose": "Rule-based SAST", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "detect-secrets", "version": "1.5.0", "source": "PyPI package in Conda arx-sec", "purpose": "Secret scanning", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "pytest", "version": "9.1.1", "source": "PyPI package in Conda arx-sec", "purpose": "Test and fuzz harness execution", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "Hypothesis", "version": "6.165.10", "source": "PyPI package in Conda arx-sec", "purpose": "Bounded property-based fuzzing", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "yara-python", "version": "4.5.4", "source": "PyPI package in Conda arx-sec", "purpose": "Local rule matching support", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "pefile", "version": "2024.8.26", "source": "PyPI package in Conda arx-sec", "purpose": "PE metadata and reproducibility analysis", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "LIEF", "version": "1.0.0", "source": "PyPI package in Conda arx-sec", "purpose": "Binary structure inspection", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "Ruff", "version": "0.16.4", "source": "PyPI package in Conda arx-sec", "purpose": "Static lint inventory", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "mypy", "version": "2.3.1", "source": "PyPI package in Conda arx-sec", "purpose": "Static type inventory", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "pylint", "version": "4.0.7", "source": "PyPI package in Conda arx-sec", "purpose": "Static lint inventory", "environment": "Conda arx-sec", "status": "INSTALLED"},
+    {"tool": "Syft", "version": "1.45.1", "source": "Chocolatey host package", "purpose": "Independent SBOM generation", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Grype", "version": "0.114.0", "source": "Chocolatey host package", "purpose": "Independent vulnerability matching", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Trivy", "version": "0.74.0", "source": "Chocolatey host package", "purpose": "Independent filesystem/SBOM vulnerability audit", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Gitleaks", "version": "8.30.1", "source": "Chocolatey host package", "purpose": "Repository and artifact secret scanning", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "OSV-Scanner", "version": "2.4.0", "source": "WinGet host package", "purpose": "Independent OSV vulnerability audit", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "YARA CLI", "version": "4.5.5", "source": "Chocolatey host package", "purpose": "Local copied-artifact rule scanning", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Sigcheck", "version": "2.91", "source": "Chocolatey Sysinternals package", "purpose": "Signature and PE inspection", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "Cosign", "version": "3.1.2", "source": "Existing Go binary installation", "purpose": "Sigstore attestation verification", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "BinSkim", "version": "4.4.9.11", "source": "C:/Security-Tools/BinSkim package", "purpose": "PE security-property analysis", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "PSScriptAnalyzer", "version": "1.25.0", "source": "Installed PowerShell module", "purpose": "PowerShell static analysis", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "WSL", "version": "2.7.12.0; Ubuntu 24.04.4 LTS", "source": "Windows component and Ubuntu distribution", "purpose": "Disposable isolated Linux analysis", "environment": "Windows host", "status": "INSTALLED"},
+    {"tool": "ClamAV", "version": "1.5.3", "source": "Ubuntu 24.04 security/update repositories", "purpose": "Isolated second-engine on-demand malware scan", "environment": "WSL2 Ubuntu", "initial_status": "MISSING", "status": "INSTALLED_DURING_AUDIT"},
+    {"tool": "innoextract", "version": "1.9", "source": "Ubuntu 24.04 package extracted into an unprivileged temporary audit directory", "purpose": "Read-only installer payload comparison attempt", "environment": "WSL2 Ubuntu", "initial_status": "MISSING", "status": "TEMPORARY_AUDIT_TOOL_UNSUPPORTED_FOR_INNO_7_1", "limitation": "Supports Inno Setup through 6.0.5 and could not determine the Beta 1 Inno Setup 7.1.0 data version; no installer content was extracted."},
+    {"tool": "CodeQL CLI", "version": null, "source": "Local host", "purpose": "Local CodeQL analysis", "environment": "Windows host", "status": "MISSING"},
+    {"tool": "GitHub CodeQL workflow", "version": "github/codeql-action v4.37.0 pinned SHA", "source": "GitHub Actions", "purpose": "Repository CodeQL analysis", "environment": "GitHub Actions", "status": "INSTALLED_CI_ONLY"}
+    ,{"tool": "pypi-attestations", "version": "0.0.30", "source": "PyPI package in a dedicated temporary virtual environment", "purpose": "Verify PyPI Integrity API attestation bundles and expected GitHub publisher identity", "environment": "Isolated PyPI attestation verifier", "status": "INSTALLED_DURING_AUDIT"}
+  ]
+}

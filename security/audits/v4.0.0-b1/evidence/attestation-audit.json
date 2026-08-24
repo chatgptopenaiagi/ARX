@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 publication and artifact attestation audit",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "observed_at": "2026-08-24T12:30:06.0325223+02:00",
+  "published_release_modified": false,
+  "testpypi": {
+    "project": "arx-prescanner",
+    "version": "4.0.0b1",
+    "version_url": "https://test.pypi.org/project/arx-prescanner/4.0.0b1/",
+    "status": "PRESENT_AND_CRYPTOGRAPHICALLY_VERIFIED",
+    "trusted_publisher": {
+      "kind": "GitHub",
+      "repository": "chatgptopenaiagi/ARX",
+      "workflow": "publish-pypi.yml",
+      "environment": "testpypi",
+      "workflow_run_id": 32700693122,
+      "workflow_run_url": "https://github.com/chatgptopenaiagi/ARX/actions/runs/32700693122",
+      "workflow_run_conclusion": "success",
+      "workflow_run_head_sha": "f3bce58552578df2795f292b1d4f572ee6af8e0b"
+    },
+    "files": [
+      {
+        "filename": "arx_prescanner-4.0.0b1-py3-none-any.whl",
+        "bytes": 111830,
+        "sha256": "44ec015db141fd14eec411dc6fd6b4f40f989f256e2404c2be0fb8684ee5dbc4",
+        "upload_time": "2026-08-24T07:16:36.169644Z",
+        "provenance_response_sha256": "2284a3a527cad14e2a6bc0914c74eee102021d49ab251d1cc9b5a39dcfc6c5d2",
+        "attestation_subject_matches": true,
+        "predicate_type": "https://docs.pypi.org/attestations/publish/v1",
+        "attestation_count": 1,
+        "certificate_present": true,
+        "transparency_entry_present": true,
+        "verification": "PASS"
+      },
+      {
+        "filename": "arx_prescanner-4.0.0b1.tar.gz",
+        "bytes": 144478,
+        "sha256": "ac95e7ec679c626ac641608151d0951353e83d36c9df307904dda120db86a790",
+        "upload_time": "2026-08-24T07:16:37.766510Z",
+        "provenance_response_sha256": "83e24eae4cf3f0a7859eb211760f9ce35bb534cebefb7352fa88cfa9b3a645c6",
+        "attestation_subject_matches": true,
+        "predicate_type": "https://docs.pypi.org/attestations/publish/v1",
+        "attestation_count": 1,
+        "certificate_present": true,
+        "transparency_entry_present": true,
+        "verification": "PASS"
+      }
+    ],
+    "verifier": {
+      "tool": "pypi-attestations",
+      "version": "0.0.30",
+      "repository_constraint": "https://github.com/chatgptopenaiagi/ARX",
+      "wheel_exit_code": 0,
+      "sdist_exit_code": 0,
+      "result": "PASS"
+    },
+    "workflow_final_state": "disabled_manually"
+  },
+  "production_pypi": {
+    "project_history_preserved": true,
+    "version_4_0_0b1_http_status": 404,
+    "version_present": false,
+    "publication": "BLOCKED_BY_HUMAN_GATE",
+    "attestation_status": "NOT_APPLICABLE_VERSION_NOT_PUBLISHED"
+  },
+  "github_release_artifact_attestations": {
+    "status": "ABSENT",
+    "method": "gh attestation verify against chatgptopenaiagi/ARX for each exact reviewed SHA-256",
+    "observations": [
+      {"filename": "arx_prescanner-4.0.0b1-py3-none-any.whl", "sha256": "44ec015db141fd14eec411dc6fd6b4f40f989f256e2404c2be0fb8684ee5dbc4", "result": "NOT_FOUND", "http_status": 404},
+      {"filename": "arx_prescanner-4.0.0b1.tar.gz", "sha256": "ac95e7ec679c626ac641608151d0951353e83d36c9df307904dda120db86a790", "result": "NOT_FOUND", "http_status": 404},
+      {"filename": "ARX-Desktop-win-x64-v4.0.0-b1.zip", "sha256": "8fde54f9c1ebb2fb1ed37fac2612693fbf07300e7114862f48206730245c2394", "result": "NOT_FOUND", "http_status": 404},
+      {"filename": "ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe", "sha256": "633b9e8d2266fd019f7c9bfcddf03abb7564fa4ae3d07d4ab50829fd3e6d19e0", "result": "NOT_FOUND", "http_status": 404},
+      {"filename": "SHA256SUMS.txt", "sha256": "8a3ed174e79af41067ca58f02b7b332e8183233c149309e18f49d21afec92673", "result": "NOT_FOUND", "http_status": 404}
+    ],
+    "workflow_observation": "The Beta 1 release-asset workflow does not request id-token: write or attestations: write and does not invoke a GitHub artifact-attestation action.",
+    "beta_1_action": "NO_RETROFIT; published assets remain immutable"
+  },
+  "findings": [
+    {
+      "id": "ATTEST-001",
+      "title": "GitHub provenance is absent for the five Beta 1 release assets",
+      "classification": "SUPPLY_CHAIN_PROVENANCE_GAP",
+      "severity": "MEDIUM",
+      "release_blocking": true,
+      "scope_of_block": "Blocks claiming GitHub artifact provenance for a future production-ready release; it does not invalidate the verified TestPyPI publish attestations or modify Beta 1.",
+      "recommendation": "For future reviewed builds, use GitHub OIDC artifact attestations with minimal id-token: write and attestations: write job permissions, pin the attestation action to a reviewed commit, attest all five release artifacts, and associate the validated SBOM where supported. Keep signing and publication behind separate human gates."
+    },
+    {
+      "id": "ATTEST-002",
+      "title": "Exact TestPyPI distributions have valid publish attestations",
+      "classification": "POSITIVE_CONTROL_EVIDENCE",
+      "severity": "INFORMATIONAL",
+      "release_blocking": false,
+      "recommendation": "Preserve the existing Trusted Publisher identity and verify the expected repository, workflow, environment, subject filename, and digest for future publication gates."
+    }
+  ],
+  "gate": {
+    "testpypi_publish_attestation": "PASS",
+    "github_release_artifact_attestation": "FAIL_ABSENT",
+    "critical_findings": 0,
+    "high_findings": 0,
+    "medium_findings": 1,
+    "release_blocking_items": 1
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "title": "Proposed ARX security CI separation for a future release",
+  "status": "DESIGN_ONLY_NOT_ENABLED",
+  "prepared_from": {
+    "release_tag": "v4.0.0-b1",
+    "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+    "audit_branch": "security-audit-v4.0.0-b1"
+  },
+  "global_constraints": [
+    "No security workflow publishes packages or GitHub releases.",
+    "No security workflow signs artifacts without a distinct protected human gate.",
+    "No pull_request_target trigger.",
+    "Checkout credentials are not persisted.",
+    "Default permissions are contents: read; write permissions are isolated to a future attestation job.",
+    "Actions and tool versions are pinned and reviewed before activation.",
+    "Untrusted pull requests never receive environments, credentials, signing material, or OIDC write permissions."
+  ],
+  "automatic_safe_ci": {
+    "proposed_triggers": ["pull_request", "push to reviewed development branches", "workflow_dispatch"],
+    "default_permissions": {"contents": "read"},
+    "jobs": [
+      {
+        "name": "dependency-and-cve",
+        "tools": ["pip-audit 2.10.1", "OSV-Scanner 2.4.0"],
+        "scope": "Build metadata and exact supported dependency closures",
+        "outputs": ["human-readable findings", "JSON findings"],
+        "failure_policy": "Fail on unresolved HIGH or CRITICAL findings; never auto-upgrade or suppress."
+      },
+      {
+        "name": "sbom",
+        "tools": ["CycloneDX BOM 7.3.1", "Syft 1.45.1"],
+        "scope": "Exact wheel dependency identity",
+        "outputs": ["CycloneDX JSON", "optional SPDX JSON", "schema validation result"],
+        "failure_policy": "Fail on invalid syntax, missing exact package identity, secret-shaped content, or local-path leakage."
+      },
+      {
+        "name": "sast",
+        "tools": ["Bandit 1.9.4", "Semgrep 1.174.0", "existing GitHub CodeQL workflow"],
+        "scope": "ARX source and GitHub workflows",
+        "outputs": ["JSON", "SARIF where supported", "classification record"],
+        "failure_policy": "Preserve findings; require review of every HIGH or CRITICAL finding. Do not rewrite code merely to silence a scanner."
+      },
+      {
+        "name": "secret-scan",
+        "tools": ["existing tracked-input secret scanner", "Gitleaks 8.30.1", "detect-secrets 1.5.0"],
+        "scope": "Tracked source and staged public artifact contents",
+        "failure_policy": "Fail closed on credential material; do not print matched secret values."
+      },
+      {
+        "name": "artifact-integrity",
+        "tools": ["scripts/verify-release-assets.py", "scripts/build-release.ps1", "SHA-256"],
+        "scope": "Fresh CI build outputs only",
+        "failure_policy": "Require expected names, package/version identity, strict package checks, and an internally valid checksum manifest."
+      },
+      {
+        "name": "provenance-verification",
+        "tools": ["gh attestation verify", "pypi-attestations"],
+        "scope": "Existing reviewed artifacts only",
+        "failure_policy": "Read-only verification; never create, replace, upload, sign, or publish an artifact."
+      }
+    ],
+    "reviewed_action_pins_available_in_repository": {
+      "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "actions/setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
+      "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+      "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
+    }
+  },
+  "manual_or_isolated": {
+    "proposed_trigger": "workflow_dispatch or documented local/VM procedure",
+    "protected_environment": "security-manual-review",
+    "permissions": {"contents": "read"},
+    "campaigns": [
+      "second-engine malware scanning of copied artifacts",
+      "bounded fuzz campaigns against ARX-owned parsers and local inputs",
+      "installer lifecycle tests in a disposable Windows VM",
+      "standard-user and privilege-boundary tests",
+      "destructive tamper tests on copied artifacts only"
+    ],
+    "prohibited": [
+      "external target scanning",
+      "third-party binary uploads without explicit approval",
+      "generic exploit development",
+      "publication",
+      "production signing"
+    ]
+  },
+  "future_artifact_attestation_gate": {
+    "status": "PROPOSED_FOR_FUTURE_RELEASES_ONLY",
+    "job_permissions": {"contents": "read", "id-token": "write", "attestations": "write"},
+    "action": "actions/attest-build-provenance",
+    "reviewed_release_at_observation_time": "v4.2.2",
+    "pinned_commit": "4d101475d8b20a2381f78447822ac1eab6504dd8",
+    "subjects": [
+      "wheel",
+      "sdist",
+      "portable ZIP",
+      "installer",
+      "SHA256SUMS.txt"
+    ],
+    "sbom_association": "Associate the validated CycloneDX SBOM where GitHub support and the reviewed action interface permit it.",
+    "ordering": "Attest exact reviewed build outputs before release upload; verify subjects and digests before publication.",
+    "beta_1_policy": "Do not recreate or replace Beta 1 artifacts merely to add attestations."
+  },
+  "future_production_signing_gate": {
+    "status": "BLOCKED_NO_TRUSTED_PRODUCTION_CERTIFICATE",
+    "separation": "Distinct manually dispatched workflow or offline procedure with a protected environment and required reviewers; never part of automatic pull-request CI.",
+    "requirements": [
+      "trusted production code-signing certificate or justified hardware-backed signing service",
+      "certificate identity and expiration validation",
+      "timestamp-service validation",
+      "post-signing Authenticode verification",
+      "post-signing malware and secret scan",
+      "new checksums and provenance bound to the signed bytes",
+      "human approval before release publication"
+    ]
+  },
+  "publication_boundary": {
+    "existing_publish_workflow": ".github/workflows/publish-pypi.yml",
+    "current_state": "disabled_manually",
+    "production_pypi": "BLOCKED",
+    "security_workflow_dependency_on_publication": "NONE"
+  }
+}

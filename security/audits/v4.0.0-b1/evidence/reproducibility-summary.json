@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 two-build reproducibility experiment",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "published_release_modified": false,
+  "method": {
+    "source": "Two new detached Git worktrees at the exact release commit, each clean before build and still free of non-ignored source changes afterward.",
+    "builds": 2,
+    "separate_virtual_environments": true,
+    "python": "3.10.8 x64",
+    "python_runtime_match": "The published portable payload contains python310.dll 3.10.8.",
+    "pinned_toolchain": [
+      "pip 26.2.1",
+      "build 1.5.0",
+      "setuptools 84.0.0",
+      "wheel 0.48.0",
+      "PyInstaller 6.22.2",
+      "pyinstaller-hooks-contrib 2026.6",
+      "altgraph 0.17.5",
+      "pefile 2024.8.26",
+      "pywin32-ctypes 0.2.3",
+      "packaging 26.3",
+      "Inno Setup 7.1.0"
+    ],
+    "environment_freeze_sha256": "daf4003eabe7c9350eae050370c411cfb8b42dcc44d9a0c4667ab34dfb2b896c",
+    "environment_freezes_identical": true,
+    "source_date_epoch_configured": false,
+    "pythonhashseed_configured": false,
+    "repository_release_verifier_build_a": "PASS",
+    "repository_release_verifier_build_b": "PASS",
+    "comparison_evidence": "security/audits/v4.0.0-b1/evidence/reproducibility-analysis.json",
+    "comparison_evidence_sha256": "20f61f7f80523c0adf773463729f3edd254e6f3db646c3fb066c5c702547aac3"
+  },
+  "artifacts": [
+    {
+      "artifact": "wheel",
+      "filename": "arx_prescanner-4.0.0b1-py3-none-any.whl",
+      "classification": "STRUCTURALLY EQUIVALENT",
+      "published": {"bytes": 111830, "sha256": "44ec015db141fd14eec411dc6fd6b4f40f989f256e2404c2be0fb8684ee5dbc4"},
+      "build_a": {"bytes": 111830, "sha256": "7a220ed07a64804854ff0a85dafc24744953c89d3fb32ce6ca4b3fbea49f0750"},
+      "build_b": {"bytes": 111830, "sha256": "b0a26639541c8e9dccb89606154a419b03ff06c5efc8c2a6e66ad5b2bd443781"},
+      "basis": "All 47 entry names, uncompressed sizes, attributes, compression layout, and content hashes match. Only ZIP timestamp metadata differs across the three artifacts.",
+      "bit_for_bit": false
+    },
+    {
+      "artifact": "sdist",
+      "filename": "arx_prescanner-4.0.0b1.tar.gz",
+      "classification": "STRUCTURALLY EQUIVALENT",
+      "published": {"bytes": 144478, "sha256": "ac95e7ec679c626ac641608151d0951353e83d36c9df307904dda120db86a790"},
+      "build_a": {"bytes": 144562, "sha256": "cbc375c8fdd3e76466409cec83a217186dc47ed8221f3fe25068c8f8c912ac1e"},
+      "build_b": {"bytes": 144557, "sha256": "28f36a2b5d17e36074c3b9521b9c65836b2b6ac9c6fd56b9873f4f4ffda32387"},
+      "basis": "All 88 tar member names, types, modes, sizes, link targets, and content hashes match; ownership metadata matches. Member mtimes and resulting gzip bytes differ.",
+      "bit_for_bit": false
+    },
+    {
+      "artifact": "portable ZIP",
+      "filename": "ARX-Desktop-win-x64-v4.0.0-b1.zip",
+      "classification": "STRUCTURALLY EQUIVALENT",
+      "published": {"bytes": 10611182, "sha256": "8fde54f9c1ebb2fb1ed37fac2612693fbf07300e7114862f48206730245c2394"},
+      "build_a": {"bytes": 10611341, "sha256": "87378f3e4855bcb5303f12ded240a3180f5253307a9371ddf3c533b626ff36eb"},
+      "build_b": {"bytes": 10611715, "sha256": "ca828aa5908987955bc7fb729d183e20c4ebe523bd8916415fa45e98af3233d4"},
+      "basis": "All 989 entry names and attributes match. Exactly two raw payload entries differ: ARX.exe and _internal/base_library.zip. The executable's normalized PyInstaller code/archive semantics match; all 151 base-library bytecode modules have the same normalized semantics. The remaining 987 entry contents match exactly. ZIP timestamps and compression sizes differ.",
+      "bit_for_bit": false
+    },
+    {
+      "artifact": "ARX.exe",
+      "filename": "ARX.exe inside the portable distribution",
+      "classification": "STRUCTURALLY EQUIVALENT",
+      "published": {"bytes": 1641952, "sha256": "c904c009889abd47df2af21dc806edcdca71903c8a5399425fb061e8376b08fc"},
+      "build_a": {"bytes": 1641953, "sha256": "3e3ace0b9ac1fe63d21a72aa309380a44e0392099ac8fa94b78a2bab3cfc2958"},
+      "build_b": {"bytes": 1641953, "sha256": "47e18fcd59a5f83b4f559c416f3f233dc626d3d25fe7220219740bc4f742a0ff"},
+      "basis": "PE machine, subsystem, image size, section shape, version identity, CArchive entry set, and normalized semantics of every embedded Python module match. Raw marshal ordering, the PE COFF build timestamp/checksum, .rdata, and the compressed PyInstaller overlay differ. Extracted code filenames contain no absolute path or build-user component.",
+      "bit_for_bit": false
+    },
+    {
+      "artifact": "installer",
+      "filename": "ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe",
+      "classification": "NOT REPRODUCIBLE",
+      "published": {"bytes": 9297499, "sha256": "633b9e8d2266fd019f7c9bfcddf03abb7564fa4ae3d07d4ab50829fd3e6d19e0"},
+      "build_a": {"bytes": 9299175, "sha256": "9bee29cf21e5a242f21c638a878d2ca5a334c4ed44112db01110346fde44ca9a"},
+      "build_b": {"bytes": 9298561, "sha256": "01026503721c532a99e08ff9b3899db3999f709c8ecfead4139dbf0379a4607e"},
+      "basis": "All three have the same PE shape and ARX 4.0.0 Beta 1 version resources, and both rebuilds used the same reviewed Inno script/compiler with structurally equivalent portable inputs. However .rsrc and the compressed setup overlay differ extensively. Temporary innoextract 1.9 supports only through Inno Setup 6.0.5 and could not parse the Inno Setup 7.1.0 artifact, so installed-payload structural equivalence was not independently established. The conservative classification is NOT REPRODUCIBLE.",
+      "bit_for_bit": false
+    },
+    {
+      "artifact": "SHA256SUMS",
+      "filename": "SHA256SUMS.txt",
+      "classification": "STRUCTURALLY EQUIVALENT",
+      "published": {"bytes": 412, "sha256": "8a3ed174e79af41067ca58f02b7b332e8183233c149309e18f49d21afec92673"},
+      "build_a": {"bytes": 412, "sha256": "398cc23cbb138313e0d5ea7302332731240877b52a249ad526fbe102ad92c7bb"},
+      "build_b": {"bytes": 412, "sha256": "22af3339c5af822cc74685cc7b4bddf9966588848a257136457759b8bcf272e0"},
+      "basis": "All manifests name exactly the same four public binary/package artifacts and every manifest is internally valid for its build. Values differ because the artifacts are not bit-for-bit identical.",
+      "bit_for_bit": false
+    }
+  ],
+  "causes": [
+    "Wheel ZIP timestamps are not normalized.",
+    "sdist tar member and gzip timestamps are not normalized.",
+    "PYTHONHASHSEED is not fixed, so marshal serialization of unordered constants can vary while normalized Python semantics remain equal.",
+    "PyInstaller writes build-dependent PE timestamp/checksum and archive bytes.",
+    "Portable ZIP input times and changed compressed inputs alter ZIP compression output.",
+    "Inno Setup embeds/compresses the non-identical portable bytes; independent Inno 7.1 payload extraction was unavailable."
+  ],
+  "privacy_observation": {
+    "normalized_pyinstaller_code_filenames_checked": 180,
+    "normalized_base_library_code_filenames_checked": 151,
+    "absolute_paths_found": 0,
+    "build_user_components_found": 0
+  },
+  "findings": [
+    {
+      "id": "REPRO-001",
+      "title": "No Beta 1 artifact is bit-for-bit reproducible under the reconstructed build",
+      "classification": "SUPPLY_CHAIN_REPRODUCIBILITY_GAP",
+      "severity": "MEDIUM",
+      "release_blocking": true,
+      "scope_of_block": "Blocks claiming reproducible builds for a future production-ready release. It does not mutate or invalidate the already-published Beta 1 artifacts.",
+      "recommendation": "Pin every build input, set SOURCE_DATE_EPOCH to reviewed source provenance, control PYTHONHASHSEED, normalize archive metadata/order, investigate deterministic PyInstaller PE generation, and add an Inno 7-compatible payload comparison before claiming reproducibility."
+    },
+    {
+      "id": "REPRO-002",
+      "title": "Installer structural equivalence could not be independently proven",
+      "classification": "VERIFICATION_GAP",
+      "severity": "LOW",
+      "release_blocking": true,
+      "scope_of_block": "Blocks the installer-specific reproducibility sub-gate.",
+      "recommendation": "Use a reviewed Inno Setup 7-compatible extractor or compare an independently generated install image in a disposable VM. Do not weaken the classification based only on matching filenames or version resources."
+    }
+  ],
+  "gate": {
+    "result": "FAIL_NOT_BIT_FOR_BIT",
+    "bit_for_bit_reproducible_artifacts": 0,
+    "structurally_equivalent_artifacts": 5,
+    "not_reproducible_artifacts": 1,
+    "critical_findings": 0,
+    "high_findings": 0,
+    "medium_findings": 1,
+    "release_blocking_items": 2
+  }
+}

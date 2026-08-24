@@ -1,0 +1,95 @@
+{
+  "tool": "Bandit 1.9.4",
+  "scope": ["src", "scripts", "packaging"],
+  "raw_result": {
+    "exit_code": 1,
+    "meaning": "Findings present",
+    "findings": 23,
+    "scanner_severity": {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 3, "LOW": 20},
+    "scanner_confidence": {"HIGH": 22, "MEDIUM": 0, "LOW": 1},
+    "nosec_suppressions": 0,
+    "skipped_tests": 0,
+    "json_sha256": "3a3011960838e1e5e37a510e94f12bd30e98ccc8e90ad18c830d8a9dc6e0e02c",
+    "text_sha256": "75e2070115760bc737352a711ee97cfd06698e55e446ac5776bf624b01161dee"
+  },
+  "reviewed_classification": {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 1, "LOW": 9, "INFORMATIONAL": 13},
+  "finding_groups": [
+    {
+      "classification": "MEDIUM",
+      "raw_findings": 1,
+      "test_ids": ["B310"],
+      "location": "scripts/verify-python-index.py:32",
+      "finding": "The release verifier hashes a download URL supplied by package-index JSON without independently enforcing HTTPS, an exact approved host, redirect rejection, or a response-size bound.",
+      "evidence": "remote_sha256() passes the externally supplied URL directly to urllib.request.urlopen().",
+      "disposition": "VALID_HARDENING_FINDING",
+      "recommendation": "For a future release, validate scheme/host/port, reject redirects, bound bytes, and keep the existing exact SHA-256 comparison. Do not rewrite immutable Beta 1."
+    },
+    {
+      "classification": "INFORMATIONAL",
+      "raw_findings": 1,
+      "test_ids": ["B310"],
+      "location": "scripts/verify-python-index.py:43",
+      "finding": "urlopen is used for package-index metadata.",
+      "evidence": "The URL is constructed exclusively from a command-line choice constrained to pypi/testpypi and fixed HTTPS constants; the version path segment is quoted.",
+      "disposition": "FALSE_POSITIVE_FOR_SCHEME_CONTROL",
+      "recommendation": "Retain explicit endpoint invariants in future tests."
+    },
+    {
+      "classification": "INFORMATIONAL",
+      "raw_findings": 1,
+      "test_ids": ["B604"],
+      "location": "src/arx/project/models.py:479",
+      "finding": "Bandit interpreted a keyword named shell as subprocess shell=True.",
+      "evidence": "The code constructs an ExecutionContext dataclass and assigns a descriptive shell string; no process API is called at this location.",
+      "disposition": "FALSE_POSITIVE",
+      "recommendation": "No security change required."
+    },
+    {
+      "classification": "LOW",
+      "raw_findings": 7,
+      "test_ids": ["B603"],
+      "location": "src/arx/machine/windows.py",
+      "finding": "Machine inventory deliberately starts discovered tool and interpreter executables using fixed version/health probes.",
+      "evidence": "All calls use argument arrays, shell=False, fixed probes, timeouts, bounded output, and resolved executable paths. A hostile executable already present on a user's command path could still run when inventoried.",
+      "disposition": "VALID_TRUST_BOUNDARY_RISK_ACCEPTED_FOR_BETA1",
+      "recommendation": "Consider marking untrusted/project-local paths without execution or requiring an explicit deep-probe choice in a future release."
+    },
+    {
+      "classification": "LOW",
+      "raw_findings": 2,
+      "test_ids": ["B603", "B607"],
+      "location": "scripts/scan-tracked-secrets.py:32",
+      "finding": "The tracked-file secret scanner launches git by a partial name resolved from PATH.",
+      "evidence": "Arguments are fixed and shell=False, but a hostile PATH can substitute the executable.",
+      "disposition": "VALID_LOCAL_TOOLCHAIN_HARDENING_FINDING",
+      "recommendation": "Resolve and validate the Git executable once in future tooling; CI should continue using a controlled runner PATH."
+    },
+    {
+      "classification": "INFORMATIONAL",
+      "raw_findings": 4,
+      "test_ids": ["B603"],
+      "locations": [
+        "scripts/run-isolated-gui-tests.py",
+        "src/arx/project/resolver.py",
+        "src/arx/software/scanner.py"
+      ],
+      "finding": "Subprocess calls use fixed/allowlisted commands for test isolation, command resolution, and local Authenticode inspection.",
+      "evidence": "Argument arrays, shell=False, allowlisted command names or resolved native tools, bounded timeouts, and non-project code execution were confirmed.",
+      "disposition": "EXPECTED_CONTROLLED_PROCESS_BOUNDARIES",
+      "recommendation": "Keep these boundaries covered by tests."
+    },
+    {
+      "classification": "INFORMATIONAL",
+      "raw_findings": 7,
+      "test_ids": ["B404"],
+      "location": "Multiple source and support modules",
+      "finding": "Importing the subprocess module is security-sensitive but is not itself a vulnerability.",
+      "evidence": "The corresponding call sites were reviewed separately above.",
+      "disposition": "IMPORT_ONLY",
+      "recommendation": "No standalone change required."
+    }
+  ],
+  "blocker_status": "NO_HIGH_OR_CRITICAL_FINDING",
+  "automatic_fixes_applied": false,
+  "suppressions_added": false
+}

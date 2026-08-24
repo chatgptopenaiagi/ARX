@@ -1,0 +1,1139 @@
+{
+  "errors": [],
+  "generated_at": "2026-08-24T09:23:09Z",
+  "metrics": {
+    "_totals": {
+      "CONFIDENCE.HIGH": 22,
+      "CONFIDENCE.LOW": 1,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 20,
+      "SEVERITY.MEDIUM": 3,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 8593,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "packaging\\arx_desktop_entry.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 3,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "scripts\\check-architecture.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 106,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "scripts\\run-isolated-gui-tests.py": {
+      "CONFIDENCE.HIGH": 2,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 2,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 43,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "scripts\\scan-tracked-secrets.py": {
+      "CONFIDENCE.HIGH": 3,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 3,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 57,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "scripts\\verify-python-index.py": {
+      "CONFIDENCE.HIGH": 2,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 2,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 80,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "scripts\\verify-release-assets.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 194,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 5,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\__main__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 2,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\advisory\\__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 71,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\advisory\\audit.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 245,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\advisory\\context.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 241,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\advisory\\credentials.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 401,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\advisory\\health.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 56,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\advisory\\providers.py": {
+      "CONFIDENCE.HIGH": 1,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 1,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 849,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\advisory\\web.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 70,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\cli.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 225,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\core\\__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\core\\engine.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 59,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\core\\evidence.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 18,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\core\\interfaces.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 12,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\core\\models.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 26,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 3,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\__main__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 16,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\advisory.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 341,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\app.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1296,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\controllers.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 68,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\provider_settings.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 327,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\theme.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 25,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\ux.py": {
+      "CONFIDENCE.HIGH": 1,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 1,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 187,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\desktop\\widgets.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 328,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\exporters\\__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 5,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\exporters\\codex_exporter.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 4,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\exporters\\json_exporter.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 3,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\exporters\\project_codex_exporter.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 341,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\exporters\\text_exporter.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 3,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\machine\\__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 2,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\machine\\windows.py": {
+      "CONFIDENCE.HIGH": 8,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 8,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 121,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\project\\__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 121,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\project\\engine.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 876,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\project\\invariants.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 101,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\project\\models.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 1,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 1,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 573,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\project\\resolution_contract.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 29,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\project\\resolver.py": {
+      "CONFIDENCE.HIGH": 3,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 3,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 297,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\project\\scanner.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 519,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\project\\versions.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 138,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\software\\__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 2,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "src\\arx\\software\\scanner.py": {
+      "CONFIDENCE.HIGH": 2,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 2,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 103,
+      "nosec": 0,
+      "skipped_tests": 0
+    }
+  },
+  "results": [
+    {
+      "code": "9 \n10 import subprocess\n11 import sys\n",
+      "col_offset": 0,
+      "end_col_offset": 17,
+      "filename": "scripts\\run-isolated-gui-tests.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with the subprocess module.",
+      "line_number": 10,
+      "line_range": [
+        10
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
+      "test_id": "B404",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "29         capture_output=capture,\n30         shell=False,\n31     )\n32 \n33 \n34 def main() -> int:\n35     collection = _run([\"--collect-only\", \"-q\", *GUI_MODULES], capture=True)\n36     if collection.returncode != 0:\n37         sys.stdout.write(collection.stdout)\n",
+      "col_offset": 11,
+      "end_col_offset": 5,
+      "filename": "scripts\\run-isolated-gui-tests.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 30,
+      "line_range": [
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "9 import re\n10 import subprocess\n11 import sys\n",
+      "col_offset": 0,
+      "end_col_offset": 17,
+      "filename": "scripts\\scan-tracked-secrets.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with the subprocess module.",
+      "line_number": 10,
+      "line_range": [
+        10
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
+      "test_id": "B404",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "31 def tracked_files() -> list[Path]:\n32     result = subprocess.run(\n33         [\"git\", \"ls-files\", \"-z\"],\n34         cwd=ROOT,\n35         check=True,\n36         stdout=subprocess.PIPE,\n37         stderr=subprocess.PIPE,\n38     )\n39     return [ROOT / item.decode(\"utf-8\", errors=\"surrogateescape\") for item in result.stdout.split(b\"\\0\") if item]\n",
+      "col_offset": 13,
+      "end_col_offset": 5,
+      "filename": "scripts\\scan-tracked-secrets.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Starting a process with a partial executable path",
+      "line_number": 32,
+      "line_range": [
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b607_start_process_with_partial_path.html",
+      "test_id": "B607",
+      "test_name": "start_process_with_partial_path"
+    },
+    {
+      "code": "31 def tracked_files() -> list[Path]:\n32     result = subprocess.run(\n33         [\"git\", \"ls-files\", \"-z\"],\n34         cwd=ROOT,\n35         check=True,\n36         stdout=subprocess.PIPE,\n37         stderr=subprocess.PIPE,\n38     )\n39     return [ROOT / item.decode(\"utf-8\", errors=\"surrogateescape\") for item in result.stdout.split(b\"\\0\") if item]\n",
+      "col_offset": 13,
+      "end_col_offset": 5,
+      "filename": "scripts\\scan-tracked-secrets.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 32,
+      "line_range": [
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "31     request = urllib.request.Request(url, headers={\"User-Agent\": \"ARX-release-verifier/4\"})\n32     with urllib.request.urlopen(request, timeout=30) as response:\n33         for block in iter(lambda: response.read(1024 * 1024), b\"\"):\n",
+      "col_offset": 9,
+      "end_col_offset": 52,
+      "filename": "scripts\\verify-python-index.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 22,
+        "link": "https://cwe.mitre.org/data/definitions/22.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.",
+      "line_number": 32,
+      "line_range": [
+        32
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b310-urllib-urlopen",
+      "test_id": "B310",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "42         try:\n43             with urllib.request.urlopen(request, timeout=30) as response:\n44                 value = json.load(response)\n",
+      "col_offset": 17,
+      "end_col_offset": 60,
+      "filename": "scripts\\verify-python-index.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 22,
+        "link": "https://cwe.mitre.org/data/definitions/22.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.",
+      "line_number": 43,
+      "line_range": [
+        43
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b310-urllib-urlopen",
+      "test_id": "B310",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "10 import ssl\n11 import subprocess\n12 import tempfile\n",
+      "col_offset": 0,
+      "end_col_offset": 17,
+      "filename": "src\\arx\\advisory\\providers.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with the subprocess module.",
+      "line_number": 11,
+      "line_range": [
+        11
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
+      "test_id": "B404",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "12 import re\n13 import subprocess\n14 from dataclasses import dataclass\n",
+      "col_offset": 0,
+      "end_col_offset": 17,
+      "filename": "src\\arx\\desktop\\ux.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with the subprocess module.",
+      "line_number": 13,
+      "line_range": [
+        13
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
+      "test_id": "B404",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "1 import json, os, platform, re, shutil, subprocess\n2 from pathlib import Path\n3 from arx.core.evidence import safe_environment\n",
+      "col_offset": 0,
+      "end_col_offset": 49,
+      "filename": "src\\arx\\machine\\windows.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with the subprocess module.",
+      "line_number": 1,
+      "line_range": [
+        1
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
+      "test_id": "B404",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "17     try:\n18         p=subprocess.run([path,*spec[1:]],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,\"CREATE_NO_WINDOW\",0))\n19         output=(p.stdout+\"\\n\"+p.stderr).strip(); match=re.search(r\"(?<!\\d)(\\d+(?:\\.\\d+){1,3}(?:[-+._a-zA-Z0-9]*)?)\",output)\n",
+      "col_offset": 10,
+      "end_col_offset": 155,
+      "filename": "src\\arx\\machine\\windows.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 18,
+      "line_range": [
+        18
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "30             try:\n31                 p=subprocess.run([str(installer),\"-latest\",\"-products\",\"*\",\"-requires\",\"Microsoft.Component.MSBuild\",\"-find\",r\"MSBuild\\**\\Bin\\MSBuild.exe\"],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,\"CREATE_NO_WINDOW\",0))\n32                 candidates.extend(line.strip() for line in p.stdout.splitlines())\n",
+      "col_offset": 18,
+      "end_col_offset": 263,
+      "filename": "src\\arx\\machine\\windows.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 31,
+      "line_range": [
+        31
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "51         try:\n52             p=subprocess.run([launcher,\"-0p\"],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,\"CREATE_NO_WINDOW\",0))\n53             candidates.extend(re.findall(r\"([A-Za-z]:\\\\[^\\r\\n]*?python\\.exe)\",p.stdout+p.stderr,re.I))\n",
+      "col_offset": 14,
+      "end_col_offset": 153,
+      "filename": "src\\arx\\machine\\windows.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 52,
+      "line_range": [
+        52
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "58             try:\n59                 p=subprocess.run([where,command],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,\"CREATE_NO_WINDOW\",0));candidates.extend(line.strip() for line in p.stdout.splitlines())\n60             except (OSError,subprocess.TimeoutExpired):pass\n",
+      "col_offset": 18,
+      "end_col_offset": 156,
+      "filename": "src\\arx\\machine\\windows.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 59,
+      "line_range": [
+        59
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "73         try:\n74             p=subprocess.run([path,\"-c\",script],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,\"CREATE_NO_WINDOW\",0))\n75             if p.returncode != 0:\n",
+      "col_offset": 14,
+      "end_col_offset": 161,
+      "filename": "src\\arx\\machine\\windows.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 74,
+      "line_range": [
+        74
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "103     try:\n104         p=subprocess.run([path,\"--list-runtimes\"],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,\"CREATE_NO_WINDOW\",0));records=[]\n105         for line in p.stdout.splitlines():\n",
+      "col_offset": 10,
+      "end_col_offset": 163,
+      "filename": "src\\arx\\machine\\windows.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 104,
+      "line_range": [
+        104
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "114     try:\n115         p=subprocess.run([exe,\"-NoProfile\",\"-NonInteractive\",\"-Command\",script],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,\"CREATE_NO_WINDOW\",0))\n116         return json.loads(p.stdout) if p.returncode==0 and p.stdout.strip() else None\n",
+      "col_offset": 10,
+      "end_col_offset": 193,
+      "filename": "src\\arx\\machine\\windows.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 115,
+      "line_range": [
+        115
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "478             id=context_id,\n479             shell=shell or (\"powershell\" if os.name == \"nt\" else \"process\"),\n480             working_directory=directory,\n481             path_fingerprint=path_fingerprint,\n482             process_environment_fingerprint=environment_fingerprint,\n483             account_fingerprint=account_fingerprint,\n484             command=command,\n485             virtual_environment=virtual_environment,\n486             conda_environment=conda_environment,\n487             uv_indicators=uv_indicators,\n488         )\n489 \n490 \n491 @dataclass\n",
+      "col_offset": 15,
+      "end_col_offset": 9,
+      "filename": "src\\arx\\project\\models.py",
+      "issue_confidence": "LOW",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "MEDIUM",
+      "issue_text": "Function call with shell=True parameter identified, possible security issue.",
+      "line_number": 479,
+      "line_range": [
+        477,
+        478,
+        479,
+        480,
+        481,
+        482,
+        483,
+        484,
+        485,
+        486,
+        487,
+        488
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b604_any_other_function_with_shell_equals_true.html",
+      "test_id": "B604",
+      "test_name": "any_other_function_with_shell_equals_true"
+    },
+    {
+      "code": "4 import shutil\n5 import subprocess\n6 import ntpath\n",
+      "col_offset": 0,
+      "end_col_offset": 17,
+      "filename": "src\\arx\\project\\resolver.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with the subprocess module.",
+      "line_number": 5,
+      "line_range": [
+        5
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
+      "test_id": "B404",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "224             timeout=timeout,\n225             shell=False,\n226             creationflags=getattr(subprocess, \"CREATE_NO_WINDOW\", 0),\n227         )\n228     except (OSError, subprocess.TimeoutExpired):\n229         return []\n230     if completed.returncode != 0:\n231         return []\n232     return [line.strip() for line in completed.stdout.splitlines() if line.strip()]\n233 \n234 \n235 def _where_paths(\n",
+      "col_offset": 20,
+      "end_col_offset": 9,
+      "filename": "src\\arx\\project\\resolver.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 225,
+      "line_range": [
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        227
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "251             timeout=timeout,\n252             shell=False,\n253             creationflags=getattr(subprocess, \"CREATE_NO_WINDOW\", 0),\n254         )\n255     except (OSError, subprocess.TimeoutExpired):\n256         return []\n257     if completed.returncode != 0:\n258         return []\n259     return [line.strip() for line in completed.stdout.splitlines() if line.strip()]\n260 \n261 \n262 def _unique_paths(paths: Iterable[str]) -> list[str]:\n",
+      "col_offset": 20,
+      "end_col_offset": 9,
+      "filename": "src\\arx\\project\\resolver.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 252,
+      "line_range": [
+        245,
+        246,
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        253,
+        254
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    },
+    {
+      "code": "1 import hashlib, json, re, shutil, struct, subprocess, zipfile\n2 from pathlib import Path\n3 from arx.core.models import Evidence,EvidenceKind,utc_now\n",
+      "col_offset": 0,
+      "end_col_offset": 61,
+      "filename": "src\\arx\\software\\scanner.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with the subprocess module.",
+      "line_number": 1,
+      "line_range": [
+        1
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
+      "test_id": "B404",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "39     try:\n40         p=subprocess.run([pwsh,\"-NoProfile\",\"-NonInteractive\",\"-CommandWithArgs\",script,str(path)],capture_output=True,text=True,timeout=10,shell=False,creationflags=getattr(subprocess,\"CREATE_NO_WINDOW\",0))\n41         return json.loads(p.stdout) if p.returncode==0 and p.stdout.strip() else {\"status\":\"unknown\",\"reason\":p.stderr.strip()[:300]}\n",
+      "col_offset": 10,
+      "end_col_offset": 207,
+      "filename": "src\\arx\\software\\scanner.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 40,
+      "line_range": [
+        40
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "tool": "Semgrep 1.174.0",
+  "telemetry": "OFF",
+  "configs": ["p/python", "p/github-actions"],
+  "automatic_fixes_applied": false,
+  "rules_suppressed": false,
+  "python_scan": {
+    "scope": ["src", "scripts", "packaging", "tests"],
+    "targets_scanned": 47,
+    "rules_run": 151,
+    "parsed_lines": "approximately 100%",
+    "engine_errors": 0,
+    "raw_findings": 1,
+    "raw_severity": {"ERROR": 1},
+    "exit_code": 1,
+    "exit_meaning": "Finding present because --error was enabled",
+    "reports": {
+      "semgrep-python.json": "d972f52bbddc0c8b31e91c63d17cc07ce832ead2cef86a99991be0a0dc61a52c",
+      "semgrep-python.sarif": "91c78d40b4d65ecdeaecd9cc1259f5156fc46b912e13fb13137dbf32172157f0",
+      "semgrep-python.txt": "56f53ae3371f475e2294fb8ed4a29b6302b55f12dc752ef26638cf49ce6cc185"
+    }
+  },
+  "finding_review": [
+    {
+      "rule": "python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args",
+      "raw_severity": "ERROR",
+      "raw_confidence": "MEDIUM",
+      "classification": "LOW",
+      "location": "src/arx/machine/windows.py:31",
+      "finding": "ProgramFiles(x86) from the process environment influences the absolute vswhere.exe path used for a fixed MSBuild discovery probe.",
+      "evidence": "The subprocess uses an argument array, shell=False, fixed arguments, and a timeout. Shell command injection and shlex quoting are not applicable. A hostile environment can nevertheless redirect the executable path to an existing same-privilege binary.",
+      "disposition": "VALID_ENVIRONMENT_TRUST_BOUNDARY; FALSE_POSITIVE_FOR_SHELL_INJECTION",
+      "recommendation": "In a future release, derive trusted Windows installation roots from a native source or validate ownership/location before executing vswhere.exe."
+    }
+  ],
+  "github_actions_scan": {
+    "scope": [".github"],
+    "targets_scanned": 4,
+    "rules_run": 11,
+    "parsed_lines": "approximately 79.1%",
+    "raw_findings": 0,
+    "warnings": 6,
+    "exit_code": 3,
+    "status": "PARTIAL_COVERAGE",
+    "warning_classification": "The GitHub Actions rule pack tried to parse three pwsh run blocks as Bash for two curl-oriented rules. These are Semgrep partial-parser warnings, not findings, but they prevent a complete Semgrep claim for those blocks.",
+    "reports": {
+      "semgrep-github-actions.json": "b1d234bbc4bccd247c7832cf7b2f5812ffc69c3edb515b825205c1d0b45ef2c2",
+      "semgrep-github-actions.sarif": "0dbaeb982738bcce2bc3b607abb536e334dcf0508fb4b5e7d607850a36ed17a1",
+      "semgrep-github-actions.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "recommendation": "Treat GitHub Actions Semgrep coverage as partial and rely additionally on the existing Actions-aware CodeQL analysis and workflow tests."
+  },
+  "reviewed_classification": {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 1, "INFORMATIONAL": 6},
+  "blocker_status": "NO_HIGH_OR_CRITICAL_FINDING"
+}

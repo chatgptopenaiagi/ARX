@@ -1,0 +1,9 @@
+# BinSkim SARIF embeds a local temporary path; its sanitized classification and hash are durable evidence.
+binskim-published-arx.sarif
+
+# Semgrep SARIF includes credential-shaped synthetic test snippets. JSON/text reports and reviewed hashes remain durable.
+semgrep*.sarif
+
+# Tool-rendered console transcripts contain formatter padding; JSON plus reviewed classifications are canonical.
+bandit.txt
+semgrep*.txt

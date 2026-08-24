@@ -1,0 +1,32 @@
+{
+  "result": "PASS_DEFINED_GATE",
+  "completed_at": "2026-08-24T11:12:29.7991853+02:00",
+  "tool": {
+    "name": "Microsoft Defender Antivirus MpCmdRun",
+    "product_version": "4.18.26070.9",
+    "signature_version": "1.457.316.0",
+    "signature_last_updated": "2026-08-24T02:39:07.0000000+02:00"
+  },
+  "mode": {
+    "scan_type": "custom file scan",
+    "remediation": "disabled for audit copies",
+    "archive_scanning": true,
+    "settings_modified": false
+  },
+  "targets": [
+    {"filename": "arx_prescanner-4.0.0b1-py3-none-any.whl", "sha256": "44ec015db141fd14eec411dc6fd6b4f40f989f256e2404c2be0fb8684ee5dbc4", "exit_code": 0, "result": "NO_THREATS_FOUND"},
+    {"filename": "arx_prescanner-4.0.0b1.tar.gz", "sha256": "ac95e7ec679c626ac641608151d0951353e83d36c9df307904dda120db86a790", "exit_code": 0, "result": "NO_THREATS_FOUND"},
+    {"filename": "ARX-Desktop-win-x64-v4.0.0-b1.zip", "sha256": "8fde54f9c1ebb2fb1ed37fac2612693fbf07300e7114862f48206730245c2394", "exit_code": 0, "result": "NO_THREATS_FOUND"},
+    {"filename": "ARX.exe", "sha256": "c904c009889abd47df2af21dc806edcdca71903c8a5399425fb061e8376b08fc", "exit_code": 0, "result": "NO_THREATS_FOUND", "source": "Exact ARX.exe entry extracted from the reviewed portable ZIP; hash also matches the reviewed release build directory."},
+    {"filename": "ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe", "sha256": "633b9e8d2266fd019f7c9bfcddf03abb7564fa4ae3d07d4ab50829fd3e6d19e0", "exit_code": 0, "result": "NO_THREATS_FOUND"}
+  ],
+  "current_protection_state_at_completion": {
+    "AMRunningMode": "Normal",
+    "RealTimeProtectionEnabled": true,
+    "BehaviorMonitorEnabled": true,
+    "IoavProtectionEnabled": true,
+    "NISEnabled": true,
+    "IsTamperProtected": true
+  },
+  "scope_note": "Only byte-identical temporary copies of reviewed Beta 1 artifacts were scanned. No artifact was uploaded, modified, signed, or published."
+}

@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "audit": "ARX 4.0.0 Beta 1 copied-artifact tamper tests",
+  "release_tag": "v4.0.0-b1",
+  "release_commit": "f3bce58552578df2795f292b1d4f572ee6af8e0b",
+  "scope": "%SYSTEMDRIVE%/ARX-Audit-Temp/tamper-v4.0.0-b1-20260824",
+  "published_assets_modified": false,
+  "pristine_identity": {
+    "source": "Fresh gh release download from chatgptopenaiagi/ARX v4.0.0-b1",
+    "all_expected_sha256_matched": true,
+    "verifier_exit": 0,
+    "verifier_result": "PASS",
+    "assets": {
+      "arx_prescanner-4.0.0b1-py3-none-any.whl": "44ec015db141fd14eec411dc6fd6b4f40f989f256e2404c2be0fb8684ee5dbc4",
+      "arx_prescanner-4.0.0b1.tar.gz": "ac95e7ec679c626ac641608151d0951353e83d36c9df307904dda120db86a790",
+      "ARX-Desktop-win-x64-v4.0.0-b1.zip": "8fde54f9c1ebb2fb1ed37fac2612693fbf07300e7114862f48206730245c2394",
+      "ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe": "633b9e8d2266fd019f7c9bfcddf03abb7564fa4ae3d07d4ab50829fd3e6d19e0",
+      "SHA256SUMS.txt": "8a3ed174e79af41067ca58f02b7b332e8183233c149309e18f49d21afec92673"
+    }
+  },
+  "verifier": {
+    "path": "scripts/verify-release-assets.py",
+    "arguments": "--version 4.0.0b1 --artifact-version 4.0.0-b1",
+    "trust_model": "The verifier compares exact public artifact names and bytes to SHA256SUMS.txt, validates package/archive structure and metadata, and scans public artifacts for forbidden local/private markers. The GitHub Release is the distribution trust anchor."
+  },
+  "cases": [
+    {
+      "case": "ONE_BYTE_INSTALLER_MUTATION",
+      "method": "XOR the final byte of an isolated installer copy.",
+      "mutated_sha256": "803d4351704a4aa1733a4d67ec908ca1119bc0a9ccac0ff182809c221173daf0",
+      "verifier_exit": 1,
+      "rejected": true,
+      "reason": "SHA-256 mismatch for ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe.",
+      "result": "PASS"
+    },
+    {
+      "case": "TRUNCATED_INSTALLER",
+      "method": "Truncate an isolated installer copy from 9,297,499 to 4,648,749 bytes.",
+      "mutated_sha256": "07d7568e938e6e25723d6d50a6f08d2e241e7755c88b599e2eb67c84fb9c093d",
+      "verifier_exit": 1,
+      "rejected": true,
+      "reason": "SHA-256 mismatch for ARX-Desktop-Setup-win-x64-v4.0.0-b1.exe.",
+      "result": "PASS"
+    },
+    {
+      "case": "CORRUPTED_PORTABLE_ZIP",
+      "method": "XOR one byte at the midpoint of an isolated portable ZIP copy.",
+      "mutated_sha256": "5022c080ea69d1e2be16cf8699308e45a4f71d919df41800b95b571190f4617c",
+      "verifier_exit": 1,
+      "rejected": true,
+      "reason": "SHA-256 mismatch for ARX-Desktop-win-x64-v4.0.0-b1.zip.",
+      "result": "PASS"
+    },
+    {
+      "case": "ALTERED_CHECKSUM_MANIFEST",
+      "method": "Change one hexadecimal character in an isolated SHA256SUMS.txt copy without changing artifacts.",
+      "mutated_sha256": "6a35724db5a36994826c1cbe7a0586ae2e4b1e66a16d70f7066b55d1dd9a5d08",
+      "verifier_exit": 1,
+      "rejected": true,
+      "reason": "SHA-256 mismatch for arx_prescanner-4.0.0b1-py3-none-any.whl.",
+      "result": "PASS"
+    },
+    {
+      "case": "UNEXPECTED_PUBLIC_ARTIFACT",
+      "method": "Add an unexpected versioned public ZIP to an otherwise pristine copied release directory.",
+      "verifier_exit": 1,
+      "rejected": true,
+      "reason": "Unexpected or missing versioned public release artifacts.",
+      "result": "PASS"
+    },
+    {
+      "case": "MISSING_PORTABLE_ZIP",
+      "method": "Construct a copied release directory without the required portable ZIP.",
+      "verifier_exit": 1,
+      "rejected": true,
+      "reason": "Missing required release artifact: ARX-Desktop-win-x64-v4.0.0-b1.zip.",
+      "result": "PASS"
+    },
+    {
+      "case": "UNEXPECTED_AUXILIARY_TEXT_FILE",
+      "method": "Add an unexpected .txt file to an otherwise pristine copied release directory.",
+      "verifier_exit": 0,
+      "rejected": false,
+      "reason": "The verifier intentionally enumerates versioned public artifact extensions, not arbitrary auxiliary working-directory files.",
+      "result": "INFORMATIONAL_SCOPE_LIMIT"
+    }
+  ],
+  "findings": [
+    {
+      "id": "TAMPER-001",
+      "title": "Release-root verifier ignores non-public auxiliary file extensions",
+      "classification": "SCOPE_LIMITATION",
+      "severity": "INFORMATIONAL",
+      "release_blocking": false,
+      "evidence": "An added UNEXPECTED.txt did not affect verification. In contrast, an unexpected .zip public artifact was rejected.",
+      "mitigation": "The reviewed GitHub release workflow stages an explicit allowlist of four or five named artifacts before upload (.github/workflows/release-assets.yml:107-125), so arbitrary release-root files are not uploaded by that workflow.",
+      "recommendation": "For future defense in depth, consider enforcing an exact allowlist over every file in the verification root or ensure every caller first stages only named public artifacts."
+    },
+    {
+      "id": "TAMPER-002",
+      "title": "Checksum integrity is not an independent authenticity mechanism",
+      "classification": "TRUST_MODEL_LIMITATION",
+      "severity": "INFORMATIONAL",
+      "release_blocking": false,
+      "evidence": "The defined tests altered artifacts or the manifest independently and were rejected. Coordinated replacement of both an artifact and an unsigned manifest is outside a bare SHA-256 comparison's threat model.",
+      "recommendation": "Use human-gated signing and OIDC-backed artifact attestations for future releases; do not retrofit or rewrite Beta 1."
+    }
+  ],
+  "gate": {
+    "result": "PASS_DEFINED_CASES",
+    "required_cases_rejected": 6,
+    "required_cases_total": 6,
+    "critical_findings": 0,
+    "high_findings": 0,
+    "release_blocking_items": 0,
+    "statement": "All required copied-artifact mutation, truncation, corruption, manifest, unexpected-public-artifact, and missing-artifact cases were rejected. No published asset was changed."
+  }
+}

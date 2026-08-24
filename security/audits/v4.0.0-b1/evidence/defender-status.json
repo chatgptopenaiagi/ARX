@@ -1,0 +1,60 @@
+{
+  "status": "CURRENTLY_ENABLED_AND_NORMAL",
+  "query_method": "native Windows PowerShell Get-MpComputerStatus",
+  "settings_modified": false,
+  "observations": [
+    {
+      "observed_at": "2026-08-24T10:40:05.2846840+02:00",
+      "AMRunningMode": "Normal",
+      "AMServiceEnabled": true,
+      "AntivirusEnabled": true,
+      "AntispywareEnabled": true,
+      "RealTimeProtectionEnabled": true,
+      "BehaviorMonitorEnabled": true,
+      "IoavProtectionEnabled": true,
+      "NISEnabled": true,
+      "IsTamperProtected": true,
+      "AMProductVersion": "4.18.26070.9",
+      "AntivirusSignatureVersion": "1.457.316.0",
+      "AntivirusSignatureLastUpdated": "2026-08-24T02:39:07.0000000+02:00"
+    },
+    {
+      "observed_at": "2026-08-24T10:40:08.3101195+02:00",
+      "AMRunningMode": "Normal",
+      "AMServiceEnabled": true,
+      "AntivirusEnabled": true,
+      "AntispywareEnabled": true,
+      "RealTimeProtectionEnabled": true,
+      "BehaviorMonitorEnabled": true,
+      "IoavProtectionEnabled": true,
+      "NISEnabled": true,
+      "IsTamperProtected": true,
+      "AMProductVersion": "4.18.26070.9",
+      "AntivirusSignatureVersion": "1.457.316.0",
+      "AntivirusSignatureLastUpdated": "2026-08-24T02:39:07.0000000+02:00"
+    },
+    {
+      "observed_at": "2026-08-24T10:40:11.0193135+02:00",
+      "AMRunningMode": "Normal",
+      "AMServiceEnabled": true,
+      "AntivirusEnabled": true,
+      "AntispywareEnabled": true,
+      "RealTimeProtectionEnabled": true,
+      "BehaviorMonitorEnabled": true,
+      "IoavProtectionEnabled": true,
+      "NISEnabled": true,
+      "IsTamperProtected": true,
+      "AMProductVersion": "4.18.26070.9",
+      "AntivirusSignatureVersion": "1.457.316.0",
+      "AntivirusSignatureLastUpdated": "2026-08-24T02:39:07.0000000+02:00"
+    }
+  ],
+  "transition_context": {
+    "note": "An earlier observation during the audit returned disabled protection fields. Native Defender Operational events show a short real-time-protection transition before the repeated measurements; the repeated current-state measurements above agree.",
+    "events": [
+      {"observed_at": "2026-08-24T10:00:55.3360000+02:00", "event_id": 5000, "state": "REAL_TIME_PROTECTION_ENABLED"},
+      {"observed_at": "2026-08-24T10:00:55.6330000+02:00", "event_id": 5001, "state": "REAL_TIME_PROTECTION_DISABLED"},
+      {"observed_at": "2026-08-24T10:01:04.2010000+02:00", "event_id": 5000, "state": "REAL_TIME_PROTECTION_ENABLED"}
+    ]
+  }
+}

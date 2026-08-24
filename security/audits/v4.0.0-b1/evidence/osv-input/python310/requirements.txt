@@ -1,0 +1,2 @@
+# Resolved from arx-prescanner 4.0.0b1 on CPython 3.10.8.
+tomli==2.4.1

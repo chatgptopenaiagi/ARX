@@ -1,0 +1,7 @@
+pip-audit 2.10.1
+Scope: ARX 4.0.0b1 resolved runtime dependency closure on CPython 3.10.8
+Dependency: tomli==2.4.1 (direct conditional dependency)
+Result: No known vulnerabilities found
+Exit status: 0
+
+ARX has no third-party runtime dependency on Python 3.11 or newer.

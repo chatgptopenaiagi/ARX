@@ -1,0 +1,4 @@
+# Raw JUnit files contain a local host name and remain local audit evidence.
+fuzz-results.xml
+provider-mock-tests.xml
+provider-localhost-tests.xml
