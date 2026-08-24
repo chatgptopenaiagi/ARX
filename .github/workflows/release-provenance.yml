@@ -51,7 +51,7 @@ jobs:
               throw 'The documented GitHub Windows image Miniconda installation is unavailable.'
           }
           $PythonRoot = Join-Path $env:RUNNER_TEMP 'arx-release-python'
-          & $Conda create --yes --quiet --prefix $PythonRoot --override-channels --channel defaults python=3.12.13 pip=26.2.1
+          & $Conda create --yes --quiet --prefix $PythonRoot --override-channels --channel defaults python=3.12.13 pip
           if ($LASTEXITCODE -ne 0) {
               throw "Unable to provision the locked CPython 3.12.13 release environment (exit $LASTEXITCODE)."
           }
