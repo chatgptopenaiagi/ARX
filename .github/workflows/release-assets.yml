@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: "3.12.13"
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: packaging/release-build-requirements.txt
       - name: Verify tag and draft prerelease identity
         shell: pwsh
         env:
@@ -76,7 +76,7 @@ jobs:
           python scripts/scan-tracked-secrets.py
       - name: Build release artifacts
         shell: pwsh
-        run: .\scripts\build-release.ps1 -Version $env:PACKAGE_VERSION -AllowMissingInstaller
+        run: .\scripts\build-release.ps1 -Version $env:PACKAGE_VERSION
       - name: Validate Python distributions
         shell: pwsh
         run: |

@@ -123,6 +123,7 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert "persist-credentials: false" in workflow
     assert "draft" in workflow and "prerelease" in workflow
     assert "build-release.ps1" in workflow
+    assert "-AllowMissingInstaller" not in workflow
     assert 'python-version: "3.12.13"' in workflow
     assert "packaging/release-build-requirements.txt" in workflow
     assert '"FILE_VERSION=$($Matches[\'base\']).$($Matches[\'number\'])"' in workflow
