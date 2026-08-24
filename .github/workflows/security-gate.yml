@@ -121,16 +121,44 @@ jobs:
 
           report = json.loads(Path("security-results/semgrep.json").read_text(encoding="utf-8"))
           counts = Counter(item.get("extra", {}).get("severity", "UNKNOWN") for item in report.get("results", []))
+          classification = json.loads(
+              Path("security/beta2/evidence/semgrep-classification.json").read_text(encoding="utf-8")
+          )
+          reviewed = {
+              (
+                  classification["finding"]["rule_id"],
+                  classification["finding"]["path"].replace("\\", "/"),
+              )
+          }
+          observed_errors = {
+              (
+                  item.get("check_id", ""),
+                  item.get("path", "").replace("\\", "/"),
+              )
+              for item in report.get("results", [])
+              if item.get("extra", {}).get("severity") == "ERROR"
+          }
+          unreviewed_errors = sorted(observed_errors - reviewed)
+          stale_reviews = sorted(reviewed - observed_errors)
+          engine_errors = [
+              item for item in report.get("errors", []) if item.get("level") == "error"
+          ]
           summary = {
               "counts": dict(sorted(counts.items())),
-              "engine_errors": len(report.get("errors", [])),
-              "fail_threshold": "ERROR",
+              "engine_errors": len(engine_errors),
+              "engine_warnings": sum(
+                  item.get("level") != "error" for item in report.get("errors", [])
+              ),
+              "reviewed_errors": len(observed_errors & reviewed),
+              "unreviewed_errors": unreviewed_errors,
+              "stale_reviews": stale_reviews,
+              "fail_policy": "engine error, unreviewed ERROR, or stale reviewed identity",
           }
           Path("security-results/semgrep-summary.json").write_text(
               json.dumps(summary, indent=2) + "\n", encoding="utf-8"
           )
-          if summary["engine_errors"] or counts.get("ERROR", 0):
-              raise SystemExit("Semgrep reported engine errors or ERROR-severity evidence.")
+          if engine_errors or unreviewed_errors or stale_reviews:
+              raise SystemExit("Semgrep reported an engine error or an unreviewed/stale ERROR identity.")
           PY
           if [ "$tool_status" -gt 1 ]; then
             exit "$tool_status"

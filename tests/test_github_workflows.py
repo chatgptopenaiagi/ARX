@@ -196,6 +196,10 @@ def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
     assert "--vulnerability-service osv" in workflow
     assert "bandit==1.9.4" in workflow
     assert "semgrep==1.174.0" in workflow
+    assert "semgrep-classification.json" in workflow
+    assert "unreviewed_errors" in workflow
+    assert "stale_reviews" in workflow
+    assert 'item.get("level") == "error"' in workflow
     assert "cyclonedx-bom==7.3.1" in workflow
     assert "detect-secrets==1.5.0" in workflow
     assert "scan-tracked-secrets.py" in workflow
