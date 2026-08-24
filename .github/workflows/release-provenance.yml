@@ -208,12 +208,13 @@ jobs:
               throw 'Published checksum manifest is not exactly reproducible.'
           }
 
-      - name: Stage only independently reproduced subjects
+      - name: Stage complete validated release subjects
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $Stage = "$env:RUNNER_TEMP\attestation-subjects"
           New-Item -ItemType Directory -Path $Stage -Force | Out-Null
+          Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\published" -File | Copy-Item -Destination $Stage
           $Names = @(
               "arx_prescanner-$env:PACKAGE_VERSION-py3-none-any.whl",
               "arx_prescanner-$env:PACKAGE_VERSION.tar.gz",
@@ -221,10 +222,15 @@ jobs:
               "ARX-Desktop-Setup-win-x64-v$env:ARTIFACT_VERSION.exe"
           )
           foreach ($Name in $Names) {
-              Copy-Item -LiteralPath "$env:GITHUB_WORKSPACE\release\reproduced\$Name" -Destination "$Stage\$Name"
+              Copy-Item -LiteralPath "$env:GITHUB_WORKSPACE\release\reproduced\$Name" -Destination "$Stage\$Name" -Force
           }
-          Copy-Item -LiteralPath "$env:RUNNER_TEMP\ARX-$env:ARTIFACT_VERSION-SBOM.cdx.json" -Destination $Stage
-          Copy-Item -LiteralPath "$env:RUNNER_TEMP\SHA256SUMS.txt" -Destination $Stage
+          Copy-Item -LiteralPath "$env:RUNNER_TEMP\ARX-$env:ARTIFACT_VERSION-SBOM.cdx.json" -Destination $Stage -Force
+          Copy-Item -LiteralPath "$env:RUNNER_TEMP\SHA256SUMS.txt" -Destination $Stage -Force
+          $PublishedNames = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\published" -File | Select-Object -ExpandProperty Name | Sort-Object)
+          $StagedNames = @(Get-ChildItem -LiteralPath $Stage -File | Select-Object -ExpandProperty Name | Sort-Object)
+          if (Compare-Object -ReferenceObject $PublishedNames -DifferenceObject $StagedNames) {
+              throw 'Attestation subjects do not exactly match the complete validated release file set.'
+          }
 
       - name: Attest exact independently reproduced subjects
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2

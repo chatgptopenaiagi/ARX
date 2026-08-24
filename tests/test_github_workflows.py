@@ -290,6 +290,9 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "Reproduced portable runtime is incomplete" in workflow
     assert "Published CycloneDX SBOM is not bit-for-bit reproducible" in workflow
     assert "Published checksum manifest is not exactly reproducible" in workflow
+    assert "Stage complete validated release subjects" in workflow
+    assert 'Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\\published" -File' in workflow
+    assert "Attestation subjects do not exactly match" in workflow
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
     assert workflow.count("id-token: write") == 2
     assert workflow.count("attestations: write") == 2
