@@ -1,6 +1,6 @@
 ARX 4
-ARX 4.0.0 Beta 3
-Package version 4.0.0b3
+ARX 4.0.0 Beta 4
+Package version 4.0.0b4
 
 PURPOSE
 ARX is a read-only project-aware compatibility and resolution engine. It scans
@@ -17,7 +17,7 @@ Extract the complete folder, then double-click ARX.exe. Keep the _internal
 folder beside ARX.exe; it contains the standalone Python/Tk runtime.
 
 INSTALLER DISTRIBUTION
-When ARX is distributed as ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe, the installer provides
+When ARX is distributed as ARX-Desktop-Setup-win-x64-v4.0.0-b4.exe, the installer provides
 Start Menu and uninstall entries, offers an optional desktop shortcut, and can
 launch ARX after an interactive install. The portable extracted-folder workflow
 remains supported. Installer builds are currently unsigned; verify the published
@@ -69,12 +69,16 @@ non-authoritative and cannot modify deterministic ARX evidence, compatibility,
 readiness, or EvidenceKind.
 
 BETA SCOPE
-ARX 4.0.0 Beta 3 preserves the Phase B trust foundation and Beta 2 release-trust
-controls and adds the Phase C Intelligence Console. OpenAI Chat and Codex CLI
+ARX 4.0.0 Beta 4 preserves the Phase B trust foundation, Beta 2 release-trust
+controls, and the Phase C Intelligence Console. OpenAI Chat and Codex CLI
 retain independent bounded in-session conversations. GENERAL CHAT attaches no
 ARX state; ARX EVIDENCE CHAT requires explicit selection, redaction, preview,
 and consent. Ask Both shows two flat, unranked provider responses; optional
 comparison is limited to textual overlap, differences, and unresolved items.
+Beta 4 adds an optional loopback-only Local AI Bridge. It can connect to an
+explicit localhost OpenAI-compatible endpoint or supervise an explicitly
+approved typed llama.cpp profile without executing model-generated commands.
+Local model output remains AI ADVISORY — NON-AUTHORITATIVE.
 No AI output can modify deterministic evidence, compatibility, or readiness.
 This prerelease does not claim AI consensus, provider ranking, autonomous
 remediation, a production Authenticode identity, or ARX 4 stable status.

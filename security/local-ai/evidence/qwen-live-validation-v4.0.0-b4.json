@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "record_type": "arx_local_ai_live_integration_validation",
+  "release_candidate": "4.0.0b4",
+  "recorded_at_utc": "2026-08-25T13:46:27Z",
+  "validation_date": "2026-08-25",
+  "source_commit_tested": "8fbac09e31651863aebdad6a5cf67f7e9f702b6a",
+  "classification": "PASS_WITH_LIMITATION",
+  "evidence_category": "OBSERVED_INTEGRATION",
+  "epistemic_separation": {
+    "deterministic_test_evidence": "Recorded independently by the Local AI and Phase C test suites.",
+    "live_observed_backend_behavior": "Recorded in this file as bounded metadata.",
+    "ai_advisory_content": "Excluded; no model response body is present."
+  },
+  "backend": {
+    "ownership": "EXTERNALLY_RUNNING",
+    "process_terminated_by_arx": false,
+    "identity": "llama-server",
+    "version": "0.1.2-dev",
+    "build": "10545",
+    "commit": "a30273376",
+    "platform": "Windows x86_64",
+    "endpoint": "http://127.0.0.1:8080",
+    "endpoint_class": "IPV4_LOOPBACK",
+    "cors_observation": "An arbitrary preflight Origin was echoed by the external backend.",
+    "authentication_observation": "The manually launched backend accepted the bounded loopback validation without an API key."
+  },
+  "model": {
+    "identity": "Qwen/Qwen3-4B-GGUF:Q4_K_M",
+    "source": "BOUNDED_V1_MODELS_RESPONSE"
+  },
+  "observations": {
+    "loopback_validation": "PASS",
+    "v1_models": "PASS",
+    "provider_ready": "PASS",
+    "advisory_transport": "PASS",
+    "response_parser": "PASS",
+    "busy_ready_transition": "PASS",
+    "clean_disconnect": "PASS",
+    "metadata_only_audit": "PASS",
+    "capability_or_token_persisted": false,
+    "credential_leakage_detected": false,
+    "deterministic_state_mutation_detected": false,
+    "product_code_change_required": false
+  },
+  "deterministic_state": {
+    "evidence_mutated": false,
+    "evidence_kind_mutated": false,
+    "machine_dna_mutated": false,
+    "software_dna_mutated": false,
+    "project_dna_mutated": false,
+    "readiness_mutated": false,
+    "evidence_kind_contract": [
+      "DECLARED",
+      "OBSERVED",
+      "INFERRED",
+      "ESTIMATED",
+      "SIMULATED",
+      "STRUCTURAL",
+      "UNKNOWN"
+    ]
+  },
+  "limitations": [
+    "The local response completed too quickly for a reliable live mid-flight cancellation observation; pre-transmission and deterministic cancellation paths were tested separately.",
+    "The ordinary llama.cpp endpoint did not implement an ARX-compatible capability wrapper, so live capability-header enforcement was not exercised.",
+    "One backend and model configuration does not establish universal backend compatibility."
+  ],
+  "prohibited_claims": [
+    "AI advisory content is evidence",
+    "Local model output is authoritative",
+    "Universal llama.cpp or model compatibility",
+    "Authenticated capability enforcement was proven by the external backend"
+  ]
+}

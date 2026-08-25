@@ -2,7 +2,7 @@
 
 Phase C adds an optional, bounded advisory console to the ARX desktop application. It does not replace the deterministic compatibility engine. ARX remains useful without an AI provider, an OpenAI API credential, Codex CLI, or network access.
 
-The published `v4.0.0-b3` release is the immutable Phase C release anchor. The Local AI Bridge is later development on a separate branch and is not part of the published Beta 3 bytes. It reuses this console and its one-way advisory boundary; see [Local AI Bridge](LOCAL_AI_BRIDGE.md).
+The published `v4.0.0-b3` release remains the immutable original Phase C release anchor. The Beta 4 candidate adds the Local AI Bridge without changing the published Beta 3 bytes. Local AI reuses this console and its one-way advisory boundary; see [Local AI Bridge](LOCAL_AI_BRIDGE.md).
 
 The persistent UI notice is:
 
@@ -49,7 +49,7 @@ There is deliberately no return path from a provider response into `DesktopContr
 
 The fact-provenance enum remains exactly:
 
-`DECLARED / OBSERVED / INFERRED / UNKNOWN / ESTIMATED / SIMULATED / STRUCTURAL`
+`DECLARED / OBSERVED / INFERRED / ESTIMATED / SIMULATED / STRUCTURAL / UNKNOWN`
 
 `VERIFIED` is not an `EvidenceKind`. Verification belongs only to a relation, schema, semantic invariant, or composed decision where the implementation actually performs that validation.
 

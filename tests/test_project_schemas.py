@@ -125,8 +125,8 @@ def test_ai_contract_schema_version_is_independent_from_application_version():
 
 
 def test_application_and_legacy_schema_versions_remain_independent():
-    assert __version__ == "4.0.0b3"
-    assert 'version = "4.0.0b3"' in (SCHEMAS.parent / "pyproject.toml").read_text(encoding="utf-8")
+    assert __version__ == "4.0.0b4"
+    assert 'version = "4.0.0b4"' in (SCHEMAS.parent / "pyproject.toml").read_text(encoding="utf-8")
     assert envelope()["schema_version"] == "0.1"
 
 
