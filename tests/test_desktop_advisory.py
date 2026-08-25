@@ -16,7 +16,11 @@ from arx.advisory.providers import (
     AdvisoryResponse,
     ProviderAvailability,
 )
-from arx.desktop.advisory import AdvisoryWindow, render_conversation
+from arx.desktop.advisory import (
+    AdvisoryWindow,
+    ContextInspectorWindow,
+    render_conversation,
+)
 from arx.desktop.app import ARXDesktopApp
 from arx.desktop.ux import UIStateStore
 
@@ -303,10 +307,14 @@ def test_ask_both_runs_two_flat_unranked_provider_responses(tmp_path):
     assert openai.calls[0]["context"] is codex.calls[0]["context"]
     assert window._result_windows
     result = window._result_windows[0].result
+    result_window = window._result_windows[0]
     assert [item.provider_label for item in result.outcomes] == ["OpenAI Chat", "Codex CLI"]
     assert all(item.completed for item in result.outcomes)
     assert "winner" not in repr(result).casefold()
     assert "consensus" not in repr(result).casefold()
+    assert not result_window.comparison_visible
+    result_window.show_comparison()
+    assert result_window.comparison_visible
     window._close()
     app.destroy()
 
@@ -357,4 +365,31 @@ def test_general_chat_can_attach_preview_and_detach_bounded_arx_context(tmp_path
     window.detach_context()
     assert not window.context.has_arx_evidence
     window._close()
+    app.destroy()
+
+
+def test_context_inspector_keeps_evidence_contradictions_and_unknowns_separate(tmp_path):
+    app = ARXDesktopApp(advisory_providers={}, state_store=UIStateStore(tmp_path / "ui-state.json"))
+    app.withdraw()
+    context = build_intelligence_context(
+        selected={"finding": "Mismatch", "status": "YELLOW"},
+        evidence=[{"kind": "observed", "source": "fixture", "value": "3.13"}],
+        contradictions=[{"id": "conflict-1", "description": "constraint mismatch"}],
+        unknowns=["project-local runtime health"],
+    )
+
+    inspector = ContextInspectorWindow(app, context, initial_tab="Contradictions")
+    inspector.withdraw()
+
+    assert [inspector.tabs.tab(item, "text") for item in inspector.tabs.tabs()] == [
+        "Overview",
+        "Evidence",
+        "Contradictions",
+        "Unknowns",
+    ]
+    assert inspector.tabs.tab(inspector.tabs.select(), "text") == "Contradictions"
+    assert "observed" in inspector.views["Evidence"].get("1.0", "end")
+    assert "conflict-1" in inspector.views["Contradictions"].get("1.0", "end")
+    assert "runtime health" in inspector.views["Unknowns"].get("1.0", "end")
+    inspector.destroy()
     app.destroy()

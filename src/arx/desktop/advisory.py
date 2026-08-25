@@ -120,8 +120,8 @@ class AskBothResultWindow(tk.Toplevel):
                 outcome.error_status.value if outcome.error_status is not None else "NO_RESPONSE"
             )
             set_text(view, f"Status: {state}\n\n{outcome.display_text()}")
-        comparison = ttk.LabelFrame(body, text="Compare Responses — presentation aid only", padding=8)
-        comparison.pack(fill="both", expand=False, pady=(10, 0))
+        self.comparison_visible = False
+        self.comparison = ttk.LabelFrame(body, text="Compare Responses — presentation aid only", padding=8)
         comparison_text = (
             f"{result.comparison.trust_label}\n\n"
             "TEXTUAL OVERLAP\n"
@@ -131,11 +131,24 @@ class AskBothResultWindow(tk.Toplevel):
             "UNRESOLVED\n"
             f"{_render_items(result.comparison.unresolved)}"
         )
-        comparison_view = ReadOnlyText(comparison, content_type="text")
+        comparison_view = ReadOnlyText(self.comparison, content_type="text")
         comparison_view.pack(fill="both", expand=True)
         comparison_view.text.configure(height=10)
         set_text(comparison_view, comparison_text)
-        ttk.Button(body, text="Close", command=self.destroy).pack(side="right", pady=(8, 0))
+        controls = ttk.Frame(body)
+        controls.pack(fill="x", pady=(8, 0))
+        self.compare_button = ttk.Button(controls, text="Compare Responses", command=self.show_comparison)
+        self.compare_button.pack(side="left")
+        ttk.Button(controls, text="Close", command=self.destroy).pack(side="right")
+
+    def show_comparison(self) -> None:
+        """Reveal comparison aids only after an explicit user action."""
+
+        if self.comparison_visible:
+            return
+        self.comparison_visible = True
+        self.comparison.pack(fill="both", expand=False, pady=(10, 0), before=self.compare_button.master)
+        self.compare_button.configure(state="disabled")
 
 
 def _render_items(items: tuple[str, ...]) -> str:
@@ -222,6 +235,56 @@ class PromptPreview(tk.Toplevel):
         ttk.Button(controls, text="Close", command=self.destroy).pack(side="right")
 
 
+class ContextInspectorWindow(tk.Toplevel):
+    """Structured read-only view of the exact redacted local advisory packet."""
+
+    def __init__(self, parent: tk.Misc, context: AdvisoryContext, *, initial_tab: str = "Overview"):
+        super().__init__(parent)
+        self.context = context
+        self.title("Redacted ARX Advisory Context — Nothing Sent")
+        self.geometry("940x680")
+        self.minsize(620, 420)
+        self.transient(parent.winfo_toplevel())
+        self.bind("<Escape>", lambda _event: self.destroy())
+        body = ttk.Frame(self, padding=12)
+        body.pack(fill="both", expand=True)
+        ttk.Label(
+            body,
+            text="Inspectable local packet. Opening this view does not contact a provider.",
+            style="Muted.TLabel",
+        ).pack(fill="x", pady=(0, 8))
+        packet = context.as_dict()
+        overview = {
+            key: value
+            for key, value in packet.items()
+            if key not in {"relevant_evidence", "contradictions", "unknowns"}
+        }
+        contents = {
+            "Overview": overview,
+            "Evidence": packet.get("relevant_evidence", []),
+            "Contradictions": packet.get("contradictions", []),
+            "Unknowns": packet.get("unknowns", []),
+        }
+        self.tabs = ttk.Notebook(body)
+        self.tabs.pack(fill="both", expand=True)
+        self.views: dict[str, ReadOnlyText] = {}
+        for label, content in contents.items():
+            frame = ttk.Frame(self.tabs, padding=6)
+            self.tabs.add(frame, text=label)
+            view = ReadOnlyText(frame, content_type="json")
+            view.pack(fill="both", expand=True)
+            set_text(view, json.dumps(redact_external(content), indent=2, ensure_ascii=False, sort_keys=True))
+            self.views[label] = view
+            if label == initial_tab:
+                self.tabs.select(frame)
+        controls = ttk.Frame(body)
+        controls.pack(fill="x", pady=(8, 0))
+        ttk.Button(controls, text="Copy Exact Context", command=lambda: copy_to_clipboard(self, context.preview())).pack(
+            side="left"
+        )
+        ttk.Button(controls, text="Close", command=self.destroy).pack(side="right")
+
+
 class AdvisoryWindow(tk.Toplevel):
     """Phase C Intelligence Console with one-way advisory-only provider access."""
 
@@ -235,7 +298,6 @@ class AdvisoryWindow(tk.Toplevel):
         initial_mode: str = "Explain Technically",
         consent_command: Callable[[str, AdvisoryContext], bool] | None = None,
         save_command: Callable[[str, str], object] | None = None,
-        view_context_command: Callable[[AdvisoryContext], object] | None = None,
         change_context_command: Callable[[], object] | None = None,
         context_builder: Callable[[ContextSelection], AdvisoryContext] | None = None,
         search_command: Callable[[AdvisoryContext, str], object] | None = None,
@@ -247,7 +309,6 @@ class AdvisoryWindow(tk.Toplevel):
         self.providers = dict(providers)
         self.consent_command = consent_command
         self.save_command = save_command
-        self.view_context_command = view_context_command
         self.change_context_command = change_context_command
         self.context_builder = context_builder
         self.search_command = search_command
@@ -702,16 +763,10 @@ class AdvisoryWindow(tk.Toplevel):
             self.save_command("text", render_conversation(self.sessions.history(self.provider_name.get())))
 
     def _view_context(self) -> None:
-        if self.view_context_command:
-            self.view_context_command(self.context)
-        else:
-            PromptPreview(self, self.context.preview())
+        ContextInspectorWindow(self, self.context)
 
     def _view_evidence(self) -> None:
-        PromptPreview(
-            self,
-            json.dumps(redact_external(list(self.context.evidence)), indent=2, ensure_ascii=False, sort_keys=True),
-        )
+        ContextInspectorWindow(self, self.context, initial_tab="Evidence")
 
     def _copy_context(self) -> None:
         copy_to_clipboard(self, self.context.preview())

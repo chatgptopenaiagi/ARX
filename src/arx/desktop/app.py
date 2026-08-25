@@ -1241,7 +1241,6 @@ class ARXDesktopApp(tk.Tk):
             initial_mode=mode,
             consent_command=self._confirm_advisory_consent,
             save_command=self._save_visible_report,
-            view_context_command=self._view_advisory_context,
             change_context_command=self._selected_advisory_context,
             context_builder=lambda selection: self._phase_c_context(
                 self._selected_advisory_context() or base_context,
