@@ -123,7 +123,7 @@ jobs:
           report = json.loads(Path("security-results/semgrep.json").read_text(encoding="utf-8"))
           counts = Counter(item.get("extra", {}).get("severity", "UNKNOWN") for item in report.get("results", []))
           classification = json.loads(
-              Path("security/beta2/evidence/semgrep-classification.json").read_text(encoding="utf-8")
+              Path("security/phase-c/evidence/semgrep-classification.json").read_text(encoding="utf-8")
           )
           reviewed = {
               (
@@ -185,7 +185,7 @@ jobs:
               raise SystemExit("detect-secrets failed; stderr was intentionally not persisted.")
           report = json.loads(scan.stdout)
           classification = json.loads(
-              Path("security/beta2/evidence/detect-secrets-classification.json").read_text(
+              Path("security/phase-c/evidence/detect-secrets-classification.json").read_text(
                   encoding="utf-8"
               )
           )

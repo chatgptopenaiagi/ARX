@@ -224,6 +224,7 @@ def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
     assert "bandit==1.9.4" in workflow
     assert "semgrep==1.174.0" in workflow
     assert "semgrep-classification.json" in workflow
+    assert "security/phase-c/evidence/semgrep-classification.json" in workflow
     assert "unreviewed_errors" in workflow
     assert "stale_reviews" in workflow
     assert 'item.get("level") == "error"' in workflow
@@ -231,6 +232,7 @@ def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
     assert "detect-secrets==1.5.0" in workflow
     assert "hypothesis==6.165.10" in workflow
     assert "detect-secrets-classification.json" in workflow
+    assert "security/phase-c/evidence/detect-secrets-classification.json" in workflow
     assert "detect-secrets-summary.json" in workflow
     assert "stale_reviews" in workflow
     assert "scan-tracked-secrets.py" in workflow
