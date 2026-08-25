@@ -1,15 +1,16 @@
 # Roadmap
 
-ARX 4.0.0 Beta 3 preserves the Phase B trust foundation and Beta 2 release-trust controls on top of the ARX deterministic compatibility engine. It adds the Phase C Intelligence Console, explicit bounded context selection, independent provider conversations, flat Ask Both results, and opt-in textual comparison without changing canonical evidence or decisions.
+ARX 4.0.0 Beta 4 preserves the Phase B trust foundation, Beta 2 release-trust controls, and Beta 3 Intelligence Console on top of the ARX deterministic compatibility engine. It adds the optional loopback-only Local AI Bridge without changing canonical evidence or decisions.
 
-## Phase C candidate
+## Phase C and Local AI candidate
 
-- The `arx4-phase-c` line implements the Intelligence Console and bounded contextual multi-turn conversation architecture for validation as Beta 3.
+- The immutable Beta 3 release contains the Intelligence Console and bounded contextual multi-turn conversation architecture.
 - Ask Both is an explicit additional operation with flat, unranked provider responses.
 - Compare Responses remains a second explicit action limited to textual overlap, differences, and unresolved items without consensus, confidence boosts, or provenance upgrades.
 - OpenAI and Codex conversations remain independent and the provider response path remains one-way.
+- The Beta 4 candidate adds provider-neutral Local AI through explicit loopback profiles, typed llama.cpp supervision, memory-only optional capabilities, and the same bounded redacted `AdvisoryContext` boundary.
 
-Phase C remains absent from the immutable ARX 4.0.0 Beta 2 release. The Beta 3 source identity does not become a published prerelease until its release gates, tag, artifacts, and public release are independently completed.
+Phase C remains absent from the immutable ARX 4.0.0 Beta 2 release, and Local AI remains absent from the immutable Beta 3 release. Beta 4 needs its own release gates, tag, artifacts, provenance, and public prerelease.
 
 ## Manual release evidence still required
 

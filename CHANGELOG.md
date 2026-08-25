@@ -1,11 +1,12 @@
 # Changelog
 
-## Unreleased — Local AI Bridge
+## 4.0.0b4 - 2026-08-25
 - Add a provider-neutral, loopback-only Local AI provider that reuses the immutable, bounded, redacted Phase C `AdvisoryContext` and existing Intelligence Console.
 - Add explicit localhost profile configuration, bounded `/v1/models` discovery, first-run backend approval, typed hidden llama.cpp process launch, health/state supervision, cancellation, clean shutdown, and safe reconnect behavior.
 - Add memory-only, expiring local session capabilities for explicitly compatible backend wrappers without persisting capability values in profiles, approvals, evidence, audit, or reports.
 - Extend the ARX architecture gate with a `local_ai -> advisory` layer while preventing deterministic layers from acquiring Local AI or advisory dependencies.
-- Preserve the published ARX 4.0.0 Beta 3 tag and assets unchanged; this work has no new release tag or Python-index publication.
+- Record a real, externally owned llama.cpp/Qwen loopback integration as observed validation evidence without storing advisory response text or treating local model output as ARX evidence.
+- Preserve the published ARX 4.0.0 Beta 1, Beta 2, and Beta 3 tags and assets unchanged; Python-index publication remains a separate explicit gate.
 
 ## 4.0.0b3 - 2026-08-25
 - Add the advisory-only ARX Intelligence Console with visibly separate deterministic evidence, contradictions, unknowns, provider status, redacted context, transcripts, and transmission-audit views.

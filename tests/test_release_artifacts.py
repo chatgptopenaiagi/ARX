@@ -8,8 +8,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VERIFIER = ROOT / "scripts" / "verify-release-assets.py"
-VERSION = "4.0.0b3"
-ARTIFACT_VERSION = "4.0.0-b3"
+VERSION = "4.0.0b4"
+ARTIFACT_VERSION = "4.0.0-b4"
 
 
 def _write_sdist(path):

@@ -11,7 +11,7 @@
 
 ARX 4 correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-**ARX 4.0.0 Beta 3** (`4.0.0b3`; tag `v4.0.0-b3`) is a published immutable prerelease containing the Phase C Intelligence Console, independent bounded OpenAI/Codex conversations, explicit ARX context attachment, and flat Ask Both comparison. The current development branch adds a post-Beta-3 Local AI Bridge for a future candidate; it does not change or republish Beta 3 and has no new release tag. ARX is not ARX 4 stable. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+**ARX 4.0.0 Beta 4** (`4.0.0b4`; tag `v4.0.0-b4`) is a prerelease candidate containing the Phase C Intelligence Console and the optional loopback-only Local AI Bridge. It retains independent bounded OpenAI/Codex conversations, explicit ARX context attachment, and flat Ask Both comparison. Beta 1, Beta 2, and Beta 3 remain published immutable historical anchors. ARX is not ARX 4 stable. The deterministic engine and local inspection workflows remain fully usable without an AI provider, local model, or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
@@ -48,7 +48,7 @@ ARX deterministic evidence
         |
         | explicit user action + bounded redacted context
         v
-optional OpenAI API | Codex CLI | safe web research
+optional OpenAI API | Codex CLI | Local AI | safe web research
         |
         v
 non-authoritative advisory output --> Human decision
@@ -91,14 +91,14 @@ GREEN is deliberately scoped. The current Python readiness vertical verifies int
 
 ## Install ARX 4
 
-ARX `4.0.0b3` is a pre-release candidate. The Python package keeps the existing `arx-prescanner` identity and history. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
+ARX `4.0.0b4` is a pre-release candidate. The Python package keeps the existing `arx-prescanner` identity and history. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
 
 ### PyPI / Python developers
 
 After the separately approved PyPI publication gate, install this exact beta from the existing `arx-prescanner` project:
 
 ```console
-python -m pip install arx-prescanner==4.0.0b3
+python -m pip install arx-prescanner==4.0.0b4
 ```
 
 Alternatively, allow pip to discover the newest available ARX pre-release:
@@ -126,16 +126,16 @@ python -m pip install arx-prescanner
 Install the immutable beta source directly from its Git tag:
 
 ```console
-python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v4.0.0-b3"
+python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v4.0.0-b4"
 ```
 
 ### Windows installer
 
-After the candidate passes its release gates and is published, download `ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe` from the `v4.0.0-b3` GitHub prerelease. It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The candidate remains unsigned because no approved production code-signing identity is configured; checksums and GitHub provenance do not substitute for Authenticode.
+After the candidate passes its release gates and is published, download `ARX-Desktop-Setup-win-x64-v4.0.0-b4.exe` from the `v4.0.0-b4` GitHub prerelease. It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The candidate remains unsigned because no approved production code-signing identity is configured; checksums and GitHub provenance do not substitute for Authenticode.
 
 ### Portable Windows
 
-After publication, download `ARX-Desktop-win-x64-v4.0.0-b3.zip`, verify it with `SHA256SUMS.txt`, extract the complete folder, and run `ARX.exe` without installation.
+After publication, download `ARX-Desktop-win-x64-v4.0.0-b4.zip`, verify it with `SHA256SUMS.txt`, extract the complete folder, and run `ARX.exe` without installation.
 
 ### Editable source checkout
 
@@ -164,12 +164,12 @@ Unknown targets are never launched, imported, or extracted. Static inspection re
 
 ### Windows distribution
 
-ARX 4 Beta 3 can be built in two Windows forms:
+ARX 4 Beta 4 can be built in two Windows forms:
 
 - a portable x64 folder and versioned ZIP containing `ARX.exe` and its private `_internal` runtime;
 - an optional Inno Setup installer with a stable application identity, x64 Program Files installation, Start Menu and uninstall entries, an optional desktop shortcut, and SHA-256 checksums.
 
-Generated release artifacts stay under the ignored, version-specific `release/v4.0.0-b3/` directory and are not committed. Historical release artifacts are not overwritten. Current beta builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md), [reproducible-build policy](docs/REPRODUCIBLE_BUILDS.md), and [trusted installation architecture](docs/TRUSTED_INSTALLATION.md).
+Generated release artifacts stay under the ignored, version-specific `release/v4.0.0-b4/` directory and are not committed. Historical release artifacts are not overwritten. Current beta builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md), [reproducible-build policy](docs/REPRODUCIBLE_BUILDS.md), and [trusted installation architecture](docs/TRUSTED_INSTALLATION.md).
 
 ## Optional advisory and safe research
 
@@ -177,6 +177,7 @@ External assistance is always optional, explicitly user-triggered, cancellable w
 
 - **OpenAI API advisory** uses the supported OpenAI Responses API. Developer sessions may use `OPENAI_API_KEY`; the packaged Windows application can import a dedicated key into an ARX-owned, per-user Windows DPAPI store. A ChatGPT subscription is not treated as an API credential.
 - **Codex CLI advisory** detects the official CLI and sends the bounded prompt through standard input to a read-only, ephemeral process in an empty temporary directory.
+- **Local AI advisory** connects only to an explicit loopback OpenAI-compatible endpoint or supervises an explicitly approved typed llama.cpp profile. It disables ambient proxies, never executes model-generated commands, and applies the same bounded redacted `AdvisoryContext` boundary as remote providers.
 - **Safe web research** creates a short redacted, URL-encoded query and opens an allowlisted HTTPS search URL in the user's browser. ARX does not scrape or import results.
 
 Open the provider configuration with `Settings → Intelligence Providers → OpenAI API`. The window provides Configure, Import, Replace, Remove, Test Connection, and Open OpenAI Chat actions. Configure opens the official OpenAI Platform API-key page; ARX never generates a key. Import immediately protects the selected key with DPAPI and never displays it again. Opening Settings performs no network request and finding a credential reports only `CONFIGURED`; an explicit successful authentication/API/model check is required for `READY`.
@@ -199,19 +200,19 @@ At the real provider boundary ARX writes only bounded local transmission metadat
 
 Read the complete [AI assistance and external-boundary security model](docs/ai-assistance-security.md).
 
-## Build the ARX 4 Beta 3 artifacts
+## Build the ARX 4 Beta 4 artifacts
 
 ```powershell
 python -m pip install -e ".[dev,build,release]"
-.\scripts\build-release.ps1 -Version 4.0.0b3
+.\scripts\build-release.ps1 -Version 4.0.0b4
 ```
 
 Expected release filenames are:
 
-- `arx_prescanner-4.0.0b3-py3-none-any.whl`
-- `arx_prescanner-4.0.0b3.tar.gz`
-- `ARX-Desktop-win-x64-v4.0.0-b3.zip`
-- `ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe`
+- `arx_prescanner-4.0.0b4-py3-none-any.whl`
+- `arx_prescanner-4.0.0b4.tar.gz`
+- `ARX-Desktop-win-x64-v4.0.0-b4.zip`
+- `ARX-Desktop-Setup-win-x64-v4.0.0-b4.exe`
 - `SHA256SUMS.txt`
 
 Building an installer is not install, upgrade, or uninstall acceptance. Those operating-system transitions remain explicit manual checks.
@@ -226,6 +227,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 
 | Document | Purpose |
 |---|---|
+| [ARX 4.0.0 Beta 4 release notes](docs/release-notes-4.0.0-b4.md) | Phase C plus the Local AI Bridge, live llama.cpp/Qwen validation, security gates, and prerelease limitations |
 | [ARX 4.0.0 Beta 3 release notes](docs/release-notes-4.0.0-b3.md) | Phase C Intelligence Console, bounded conversations/context, Ask Both, security gates, and prerelease limitations |
 | [ARX 4.0.0 Beta 2 release notes](docs/release-notes-4.0.0-b2.md) | Security remediation, reproducibility, provenance, Windows trust preparation, Phase C exclusions, and beta limitations |
 | [ARX 4.0.0 Beta 1 release notes](docs/release-notes-4.0.0-b1.md) | Historical Phase B trust-foundation prerelease |
@@ -235,7 +237,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 | [ARX 4 baseline](docs/arx-4-baseline-report.md) | Verified checkout, toolchain, epistemic model, import graph, and baseline tests |
 | [ARX 4 Phase B trust foundation](docs/arx-4-phase-b-trust-foundation.md) | Provenance, dependency enforcement, DPAPI credentials, provider health, OpenAI transport, and audit boundaries |
 | [ARX 4 Phase C Intelligence Console](docs/PHASE_C.md) | Advisory-only console, bounded context, independent conversations, Ask Both, comparison, privacy, and limitations |
-| [Local AI Bridge](docs/LOCAL_AI_BRIDGE.md) | Post-Beta-3 localhost discovery, typed process supervision, assistance profiles, advisory boundary, and limitations |
+| [Local AI Bridge](docs/LOCAL_AI_BRIDGE.md) | Beta 4 localhost discovery, typed process supervision, assistance profiles, advisory boundary, and limitations |
 | [ARX 3 final acceptance](docs/arx-3-final-acceptance.md) | Phase A evidence, blocked gates, artifacts, and release decision |
 | [Project-aware semantic engine](docs/project-semantic-engine.md) | Requirement/provider graphs, execution resolution, readiness, and planning rules |
 | [Security model](docs/security-model.md) | Local inspection, subprocess, privacy, remediation, and external trust boundaries |

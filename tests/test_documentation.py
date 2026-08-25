@@ -161,7 +161,7 @@ def test_readme_is_the_complete_arx4_beta_landing_page():
 
     for phrase in (
         "# ARX 4",
-        "ARX 4.0.0 Beta 3",
+        "ARX 4.0.0 Beta 4",
         "Project-Aware Compatibility Intelligence",
         "## Why ARX 4 is different",
         "Machine DNA",
@@ -176,8 +176,8 @@ def test_readme_is_the_complete_arx4_beta_landing_page():
         "shortest trusted path to GREEN",
         "There is no return path from external advice into ARX evidence",
         "The human remains the final decision-maker",
-        "ARX-Desktop-win-x64-v4.0.0-b3.zip",
-        "ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe",
+        "ARX-Desktop-win-x64-v4.0.0-b4.zip",
+        "ARX-Desktop-Setup-win-x64-v4.0.0-b4.exe",
         "SHA256SUMS.txt",
         "Phase C",
         "Real DPI and multi-monitor acceptance is incomplete",
@@ -187,6 +187,7 @@ def test_readme_is_the_complete_arx4_beta_landing_page():
     for workflow in ("actions/workflows/ci.yml", "actions/workflows/codeql.yml"):
         assert workflow in readme
     for document in (
+        "docs/release-notes-4.0.0-b4.md",
         "docs/release-notes-4.0.0-b3.md",
         "docs/release-notes-4.0.0-b2.md",
         "docs/release-notes-4.0.0-b1.md",
@@ -324,6 +325,38 @@ def test_beta3_release_notes_define_phase_c_without_upgrading_advice():
     assert "cannot modify Evidence, EvidenceKind" in notes
 
 
+def test_beta4_release_notes_define_local_ai_without_upgrading_advice():
+    notes = _read("docs/release-notes-4.0.0-b4.md")
+
+    for phrase in (
+        "# ARX 4.0.0 Beta 4",
+        "Package version: `4.0.0b4`",
+        "Artifact version: `4.0.0-b4`",
+        "Windows file/product version: `4.0.0.4`",
+        "Git tag: `v4.0.0-b4`",
+        "AI ADVISORY — NON-AUTHORITATIVE",
+        "DECLARED / OBSERVED / INFERRED / ESTIMATED / SIMULATED / STRUCTURAL / UNKNOWN",
+        "`VERIFIED` remains outside `EvidenceKind`",
+        "Local AI Bridge",
+        "loopback-only",
+        "typed llama.cpp",
+        "GENERAL CHAT",
+        "ARX EVIDENCE CHAT",
+        "Ask Both",
+        "COMPARISON AID — NO EVIDENCE UPGRADE",
+        "Qwen/Qwen3-4B-GGUF:Q4_K_M",
+        "OBSERVED integration-validation evidence",
+        "response body is deliberately excluded",
+        "PASS WITH LIMITATION",
+        "UNSIGNED_EXPECTED_PRE_SIGNING",
+        "production PyPI",
+    ):
+        assert phrase in notes
+
+    assert "cannot modify Evidence, EvidenceKind" in notes
+    assert "does not establish universal local-backend" in notes
+
+
 def test_python_publishing_document_preserves_release_and_credential_boundaries():
     publishing = _read("docs/python-package-publishing.md")
 
@@ -341,7 +374,7 @@ def test_python_publishing_document_preserves_release_and_credential_boundaries(
         "outside the checkout",
         "target=testpypi",
         "target=production",
-        "python -m pip install arx-prescanner==4.0.0b3",
+        "python -m pip install arx-prescanner==4.0.0b4",
     ):
         assert phrase.casefold() in publishing.casefold()
     assert "long-lived API token" in publishing

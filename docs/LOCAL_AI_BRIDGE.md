@@ -1,6 +1,6 @@
 # ARX Local AI Bridge
 
-The Local AI Bridge is post-ARX-4.0.0-Beta-3 development for running optional advisory analysis through an explicitly configured model API on the same Windows computer. It is not part of the immutable published Beta 3 artifacts and has no release tag or Python-index publication yet.
+The Local AI Bridge is part of the ARX 4.0.0 Beta 4 candidate for running optional advisory analysis through an explicitly configured model API on the same Windows computer. It does not change the immutable published Beta 3 artifacts, and Python-index publication remains a separate explicit gate.
 
 The bridge does not replace ARX Core, the Phase C Intelligence Console, `AdvisoryContext`, `Evidence`, or `EvidenceKind`. It extends the existing `AIProvider` boundary and renders every response as:
 
@@ -97,4 +97,12 @@ This milestone provides no autonomous remediation, action broker, shell bridge, 
 - Only a typed llama.cpp server profile can be launched; other backends must expose an explicitly configured compatible loopback API.
 - A model health lookup proves only that the local model-list API responded for that check; it does not prove a generation will fit available RAM/VRAM or complete successfully.
 - Capability enforcement is opt-in and requires a compatible backend wrapper; loopback alone is not a Windows publisher or process-identity guarantee.
-- Published Beta 3 remains unchanged. A future candidate needs its own version, full release gates, artifacts, SBOM, provenance, and human-gated publication decision.
+- Real integration validation covered one externally running llama.cpp/Qwen configuration; it does not establish universal backend or model compatibility.
+- The observed ordinary llama.cpp endpoint did not enforce ARX's optional capability header. Capability enforcement therefore remains deterministically tested but was not proven by that live backend.
+- Published Beta 3 remains unchanged. Beta 4 requires its own full release gates, artifacts, SBOM, provenance, and publication decision.
+
+## Observed llama.cpp/Qwen integration
+
+On 2026-08-25, the bridge was validated against an externally owned `llama-server` process on a literal loopback endpoint. The backend reported version `0.1.2-dev`, build `10545`, commit `a30273376`; `/v1/models` identified `Qwen/Qwen3-4B-GGUF:Q4_K_M`. Discovery reached READY, one bounded advisory request and response parsed successfully, the manager transitioned BUSY → READY, the metadata-only audit contained the expected transport events, canonical ARX objects remained unchanged, and disconnect did not terminate the external process.
+
+This is OBSERVED integration-validation evidence, not model advice and not a deterministic compatibility claim. The advisory response body is deliberately absent from the record. The externally launched server accepted unauthenticated loopback requests and echoed an arbitrary preflight Origin, consistent with its broad CORS/no-key configuration. ARX did not weaken its loopback, redaction, consent, or provenance boundaries to match that backend. Mid-flight cancellation could not be exercised reliably because the local response completed too quickly; pre-transmission cancellation and deterministic cancellation paths remain covered separately. See the [safe validation record](../security/local-ai/evidence/qwen-live-validation-v4.0.0-b4.json).

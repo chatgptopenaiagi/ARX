@@ -154,6 +154,15 @@ def test_github_release_asset_workflow_is_manual_draft_only_and_cannot_publish()
     assert len(FULL_SHA_ACTION.findall(workflow)) == len(actions) == 5
 
 
+def test_active_manual_release_workflow_defaults_target_beta4_without_index_publication():
+    assert "default: v4.0.0-b4" in _read("release-assets.yml")
+    assert "default: v4.0.0-b4" in _read("release-provenance.yml")
+    publishing = _read("publish-pypi.yml")
+    assert "default: v4.0.0-b4" in publishing
+    assert "workflow_dispatch:" in publishing
+    assert "release:\n" not in publishing
+
+
 def test_beta2_release_trigger_separates_attachment_from_reproduction():
     workflow = _read("beta2-release-assets-trigger.yml")
 

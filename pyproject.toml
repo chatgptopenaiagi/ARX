@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arx-prescanner"
-version = "4.0.0b3"
+version = "4.0.0b4"
 description = "ARX 4 — Project-Aware Compatibility Intelligence"
 readme = "README.md"
 requires-python = ">=3.10"
