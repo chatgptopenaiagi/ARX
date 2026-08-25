@@ -6,15 +6,21 @@ import json
 import queue
 import threading
 import time
-import traceback
 import tkinter as tk
+import traceback
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Callable, Mapping
 
 from arx import PRODUCT_NAME, RELEASE_NAME, __version__
 from arx.advisory.audit import TransmissionAudit, default_transmission_audit
-from arx.advisory.context import AdvisoryContext, build_advisory_context
+from arx.advisory.context import (
+    AdvisoryContext,
+    ContextSelection,
+    build_advisory_context,
+    build_general_chat_context,
+    build_intelligence_context,
+)
 from arx.advisory.credentials import (
     ProviderCredentialResolver,
     WindowsDPAPICredentialStore,
@@ -25,7 +31,11 @@ from arx.advisory.web import build_search_query, build_search_url, open_search
 from arx.core.models import serialize
 
 from .advisory import AdvisoryWindow
-from .controllers import DesktopController, project_readiness_view_model
+from .controllers import (
+    DesktopController,
+    intelligence_context_components,
+    project_readiness_view_model,
+)
 from .provider_settings import OpenAIProviderSettingsWindow
 from .theme import COLORS, apply_theme
 from .ux import (
@@ -96,7 +106,7 @@ class ARXDesktopApp(tk.Tk):
             (provider for provider in self._advisory_providers.values() if isinstance(provider, OpenAIProvider)),
             default_openai_provider,
         )
-        self._advisory_consent: set[str] = set()
+        self._advisory_consent: set[tuple[str, str]] = set()
         self._advisory_windows: list[AdvisoryWindow] = []
         self._provider_settings_windows: list[OpenAIProviderSettingsWindow] = []
         self._poll_id: str | None = None
@@ -137,6 +147,12 @@ class ARXDesktopApp(tk.Tk):
         actions.pack(fill="x")
         button_specs = (
             ("PROJECT PREFLIGHT", self._project_preflight, "Accent.TButton", "Inspect a project without executing its scripts."),
+            (
+                "INTELLIGENCE CONSOLE",
+                self._open_intelligence_console,
+                "TButton",
+                "Inspect bounded ARX context and request clearly labeled advisory analysis.",
+            ),
             ("QUICK SCAN", lambda: self._scan(False), "TButton", "Run the bounded quick Machine DNA scan."),
             ("DEEP SCAN", lambda: self._scan(True), "TButton", "Run the deeper read-only Machine DNA scan."),
             ("INSPECT FILE", self._inspect_file, "TButton", "Statically inspect a file without executing it."),
@@ -190,6 +206,11 @@ class ARXDesktopApp(tk.Tk):
         intelligence_menu.add_command(label="OpenAI API…", command=self._open_openai_settings)
         settings_menu.add_cascade(label="Intelligence Providers", menu=intelligence_menu)
         menu.add_cascade(label="Settings", menu=settings_menu)
+
+        intelligence_console_menu = tk.Menu(menu, tearoff=False)
+        intelligence_console_menu.add_command(label="Open Intelligence Console…", command=self._open_intelligence_console)
+        intelligence_console_menu.add_command(label="OpenAI General Chat…", command=self._open_openai_chat)
+        menu.add_cascade(label="Intelligence", menu=intelligence_console_menu)
 
         help_menu = tk.Menu(menu, tearoff=False)
         help_menu.add_command(label="About ARX", command=self._show_about)
@@ -357,7 +378,7 @@ class ARXDesktopApp(tk.Tk):
             try:
                 result = work()
                 self._events.put(("ok", complete, result, token, completed_status))
-            except Exception as exc:  # Tk presents a human summary and keeps the trace copyable.
+            except Exception as exc:  # noqa: BLE001 - Tk presents a bounded UI error for worker failures
                 self._events.put(("error", label, (exc, traceback.format_exc()), token, "Failed"))
 
         threading.Thread(target=worker, daemon=True, name="arx-desktop-worker").start()
@@ -933,10 +954,28 @@ class ARXDesktopApp(tk.Tk):
         if self._advisory_providers:
             actions.append(MenuAction(None))
             if "OpenAI Chat" in self._advisory_providers:
-                actions.append(
-                    MenuAction(
-                        "Ask OpenAI About This…",
-                        lambda context=advisory_context: self._open_advisory(context, "OpenAI Chat"),
+                actions.extend(
+                    (
+                        MenuAction(
+                            "Explain with OpenAI…",
+                            lambda context=advisory_context: self._open_advisory(
+                                context, "OpenAI Chat", "Explain Simply"
+                            ),
+                        ),
+                        MenuAction(
+                            "Ask OpenAI About This…",
+                            lambda context=advisory_context: self._open_advisory(context, "OpenAI Chat"),
+                        ),
+                        MenuAction(
+                            "Suggest Safe Fix with OpenAI…",
+                            lambda context=advisory_context: self._open_advisory(
+                                context, "OpenAI Chat", "Suggest Safe Fix"
+                            ),
+                        ),
+                        MenuAction(
+                            "Open in OpenAI Chat…",
+                            lambda context=advisory_context: self._open_advisory(context, "OpenAI Chat"),
+                        ),
                     )
                 )
             if "Codex CLI" in self._advisory_providers:
@@ -946,12 +985,13 @@ class ARXDesktopApp(tk.Tk):
                         lambda context=advisory_context: self._open_advisory(context, "Codex CLI"),
                     )
                 )
-            actions.append(
-                MenuAction(
-                    "Suggest Safe Fix with AI…",
-                    lambda context=advisory_context: self._open_advisory(context, self._default_provider(), "Suggest Safe Fix"),
+            if len(self._advisory_providers) == 2:
+                actions.append(
+                    MenuAction(
+                        "Open Ask Both…",
+                        lambda context=advisory_context: self._open_advisory(context, self._default_provider()),
+                    )
                 )
-            )
             if advisory_context.project:
                 actions.append(
                     MenuAction(
@@ -1085,6 +1125,72 @@ class ARXDesktopApp(tk.Tk):
             private_roots=private_roots,
         )
 
+    def _selected_advisory_context(self) -> AdvisoryContext | None:
+        """Project the selected visible row without changing deterministic state."""
+
+        try:
+            index = self.tabs.index(self.tabs.select())
+        except tk.TclError:
+            return None
+        views = {
+            0: self.machine_tree,
+            1: self.cap_tree,
+            2: self.import_tree,
+            3: self.check_tree,
+            4: self.evidence_tree,
+            5: self.project_tree,
+        }
+        view = views.get(index)
+        if view is None:
+            return None
+        row = self._tree_row(view)
+        if row is None:
+            return None
+        item_id, values, columns = row
+        return self._context_for_row(view, item_id, columns, values)
+
+    def _phase_c_context(self, base: AdvisoryContext, selection: ContextSelection) -> AdvisoryContext:
+        components = intelligence_context_components(self.controller)
+        report = getattr(self.controller, "project_preflight", None)
+        private_roots = [report.project.root] if report is not None else []
+        base_evidence = [dict(item) for item in base.evidence]
+        component_evidence = [dict(item) for item in components["evidence"]]  # type: ignore[arg-type]
+        project = components["project"] or dict(base.project)
+        return build_intelligence_context(
+            selected=dict(base.selected),
+            evidence=[*base_evidence, *component_evidence],
+            machine=components["machine"],  # type: ignore[arg-type]
+            software=components["software"],  # type: ignore[arg-type]
+            project=project,  # type: ignore[arg-type]
+            conclusions=components["conclusions"],  # type: ignore[arg-type]
+            contradictions=components["contradictions"],  # type: ignore[arg-type]
+            unknowns=components["unknowns"],  # type: ignore[arg-type]
+            selection=selection,
+            private_roots=private_roots,
+            surface=base.surface,
+        )
+
+    def _open_intelligence_console(self) -> None:
+        base = self._selected_advisory_context()
+        if base is None:
+            base = build_advisory_context(
+                "ARX Intelligence Console",
+                ("scope", "status"),
+                ("Current deterministic ARX state", "INSPECTION ONLY"),
+            )
+        components = intelligence_context_components(self.controller)
+        selection = ContextSelection(
+            selected_finding=True,
+            relevant_evidence=True,
+            machine_dna=bool(components["machine"]),
+            software_dna=bool(components["software"]),
+            project_dna=bool(components["project"]),
+            conclusions=bool(components["conclusions"]),
+            contradictions=True,
+            unknowns=True,
+        )
+        self._open_advisory(self._phase_c_context(base, selection), self._default_provider())
+
     def _default_provider(self) -> str:
         if "OpenAI Chat" in self._advisory_providers:
             return "OpenAI Chat"
@@ -1111,14 +1217,22 @@ class ARXDesktopApp(tk.Tk):
         self._provider_settings_windows.append(window)
 
     def _open_openai_chat(self) -> None:
-        context = build_advisory_context(
-            "General Chat",
-            ("mode", "status"),
-            ("GENERAL CHAT", "NO ARX EVIDENCE ATTACHED"),
-        )
-        self._open_advisory(context, "OpenAI Chat")
+        self._open_advisory(build_general_chat_context(), "OpenAI Chat")
 
     def _open_advisory(self, context: AdvisoryContext, provider: str, mode: str = "Explain Technically") -> None:
+        if context.has_arx_evidence and not context.sections:
+            selection = ContextSelection(
+                selected_finding=True,
+                relevant_evidence=bool(context.evidence),
+                machine_dna=False,
+                software_dna=False,
+                project_dna=bool(context.project),
+                conclusions=True,
+                contradictions=True,
+                unknowns=True,
+            )
+            context = self._phase_c_context(context, selection)
+        base_context = context
         window = AdvisoryWindow(
             self,
             context,
@@ -1128,18 +1242,29 @@ class ARXDesktopApp(tk.Tk):
             consent_command=self._confirm_advisory_consent,
             save_command=self._save_visible_report,
             view_context_command=self._view_advisory_context,
-            change_context_command=lambda: self._set_status("Right-click another finding to change AI context."),
+            change_context_command=self._selected_advisory_context,
+            context_builder=lambda selection: self._phase_c_context(
+                self._selected_advisory_context() or base_context,
+                selection,
+            ),
+            search_command=lambda selected_context, kind: self._search_context(selected_context, kind, "web"),
+            audit=self._transmission_audit,
             status_command=self._set_status,
         )
         self._advisory_windows.append(window)
 
-    def _confirm_advisory_consent(self, provider: str, _context: AdvisoryContext) -> bool:
-        if provider in self._advisory_consent:
+    def _confirm_advisory_consent(self, provider: str, context: AdvisoryContext) -> bool:
+        if not context.has_arx_evidence:
+            return True
+        consent_key = (provider, context.context_id)
+        if consent_key in self._advisory_consent:
             return True
         accepted = messagebox.askyesno(
             "ARX — External advisory consent",
             (
-                f"You chose {provider}. ARX will send only the selected, bounded, redacted diagnostic context and your "
+                f"You chose {provider}. ARX will send the selected, bounded, redacted diagnostic context "
+                f"{context.context_id}, containing {context.evidence_count} selected evidence item(s), plus only the enabled "
+                "bounded sections and your "
                 "question to that provider. It will not send a complete machine scan, credentials, or unrelated project files.\n\n"
                 "The response is non-authoritative advice and cannot change ARX evidence or modify this computer. You can preview "
                 "the exact diagnostic prompt before sending.\n\nContinue?"
@@ -1147,7 +1272,7 @@ class ARXDesktopApp(tk.Tk):
             parent=self,
         )
         if accepted:
-            self._advisory_consent.add(provider)
+            self._advisory_consent.add(consent_key)
         return bool(accepted)
 
     def _view_advisory_context(self, context: AdvisoryContext) -> None:
@@ -1156,7 +1281,7 @@ class ARXDesktopApp(tk.Tk):
     def _view_context_evidence(self, context: AdvisoryContext) -> None:
         self._show_report_window(
             "Relevant ARX evidence",
-            json.dumps(list(context.evidence), indent=2, ensure_ascii=False, sort_keys=True),
+            json.dumps(context.as_dict().get("relevant_evidence", []), indent=2, ensure_ascii=False, sort_keys=True),
             content_type="json",
         )
 
