@@ -18,6 +18,12 @@ from arx.core.evidence import SENSITIVE, redact_path
 MAX_FIELD_CHARS = 2_000
 MAX_CONTEXT_CHARS = 16_000
 MAX_EVIDENCE_ITEMS = 8
+_SELECTED_BUDGET = 1_600
+_PROJECT_BUDGET = 1_200
+_SECTION_BUDGET = 1_000
+_EVIDENCE_ITEM_BUDGET = 400
+_CONTRADICTION_BUDGET = 900
+_UNKNOWNS_BUDGET = 1_200
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 _ASSIGNMENT_SECRET = re.compile(
     r"(?i)\b(token|secret|password|passwd|api[_-]?key|private[_-]?key|credential|cookie)\s*[:=]\s*([^\s,;]+)"
@@ -187,16 +193,63 @@ def redact_external(
     return _redact_text(str(value), private_roots, max_chars=max_text_chars)
 
 
-def _bounded_mapping(value: Mapping[str, Any], budget: int) -> dict[str, Any]:
+def _json_length(value: Any) -> int:
+    return len(json.dumps(value, ensure_ascii=False, sort_keys=True))
+
+
+def _bounded_text_value(value: str, budget: int) -> str:
+    """Return a JSON string value whose encoded representation fits *budget*."""
+
+    suffix = "… <context omitted by ARX>"
+    low = 0
+    high = len(value)
+    best = ""
+    while low <= high:
+        middle = (low + high) // 2
+        candidate = value if middle == len(value) else f"{value[:middle]}{suffix}"
+        if _json_length(candidate) <= budget:
+            best = candidate
+            low = middle + 1
+        else:
+            high = middle - 1
+    return best
+
+
+def _bounded_value(value: Any, budget: int, *, depth: int) -> Any:
+    if budget < 2:
+        return ""
+    if _json_length(value) <= budget:
+        return value
+    if depth >= 8:
+        return _bounded_text_value("<nested context omitted by ARX>", budget)
+    if isinstance(value, Mapping):
+        return _bounded_mapping(value, budget, depth=depth + 1)
+    if isinstance(value, (list, tuple)):
+        return _bounded_sequence(value, budget, depth=depth + 1)
+    return _bounded_text_value(str(value), budget)
+
+
+def _bounded_mapping(value: Mapping[str, Any], budget: int, *, depth: int = 0) -> dict[str, Any]:
     result: dict[str, Any] = {}
-    used = 2
     for key, item in value.items():
-        encoded = json.dumps({str(key): item}, ensure_ascii=False, sort_keys=True)
-        if result and used + len(encoded) > budget:
-            result["_arx_truncation"] = "Additional context omitted by ARX."
-            break
-        result[str(key)] = item
-        used += len(encoded)
+        safe_key = str(key)
+        candidate = {**result, safe_key: item}
+        if _json_length(candidate) <= budget:
+            result[safe_key] = item
+            continue
+        structural_overhead = _json_length({**result, safe_key: None}) - _json_length(None)
+        remaining = budget - structural_overhead
+        if remaining >= 2:
+            fitted = _bounded_value(item, remaining, depth=depth)
+            candidate = {**result, safe_key: fitted}
+            if _json_length(candidate) <= budget:
+                result[safe_key] = fitted
+        marker = {"_arx_truncation": "Additional context omitted by ARX."}
+        while result and _json_length({**result, **marker}) > budget:
+            result.pop(next(reversed(result)))
+        if _json_length({**result, **marker}) <= budget:
+            result.update(marker)
+        break
     return result
 
 
@@ -374,22 +427,24 @@ def build_general_chat_context() -> AdvisoryContext:
     )
 
 
-def _bounded_sequence(value: Sequence[Any], budget: int) -> tuple[Any, ...]:
+def _bounded_sequence(value: Sequence[Any], budget: int, *, depth: int = 0) -> tuple[Any, ...]:
     result: list[Any] = []
-    used = 2
     for item in value:
-        encoded = json.dumps(item, ensure_ascii=False, sort_keys=True)
-        if result and used + len(encoded) > budget:
-            result.append({"_arx_truncation": "Additional items omitted by ARX."})
-            break
-        if not result and len(encoded) > budget:
-            if isinstance(item, Mapping):
-                result.append(_bounded_mapping(item, budget))
-            else:
-                result.append(_redact_text(str(item), max_chars=max(64, budget - 64)))
-            break
-        result.append(item)
-        used += len(encoded)
+        if _json_length([*result, item]) <= budget:
+            result.append(item)
+            continue
+        structural_overhead = _json_length([*result, None]) - _json_length(None)
+        remaining = budget - structural_overhead
+        if remaining >= 2:
+            fitted = _bounded_value(item, remaining, depth=depth)
+            if _json_length([*result, fitted]) <= budget:
+                result.append(fitted)
+        marker = {"_arx_truncation": "Additional items omitted by ARX."}
+        while result and _json_length([*result, marker]) > budget:
+            result.pop()
+        if _json_length([*result, marker]) <= budget:
+            result.append(marker)
+        break
     return tuple(result)
 
 
@@ -411,26 +466,26 @@ def build_intelligence_context(
 
     chosen = selection or ContextSelection()
     safe_selected = (
-        _bounded_mapping(redact_external(dict(selected or {}), private_roots), 2_500)
+        _bounded_mapping(redact_external(dict(selected or {}), private_roots), _SELECTED_BUDGET)
         if chosen.selected_finding
         else {}
     )
     safe_project = (
-        _bounded_mapping(redact_external(dict(project or {}), private_roots), 1_800)
+        _bounded_mapping(redact_external(dict(project or {}), private_roots), _PROJECT_BUDGET)
         if chosen.project_dna
         else {}
     )
     sections: dict[str, Any] = {}
     for enabled, key, value, budget in (
-        (chosen.machine_dna, "machine_dna", machine, 1_800),
-        (chosen.software_dna, "software_dna", software, 1_800),
-        (chosen.conclusions, "deterministic_conclusions", conclusions, 1_800),
+        (chosen.machine_dna, "machine_dna", machine, _SECTION_BUDGET),
+        (chosen.software_dna, "software_dna", software, _SECTION_BUDGET),
+        (chosen.conclusions, "deterministic_conclusions", conclusions, _SECTION_BUDGET),
     ):
         if enabled and value:
             sections[key] = _bounded_mapping(redact_external(dict(value), private_roots), budget)
     safe_evidence = (
         tuple(
-            _bounded_mapping(redact_external(dict(item), private_roots), 500)
+            _bounded_mapping(redact_external(dict(item), private_roots), _EVIDENCE_ITEM_BUDGET)
             for item in tuple(evidence)[:MAX_EVIDENCE_ITEMS]
         )
         if chosen.relevant_evidence
@@ -439,15 +494,18 @@ def build_intelligence_context(
     safe_contradictions = (
         _bounded_sequence(
             [redact_external(dict(item), private_roots) for item in tuple(contradictions)[:12]],
-            1_200,
+            _CONTRADICTION_BUDGET,
         )
         if chosen.contradictions
         else ()
     )
     safe_unknowns = (
         tuple(
-            str(redact_external(item, private_roots, max_text_chars=500))
-            for item in tuple(unknowns)[:16]
+            str(item)
+            for item in _bounded_sequence(
+                [redact_external(item, private_roots, max_text_chars=500) for item in tuple(unknowns)[:16]],
+                _UNKNOWNS_BUDGET,
+            )
         )
         if chosen.unknowns
         else ()

@@ -102,6 +102,31 @@ def test_intelligence_context_is_bounded_redacted_immutable_and_preserves_ancest
         context.evidence[0]["kind"] = "verified"
 
 
+def test_oversized_nested_context_is_deterministically_truncated_not_rejected():
+    oversized = {
+        "first": [{"nested": "x" * 8_000, "secret": "must-not-leave"} for _ in range(40)],
+        "second": "y" * 8_000,
+    }
+
+    context = build_intelligence_context(
+        selected=oversized,
+        evidence=[{"kind": "observed", "value": oversized} for _ in range(20)],
+        machine=oversized,
+        software=oversized,
+        project=oversized,
+        conclusions=oversized,
+        contradictions=[oversized for _ in range(20)],
+        unknowns=["z" * 8_000 for _ in range(20)],
+        selection=ContextSelection(machine_dna=True, software_dna=True),
+    )
+
+    packet = context.preview()
+    assert len(packet) <= MAX_CONTEXT_CHARS
+    assert "must-not-leave" not in packet
+    assert "omitted by ARX" in packet
+    assert context.has_arx_evidence
+
+
 def test_provider_conversations_are_independent_memory_only_and_bounded():
     registry = ConversationRegistry(max_turns=4, max_chars=1_024)
     registry.append("OpenAI Chat", "user", "openai-one")
