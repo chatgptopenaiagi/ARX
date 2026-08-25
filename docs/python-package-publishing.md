@@ -1,6 +1,6 @@
 # Python package publishing
 
-ARX publishes the Python distribution under the existing package identity `arx-prescanner`. ARX 4.0.0 Beta 2 is package version `4.0.0b2`; it is a new version of the same project already present on both PyPI and TestPyPI. Do not create or rename either project, delete historical files, or replace an existing version. Application versions remain independent from ARX report schemas `0.1` and `0.2`.
+ARX publishes the Python distribution under the existing package identity `arx-prescanner`. The ARX 4.0.0 Beta 3 candidate is package version `4.0.0b3`; if separately approved for an index, it is a new version of the same project already present on both PyPI and TestPyPI. Do not create or rename either project, delete historical files, or replace an existing version. Application versions remain independent from ARX report schemas `0.1` and `0.2`.
 
 ## Verified existing publication identity
 
@@ -12,7 +12,7 @@ The release-engineering audit on 2026-08-24 confirmed:
 - the workflow contains no PyPI username, password, long-lived API token, or stored publishing secret;
 - the same workflow filename, repository identity, package identity, and environment names are retained so the existing Trusted Publisher configuration is not replaced unnecessarily.
 
-This evidence verifies that the configured OIDC identities worked for the prior version. It does not authorize another upload. The remote publication workflow remains deliberately disabled during ARX 4 Beta 2 GitHub release preparation and must stay disabled until an explicit Python-index publication decision.
+This evidence verifies that the configured OIDC identities worked for the prior version. It does not authorize another upload. The remote publication workflow remains deliberately disabled during ARX 4 Beta 3 preparation and must stay disabled until an explicit Python-index publication decision.
 
 ## Separation from GitHub releases
 
@@ -70,18 +70,18 @@ A production-target dispatch does not republish to TestPyPI. It first requires t
 
 ## Explicit publication procedure
 
-Neither command below is part of ARX 4 Beta 2 GitHub-release preparation. Production PyPI remains blocked until explicit user approval. Run one only after explicit authorization, after this workflow has reached the default branch, and after the deliberately disabled workflow has been reviewed and re-enabled.
+Neither command below is part of ARX 4 Beta 3 GitHub-release preparation. TestPyPI remains blocked until explicit TestPyPI approval. Production PyPI remains blocked until a separate explicit production approval. Run one only after explicit authorization, after this workflow has reached the approved branch, and after the deliberately disabled workflow has been reviewed and re-enabled.
 
 TestPyPI gate:
 
 ```console
-gh workflow run publish-pypi.yml --ref main -f tag=v4.0.0-b2 -f target=testpypi
+gh workflow run publish-pypi.yml --ref main -f tag=v4.0.0-b3 -f target=testpypi
 ```
 
 Review its build, TestPyPI publication, digest comparison, and isolated-install jobs. Only after that evidence and a separate production authorization may production be selected:
 
 ```console
-gh workflow run publish-pypi.yml --ref main -f tag=v4.0.0-b2 -f target=production
+gh workflow run publish-pypi.yml --ref main -f tag=v4.0.0-b3 -f target=production
 ```
 
 The `pypi` environment review is an additional production gate, not a substitute for the explicit dispatch target or TestPyPI evidence.
@@ -91,10 +91,10 @@ The `pypi` environment review is an additional production gate, not a substitute
 Install this exact prerelease only after its index publication is confirmed:
 
 ```console
-python -m pip install arx-prescanner==4.0.0b2
+python -m pip install arx-prescanner==4.0.0b3
 ```
 
-`python -m pip install --pre arx-prescanner` opts into prerelease discovery. A normal unpinned install selects the newest stable version and does not opt into Beta 2.
+`python -m pip install --pre arx-prescanner` opts into prerelease discovery. A normal unpinned install selects the newest stable version and does not opt into Beta 3.
 
 ## Security rules
 

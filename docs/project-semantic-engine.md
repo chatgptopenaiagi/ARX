@@ -125,4 +125,4 @@ Stable typed nodes and edges preserve causal chains from evidence to requirement
 
 ## Contracts and versioning
 
-The ARX application version and schema version evolve independently. ARX 2.0.0, ARX 3.0.0rc1, and ARX 4.0.0b1 retained legacy machine/software commands and their schema `0.1` envelopes; ARX 4.0.0b2 retains that compatibility. Project-aware AI output continues to use schema `0.2` and separates facts, decisions, selected providers, blockers, warnings, recommendations, policy constraints, unknowns, and evidence references. See [AI contract 0.2](ai-contract-0.2.md).
+The ARX application version and schema version evolve independently. ARX 2.0.0, ARX 3.0.0rc1, ARX 4.0.0b1, and ARX 4.0.0b2 retained legacy machine/software commands and their schema `0.1` envelopes; ARX 4.0.0b3 retains that compatibility. Project-aware AI output continues to use schema `0.2` and separates facts, decisions, selected providers, blockers, warnings, recommendations, policy constraints, unknowns, and evidence references. Phase C's UI-only comparison objects are not added to that contract. See [AI contract 0.2](ai-contract-0.2.md).

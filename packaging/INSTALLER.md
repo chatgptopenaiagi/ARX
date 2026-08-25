@@ -1,21 +1,21 @@
 # ARX 4 Desktop installer
 
-ARX 4.0.0 Beta 2 retains the complete portable PyInstaller distribution and its optional Inno Setup 6 or 7 installer for Windows 10/11 x64.
+ARX 4.0.0 Beta 3 retains the complete portable PyInstaller distribution and its optional Inno Setup 6 or 7 installer for Windows 10/11 x64.
 
-This installer is distinct from the existing `arx-prescanner` Python package. Python developers can use `python -m pip install arx-prescanner==4.0.0b2` after a separately authorized index publication to install the `arx` and `arx-desktop` entry points into a managed Python environment. The installer instead deploys the self-contained portable Windows payload and does not require a separately managed Python installation.
+This installer is distinct from the existing `arx-prescanner` Python package. Python developers can use `python -m pip install arx-prescanner==4.0.0b3` after a separately authorized index publication to install the `arx` and `arx-desktop` entry points into a managed Python environment. The installer instead deploys the self-contained portable Windows payload and does not require a separately managed Python installation.
 
 Build the validated portable application first, then compile the installer:
 
 ```powershell
 python -m pip install -e ".[dev,build,release]"
-.\scripts\build-release.ps1 -Version 4.0.0b2
+.\scripts\build-release.ps1 -Version 4.0.0b3
 ```
 
-The release outputs are `arx_prescanner-4.0.0b2-py3-none-any.whl`, `arx_prescanner-4.0.0b2.tar.gz`, `ARX-Desktop-win-x64-v4.0.0-b2.zip`, `ARX-Desktop-Setup-win-x64-v4.0.0-b2.exe`, and `SHA256SUMS.txt`. They are isolated under `release/v4.0.0-b2/`; historical release directories are not overwritten. `build-installer.ps1` locates `ISCC.exe` from `PATH` or standard per-user and Program Files locations for Inno Setup 7 and 6. Use `-IsccPath` for another installation. Generated binaries and checksums are not committed.
+The release outputs are `arx_prescanner-4.0.0b3-py3-none-any.whl`, `arx_prescanner-4.0.0b3.tar.gz`, `ARX-Desktop-win-x64-v4.0.0-b3.zip`, `ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe`, and `SHA256SUMS.txt`. They are isolated under `release/v4.0.0-b3/`; historical release directories are not overwritten. `build-installer.ps1` locates `ISCC.exe` from `PATH` or standard per-user and Program Files locations for Inno Setup 7 and 6. Use `-IsccPath` for another installation. Generated binaries and checksums are not committed.
 
 The installer has a stable application identifier for in-place upgrades, installs in 64-bit Program Files, displays the repository's actual MIT license, creates Start Menu launch/uninstall entries, offers an unchecked desktop-shortcut task, registers uninstall metadata, and offers to launch ARX when an interactive installation finishes. Silent installs do not launch ARX.
 
-The ARX 4.0.0 Beta 2 installer and portable executable are not code-signed because no approved production signing identity is configured. They use ARX 4 version metadata rather than a custom signed project icon. Compilation, checksums, and build attestations do not constitute install, upgrade, or uninstall acceptance. They also do not constitute Authenticode acceptance; those actions remain independent Windows gates.
+The ARX 4.0.0 Beta 3 candidate installer and portable executable are not code-signed because no approved production signing identity is configured. They use ARX 4 version metadata rather than a custom signed project icon. Compilation, checksums, and build attestations do not constitute install, upgrade, or uninstall acceptance. They also do not constitute Authenticode acceptance; those actions remain independent Windows gates.
 
 ## Code-signing release gate
 

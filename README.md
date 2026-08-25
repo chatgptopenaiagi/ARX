@@ -11,7 +11,7 @@
 
 ARX 4 correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-This branch presents **ARX 4.0.0 Beta 2** (`4.0.0b2`; tag `v4.0.0-b2`). It preserves the Phase B trust foundation and adds security-audit remediation, reproducible-build controls, release provenance, and a human-gated Windows signing architecture. It is not ARX 4 stable or the completed Phase C Intelligence Console. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+This branch prepares **ARX 4.0.0 Beta 3** (`4.0.0b3`; planned tag `v4.0.0-b3`). It preserves the Phase B trust foundation and Beta 2 release-trust controls while adding the Phase C Intelligence Console, independent bounded OpenAI/Codex conversations, explicit ARX context attachment, and flat Ask Both comparison. It is not ARX 4 stable. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
@@ -91,14 +91,14 @@ GREEN is deliberately scoped. The current Python readiness vertical verifies int
 
 ## Install ARX 4
 
-ARX `4.0.0b2` is a pre-release. The Python package keeps the existing `arx-prescanner` identity and history. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
+ARX `4.0.0b3` is a pre-release candidate. The Python package keeps the existing `arx-prescanner` identity and history. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
 
 ### PyPI / Python developers
 
 After the separately approved PyPI publication gate, install this exact beta from the existing `arx-prescanner` project:
 
 ```console
-python -m pip install arx-prescanner==4.0.0b2
+python -m pip install arx-prescanner==4.0.0b3
 ```
 
 Alternatively, allow pip to discover the newest available ARX pre-release:
@@ -126,16 +126,16 @@ python -m pip install arx-prescanner
 Install the immutable beta source directly from its Git tag:
 
 ```console
-python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v4.0.0-b2"
+python -m pip install "git+https://github.com/chatgptopenaiagi/ARX.git@v4.0.0-b3"
 ```
 
 ### Windows installer
 
-Download `ARX-Desktop-Setup-win-x64-v4.0.0-b2.exe` from the [GitHub prerelease](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b2). It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The Beta 2 installer is unsigned because no approved production code-signing identity is configured; checksums and GitHub provenance do not substitute for Authenticode.
+After the candidate passes its release gates and is published, download `ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe` from the `v4.0.0-b3` GitHub prerelease. It installs ARX under 64-bit Program Files and adds Start Menu and uninstall entries. The candidate remains unsigned because no approved production code-signing identity is configured; checksums and GitHub provenance do not substitute for Authenticode.
 
 ### Portable Windows
 
-Download `ARX-Desktop-win-x64-v4.0.0-b2.zip`, verify it with `SHA256SUMS.txt`, extract the complete folder, and run `ARX.exe` without installation.
+After publication, download `ARX-Desktop-win-x64-v4.0.0-b3.zip`, verify it with `SHA256SUMS.txt`, extract the complete folder, and run `ARX.exe` without installation.
 
 ### Editable source checkout
 
@@ -164,12 +164,12 @@ Unknown targets are never launched, imported, or extracted. Static inspection re
 
 ### Windows distribution
 
-ARX 4 Beta 2 can be built in two Windows forms:
+ARX 4 Beta 3 can be built in two Windows forms:
 
 - a portable x64 folder and versioned ZIP containing `ARX.exe` and its private `_internal` runtime;
 - an optional Inno Setup installer with a stable application identity, x64 Program Files installation, Start Menu and uninstall entries, an optional desktop shortcut, and SHA-256 checksums.
 
-Generated release artifacts stay under the ignored, version-specific `release/v4.0.0-b2/` directory and are not committed. Historical release artifacts are not overwritten. Current beta builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md), [reproducible-build policy](docs/REPRODUCIBLE_BUILDS.md), and [trusted installation architecture](docs/TRUSTED_INSTALLATION.md).
+Generated release artifacts stay under the ignored, version-specific `release/v4.0.0-b3/` directory and are not committed. Historical release artifacts are not overwritten. Current beta builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md), [reproducible-build policy](docs/REPRODUCIBLE_BUILDS.md), and [trusted installation architecture](docs/TRUSTED_INSTALLATION.md).
 
 ## Optional advisory and safe research
 
@@ -185,31 +185,33 @@ Provider health distinguishes missing, unreadable, authentication, network/TLS, 
 
 A minimum-data authentication/model check can be `READY` while a later advisory generation fails with `QUOTA_EXHAUSTED` because the API project has no generation quota. ARX keeps that billing/usage condition separate from authentication failure.
 
-Only the selected finding and relevant bounded context may cross an external boundary after consent. ARX removes recognizable credentials, tokens, usernames, private roots, user-profile paths, project paths, arbitrary absolute local paths, control characters, and unrelated evidence. Copy/save paths reapply redaction.
+The Phase C Intelligence Console supports GENERAL CHAT with no attached ARX state and ARX EVIDENCE CHAT with an explicit selected scope. Users can inspect Machine DNA, Software DNA, Project DNA, conclusions, contradictions, unknowns, and evidence in separate panels; preview the redacted packet; and consent separately for each provider/context identity. OpenAI Chat and Codex CLI retain independent, bounded, memory-only conversations.
+
+Ask Both sends the same explicitly approved context and question to exactly two distinct providers and shows two flat, unranked panels. Only a second explicit **Compare Responses** action reveals textual overlap, differences, and unresolved statements. Similar wording is not consensus, verification, confidence, or evidence.
+
+Only the selected bounded context may cross an external boundary after consent. ARX removes recognizable credentials, tokens, usernames, private roots, user-profile paths, project paths, arbitrary absolute local paths, control characters, and unrelated evidence. Copy/save paths reapply redaction.
 
 AI and web outputs remain non-authoritative external advice. They cannot change an observed fact, assign GREEN/YELLOW/RED, mutate the evidence graph, or execute a recovery step. **The human remains the final decision-maker.**
 
-This beta does not include Phase C's Ask Both, AI consensus, synthesized or ranked provider answers, expanded contextual conversation architecture, or final Intelligence Console. The existing advisory entry points do not turn similar provider responses into verification.
-
-The separate `arx4-phase-c` development line implements the bounded Intelligence Console for a future prerelease without changing the immutable Beta 2 tag or assets. Its design and current limitations are documented in [ARX 4 Phase C](docs/PHASE_C.md); development-branch availability is not a claim that the feature was part of Beta 2.
+Phase C deliberately does not include AI consensus, a winning or ranked provider, a synthesized authoritative answer, automatic remediation, or any path from advisory output into ARX evidence. Its architecture and limitations are documented in [ARX 4 Phase C](docs/PHASE_C.md). The immutable Beta 2 tag and assets remain unchanged and still exclude Phase C.
 
 At the real provider boundary ARX writes only bounded local transmission metadata—never keys or prompt/response bodies—and distinguishes prepared, outbound, received, failed, and cancelled states. History rotates, expires after 30 days, has an explicit Clear History action, is not implicitly exported, and is never synchronized by ARX.
 
 Read the complete [AI assistance and external-boundary security model](docs/ai-assistance-security.md).
 
-## Build the ARX 4 Beta 2 artifacts
+## Build the ARX 4 Beta 3 artifacts
 
 ```powershell
 python -m pip install -e ".[dev,build,release]"
-.\scripts\build-release.ps1 -Version 4.0.0b2
+.\scripts\build-release.ps1 -Version 4.0.0b3
 ```
 
 Expected release filenames are:
 
-- `arx_prescanner-4.0.0b2-py3-none-any.whl`
-- `arx_prescanner-4.0.0b2.tar.gz`
-- `ARX-Desktop-win-x64-v4.0.0-b2.zip`
-- `ARX-Desktop-Setup-win-x64-v4.0.0-b2.exe`
+- `arx_prescanner-4.0.0b3-py3-none-any.whl`
+- `arx_prescanner-4.0.0b3.tar.gz`
+- `ARX-Desktop-win-x64-v4.0.0-b3.zip`
+- `ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe`
 - `SHA256SUMS.txt`
 
 Building an installer is not install, upgrade, or uninstall acceptance. Those operating-system transitions remain explicit manual checks.
@@ -224,6 +226,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 
 | Document | Purpose |
 |---|---|
+| [ARX 4.0.0 Beta 3 release notes](docs/release-notes-4.0.0-b3.md) | Phase C Intelligence Console, bounded conversations/context, Ask Both, security gates, and prerelease limitations |
 | [ARX 4.0.0 Beta 2 release notes](docs/release-notes-4.0.0-b2.md) | Security remediation, reproducibility, provenance, Windows trust preparation, Phase C exclusions, and beta limitations |
 | [ARX 4.0.0 Beta 1 release notes](docs/release-notes-4.0.0-b1.md) | Historical Phase B trust-foundation prerelease |
 | [ARX 3.0 RC1 release notes](docs/release-notes-3.0.0-rc1.md) | Changes since ARX 2, compatibility, verification, and RC limitations |

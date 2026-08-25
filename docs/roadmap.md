@@ -1,15 +1,15 @@
 # Roadmap
 
-ARX 4.0.0 Beta 2 preserves the Phase B trust foundation on top of the ARX deterministic compatibility engine and adds bounded fuzz remediation, index-download hardening, reproducible-build controls, release provenance, and trusted Windows installation preparation. The foundation still includes expanded fact provenance, dependency enforcement, provider-neutral credentials, Windows DPAPI storage, OpenAI provider health/transport, metadata-only transmission audit, and minimal provider settings.
+ARX 4.0.0 Beta 3 preserves the Phase B trust foundation and Beta 2 release-trust controls on top of the ARX deterministic compatibility engine. It adds the Phase C Intelligence Console, explicit bounded context selection, independent provider conversations, flat Ask Both results, and opt-in textual comparison without changing canonical evidence or decisions.
 
-## Phase C development
+## Phase C candidate
 
-- The `arx4-phase-c` line implements the Intelligence Console and bounded contextual multi-turn conversation architecture for validation as a future prerelease candidate.
+- The `arx4-phase-c` line implements the Intelligence Console and bounded contextual multi-turn conversation architecture for validation as Beta 3.
 - Ask Both is an explicit additional operation with flat, unranked provider responses.
 - Compare Responses remains a second explicit action limited to textual overlap, differences, and unresolved items without consensus, confidence boosts, or provenance upgrades.
 - OpenAI and Codex conversations remain independent and the provider response path remains one-way.
 
-Phase C remains absent from the immutable ARX 4.0.0 Beta 2 release. Development-branch implementation is not a claim that a Phase C prerelease has passed every release gate or been published.
+Phase C remains absent from the immutable ARX 4.0.0 Beta 2 release. The Beta 3 source identity does not become a published prerelease until its release gates, tag, artifacts, and public release are independently completed.
 
 ## Manual release evidence still required
 
