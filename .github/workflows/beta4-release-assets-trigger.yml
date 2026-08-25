@@ -1,0 +1,23 @@
+name: ARX Beta 4 release-assets trigger
+
+on:
+  push:
+    branches:
+      - release-v4.0.0-b4-assets
+      - release-v4.0.0-b4-repro-*
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release-assets:
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/release-assets.yml
+    with:
+      tag: v4.0.0-b4
+      attach_assets: ${{ github.ref_name == 'release-v4.0.0-b4-assets' }}
