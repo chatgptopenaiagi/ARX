@@ -231,6 +231,7 @@ def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
     assert "cyclonedx-bom==7.3.1" in workflow
     assert "detect-secrets==1.5.0" in workflow
     assert "hypothesis==6.165.10" in workflow
+    assert "tests/test_advisory_intelligence.py" in workflow
     assert "detect-secrets-classification.json" in workflow
     assert "security/phase-c/evidence/detect-secrets-classification.json" in workflow
     assert "detect-secrets-summary.json" in workflow

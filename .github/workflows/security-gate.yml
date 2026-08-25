@@ -54,6 +54,7 @@ jobs:
             tests/test_advisory_audit.py \
             tests/test_advisory_context.py \
             tests/test_advisory_credentials.py \
+            tests/test_advisory_intelligence.py \
             tests/test_advisory_providers.py \
             tests/test_advisory_web.py \
             tests/test_architecture_boundaries.py \
