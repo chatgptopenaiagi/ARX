@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import struct
 import tempfile
@@ -35,6 +36,7 @@ from arx.advisory.providers import (
     parse_openai_response,
 )
 from arx.core.models import Evidence, EvidenceKind, serialize
+from arx.local_ai import LocalEndpoint, parse_local_chat_response, parse_models_response
 from arx.project.scanner import _parse_setup_cfg, _parse_setup_py, _toml
 from arx.project.versions import (
     parse_python_version,
@@ -118,6 +120,42 @@ def test_openai_endpoint_acceptance_implies_exact_https_origin(url: str) -> None
     assert parsed.port in (None, 443)
     assert parsed.username is None
     assert parsed.password is None
+
+
+@FUZZ_SETTINGS
+@given(SHORT_TEXT)
+def test_local_ai_endpoint_acceptance_implies_explicit_loopback_origin(url: str) -> None:
+    try:
+        endpoint = LocalEndpoint(url)
+    except ValueError:
+        return
+    parsed = urlparse(endpoint.base_url)
+    assert parsed.scheme in {"http", "https"}
+    assert parsed.port is not None
+    assert parsed.username is None
+    assert parsed.password is None
+    assert not parsed.query
+    assert not parsed.fragment
+    if parsed.hostname != "localhost":
+        assert ipaddress.ip_address(str(parsed.hostname)).is_loopback
+
+
+@FUZZ_SETTINGS
+@given(JSON_VALUE)
+def test_local_ai_response_parsers_have_only_documented_outcomes(payload: object) -> None:
+    try:
+        models = parse_models_response(payload)
+    except (TypeError, ValueError):
+        pass
+    else:
+        assert 1 <= len(models) <= 128
+        assert all(item.model_id.strip() for item in models)
+    try:
+        response = parse_local_chat_response(payload)
+    except (TypeError, ValueError):
+        pass
+    else:
+        assert response.strip()
 
 
 @st.composite

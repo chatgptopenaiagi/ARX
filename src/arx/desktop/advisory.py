@@ -161,7 +161,7 @@ class TransmissionHistoryWindow(tk.Toplevel):
     def __init__(self, parent: tk.Misc, audit: AuditView):
         super().__init__(parent)
         self.audit = audit
-        self.title("External Transmission Audit — Metadata Only")
+        self.title("Advisory Transmission Audit — Metadata Only")
         self.geometry("900x620")
         self.minsize(600, 400)
         self.transient(parent.winfo_toplevel())
@@ -170,7 +170,7 @@ class TransmissionHistoryWindow(tk.Toplevel):
         body.pack(fill="both", expand=True)
         ttk.Label(
             body,
-            text="Local bounded metadata only — no prompts, responses, credentials, secret values, or full local paths.",
+            text="Bounded local provider metadata only — no prompts, responses, credentials, secret values, or full local paths.",
             style="Muted.TLabel",
         ).pack(fill="x", pady=(0, 8))
         self.view = ReadOnlyText(body, content_type="json")
@@ -193,7 +193,7 @@ class TransmissionHistoryWindow(tk.Toplevel):
     def clear(self) -> None:
         if not messagebox.askyesno(
             "Clear transmission history",
-            "Clear the bounded local metadata-only external transmission history?",
+            "Clear the bounded local metadata-only advisory transmission history?",
             parent=self,
         ):
             return
@@ -202,7 +202,7 @@ class TransmissionHistoryWindow(tk.Toplevel):
         except (AuditError, OSError):
             messagebox.showerror(
                 "Transmission history",
-                "The local external transmission history could not be cleared.",
+                "The local advisory transmission history could not be cleared.",
                 parent=self,
             )
             return

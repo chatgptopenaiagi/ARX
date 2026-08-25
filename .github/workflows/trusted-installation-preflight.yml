@@ -127,7 +127,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m compileall -q src tests scripts
           python scripts/check-architecture.py
-          python -m pytest --ignore=tests/test_desktop.py --ignore=tests/test_desktop_advisory.py --ignore=tests/test_desktop_provider_settings.py --ignore=tests/test_desktop_ux.py
+          python -m pytest --ignore=tests/test_desktop.py --ignore=tests/test_desktop_advisory.py --ignore=tests/test_desktop_local_ai.py --ignore=tests/test_desktop_provider_settings.py --ignore=tests/test_desktop_ux.py
           python scripts/run-isolated-gui-tests.py
           python scripts/scan-tracked-secrets.py
 

@@ -1,0 +1,19 @@
+{
+  "schema": "arx-local-ai-security-classification-v1",
+  "milestone": "Local AI Bridge",
+  "observed_at": "2026-08-25",
+  "tool": "Semgrep 1.174.0",
+  "configuration": "p/python",
+  "metrics": "off",
+  "untracked_candidate_inclusion": "--no-git-ignore",
+  "rules_run": 151,
+  "python_targets_scanned": 16,
+  "findings": 0,
+  "blocking_findings": 0,
+  "result": "PASS",
+  "limitations": [
+    "This was a focused scan of Local AI and directly modified provider/desktop boundary files.",
+    "A zero-finding scan does not prove absence of vulnerabilities.",
+    "Repository-wide CodeQL and security-gate results remain separate GitHub evidence."
+  ]
+}

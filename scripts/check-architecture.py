@@ -7,8 +7,17 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-
-ARX_LAYERS = ("core", "machine", "software", "project", "exporters", "advisory", "cli", "desktop")
+ARX_LAYERS = (
+    "core",
+    "machine",
+    "software",
+    "project",
+    "exporters",
+    "advisory",
+    "local_ai",
+    "cli",
+    "desktop",
+)
 ALLOWED_IMPORTS = {
     "core": frozenset(),
     "machine": frozenset({"core"}),
@@ -16,8 +25,11 @@ ALLOWED_IMPORTS = {
     "project": frozenset({"core", "machine"}),
     "exporters": frozenset({"core", "project"}),
     "advisory": frozenset({"core"}),
+    "local_ai": frozenset({"advisory"}),
     "cli": frozenset({"core", "machine", "software", "project", "exporters"}),
-    "desktop": frozenset({"core", "machine", "software", "project", "exporters", "advisory", "cli"}),
+    "desktop": frozenset(
+        {"core", "machine", "software", "project", "exporters", "advisory", "local_ai", "cli"}
+    ),
 }
 
 

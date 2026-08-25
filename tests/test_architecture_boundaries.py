@@ -3,7 +3,6 @@ import shutil
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER_PATH = ROOT / "scripts" / "check-architecture.py"
 SPEC = importlib.util.spec_from_file_location("arx_architecture_check", CHECKER_PATH)
@@ -19,7 +18,10 @@ def test_current_arx_dependency_graph_is_allowed_and_acyclic():
     assert report.passed
     assert not report.violations
     assert not report.cycles
-    assert not any(source in {"core", "machine", "software", "project"} and target == "advisory" for source, target in report.edges)
+    assert not any(
+        source in {"core", "machine", "software", "project"} and target in {"advisory", "local_ai"}
+        for source, target in report.edges
+    )
 
 
 def test_forbidden_import_mutation_proves_fail_revert_pass(tmp_path):

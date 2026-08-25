@@ -1,4 +1,4 @@
-"""Bounded local metadata audit for external provider transport boundaries."""
+"""Bounded local metadata audit for advisory provider transport boundaries."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ import os
 import re
 import tempfile
 import threading
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Iterable
 
 from .context import redact_external
 
@@ -231,22 +231,20 @@ class TransmissionAudit:
                 raise AuditError("The local transmission audit could not be written.") from exc
 
     def history(self) -> list[dict[str, object]]:
-        with self._lock:
-            with self._process_lock():
-                records = self._read_records()
-                retained = self._retained(records)
-                if retained != records:
-                    self._rewrite(retained)
-                return retained
+        with self._lock, self._process_lock():
+            records = self._read_records()
+            retained = self._retained(records)
+            if retained != records:
+                self._rewrite(retained)
+            return retained
 
     def clear_history(self) -> None:
         """Explicit user action; callers must not invoke this during normal application cleanup."""
 
-        with self._lock:
-            with self._process_lock():
-                for path in self._paths():
-                    with contextlib.suppress(FileNotFoundError):
-                        path.unlink()
+        with self._lock, self._process_lock():
+            for path in self._paths():
+                with contextlib.suppress(FileNotFoundError):
+                    path.unlink()
 
     def export_redacted(self, target: Path) -> None:
         """Explicit metadata-only export with another external-boundary redaction pass."""
