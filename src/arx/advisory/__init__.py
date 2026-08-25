@@ -10,9 +10,13 @@ from .audit import (
 )
 from .context import (
     ANALYSIS_MODES,
+    AdvisoryChatMode,
     AdvisoryContext,
+    ContextSelection,
     build_advisory_context,
     build_advisory_prompt,
+    build_general_chat_context,
+    build_intelligence_context,
     redact_external,
 )
 from .credentials import (
@@ -28,6 +32,14 @@ from .credentials import (
     import_openai_credential_file,
 )
 from .health import ProviderHealth, ProviderHealthStatus, validate_provider_health
+from .intelligence import (
+    AdvisoryComparison,
+    AskBothResult,
+    ConversationRegistry,
+    ProviderOutcome,
+    ask_both,
+    compare_advisories,
+)
 from .providers import (
     AdvisoryCancelled,
     AdvisoryResponse,
@@ -40,12 +52,17 @@ from .providers import (
 
 __all__ = [
     "ANALYSIS_MODES",
-    "AuditError",
     "AdvisoryCancelled",
+    "AdvisoryChatMode",
+    "AdvisoryComparison",
     "AdvisoryContext",
     "AdvisoryResponse",
     "AdvisoryTimeout",
+    "AskBothResult",
+    "AuditError",
     "CodexCLIProvider",
+    "ContextSelection",
+    "ConversationRegistry",
     "CredentialError",
     "CredentialSource",
     "CredentialState",
@@ -53,21 +70,26 @@ __all__ = [
     "CredentialUnreadable",
     "MemoryTransmissionAudit",
     "OpenAIProvider",
+    "ProviderAvailability",
+    "ProviderCredentialResolver",
+    "ProviderError",
     "ProviderHealth",
     "ProviderHealthStatus",
-    "ProviderCredentialResolver",
-    "ProviderAvailability",
-    "ProviderError",
+    "ProviderOutcome",
+    "TransmissionAudit",
+    "TransmissionEvent",
+    "TransportState",
+    "WindowsDPAPICredentialStore",
+    "ask_both",
     "build_advisory_context",
     "build_advisory_prompt",
+    "build_general_chat_context",
+    "build_intelligence_context",
+    "compare_advisories",
     "default_openai_credential_resolver",
     "default_openai_credential_store",
     "default_transmission_audit",
     "import_openai_credential_file",
     "redact_external",
-    "TransmissionAudit",
-    "TransmissionEvent",
-    "TransportState",
     "validate_provider_health",
-    "WindowsDPAPICredentialStore",
 ]
