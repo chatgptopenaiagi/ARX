@@ -1,0 +1,20 @@
+name: ARX Beta 3 provenance trigger
+
+on:
+  push:
+    branches: [release-v4.0.0-b3-provenance-*]
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  release-provenance:
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/release-provenance.yml
+    with:
+      tag: v4.0.0-b3
