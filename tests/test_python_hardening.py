@@ -1,5 +1,3 @@
-import json
-import os
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
@@ -425,6 +423,15 @@ def test_setup_cfg_and_setup_py_are_static_requirement_evidence(tmp_path, monkey
     assert project.primary_python_requirement.constraint == ">=3.11,<3.13"
     assert any(item.source == "setup.py" and item.constraint is None for item in project.requirements)
     assert any("was not executed" in item for item in project.unknowns)
+
+
+def test_setup_py_with_null_bytes_fails_closed_as_unknown(tmp_path):
+    (tmp_path / "setup.py").write_bytes(b"setup(name='truncated')\x00")
+
+    project = inspect_project(tmp_path)
+
+    assert any("static AST parser" in item for item in project.unknowns)
+    assert any(item.kind is EvidenceKind.UNKNOWN and item.source == "setup.py" for item in project.evidence)
 
 
 def test_selection_only_project_is_unknown_not_false_green(tmp_path):
