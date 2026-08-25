@@ -121,6 +121,41 @@ def test_phase_b_security_document_covers_credentials_health_audit_and_uninstall
     assert "%LOCALAPPDATA%\\ARX" in installer
 
 
+def test_phase_c_document_preserves_advisory_and_provenance_boundaries():
+    phase_c = _read("docs/PHASE_C.md")
+
+    for phrase in (
+        "AI ADVISORY — NON-AUTHORITATIVE",
+        "ARX remains useful without an AI provider",
+        "GENERAL CHAT",
+        "ARX EVIDENCE CHAT",
+        "OpenAI Chat and Codex CLI keep independent",
+        "at most 16 turns and 24,000 characters",
+        "View Redacted Context",
+        "Preview What Will Be Sent",
+        "Ask Both requires exactly two distinct",
+        "two flat panels",
+        "Compare Responses",
+        "TEXTUAL OVERLAP",
+        "DIFFERENCES",
+        "UNRESOLVED",
+        "COMPARISON AID — NO EVIDENCE UPGRADE",
+        "`VERIFIED` is not an `EvidenceKind`",
+        "REQUEST_PREPARED",
+        "OUTBOUND_REQUEST_INITIATED",
+        "RESPONSE_RECEIVED",
+        "REQUEST_FAILED",
+        "CANCELLED",
+        "30 days",
+        "QUOTA_EXHAUSTED",
+        "There is deliberately no return path",
+    ):
+        assert phrase in phase_c
+
+    assert "winner, ranking, confidence boost" in phase_c
+    assert "does not claim AI independence" in phase_c
+
+
 def test_readme_is_the_complete_arx4_beta_landing_page():
     readme = _read("README.md")
 

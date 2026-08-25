@@ -191,6 +191,8 @@ AI and web outputs remain non-authoritative external advice. They cannot change 
 
 This beta does not include Phase C's Ask Both, AI consensus, synthesized or ranked provider answers, expanded contextual conversation architecture, or final Intelligence Console. The existing advisory entry points do not turn similar provider responses into verification.
 
+The separate `arx4-phase-c` development line implements the bounded Intelligence Console for a future prerelease without changing the immutable Beta 2 tag or assets. Its design and current limitations are documented in [ARX 4 Phase C](docs/PHASE_C.md); development-branch availability is not a claim that the feature was part of Beta 2.
+
 At the real provider boundary ARX writes only bounded local transmission metadata—never keys or prompt/response bodies—and distinguishes prepared, outbound, received, failed, and cancelled states. History rotates, expires after 30 days, has an explicit Clear History action, is not implicitly exported, and is never synchronized by ARX.
 
 Read the complete [AI assistance and external-boundary security model](docs/ai-assistance-security.md).
@@ -229,6 +231,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 | [Confidence semantics](docs/confidence-semantics.md) | Numeric assignment inventory and explicit non-probabilistic meaning |
 | [ARX 4 baseline](docs/arx-4-baseline-report.md) | Verified checkout, toolchain, epistemic model, import graph, and baseline tests |
 | [ARX 4 Phase B trust foundation](docs/arx-4-phase-b-trust-foundation.md) | Provenance, dependency enforcement, DPAPI credentials, provider health, OpenAI transport, and audit boundaries |
+| [ARX 4 Phase C Intelligence Console](docs/PHASE_C.md) | Advisory-only console, bounded context, independent conversations, Ask Both, comparison, privacy, and limitations |
 | [ARX 3 final acceptance](docs/arx-3-final-acceptance.md) | Phase A evidence, blocked gates, artifacts, and release decision |
 | [Project-aware semantic engine](docs/project-semantic-engine.md) | Requirement/provider graphs, execution resolution, readiness, and planning rules |
 | [Security model](docs/security-model.md) | Local inspection, subprocess, privacy, remediation, and external trust boundaries |
