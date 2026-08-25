@@ -81,10 +81,16 @@ jobs:
           if ($env:RELEASE_TAG -notmatch '^v(?<base>\d+\.\d+\.\d+)-(?<kind>a|b|rc)(?<number>\d+)$') {
               throw "Unsupported prerelease tag: $env:RELEASE_TAG"
           }
-          $Release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:RELEASE_TAG" | ConvertFrom-Json
-          if (-not $Release.prerelease -or $Release.tag_name -ne $env:RELEASE_TAG) {
-              throw 'Provenance may be created only for the matching prerelease.'
+          $Releases = @(gh api "repos/$env:GITHUB_REPOSITORY/releases?per_page=100" | ConvertFrom-Json)
+          $Matches = @(
+              $Releases | Where-Object {
+                  $_.tag_name -ceq $env:RELEASE_TAG -and $_.prerelease -eq $true
+              }
+          )
+          if ($Matches.Count -ne 1) {
+              throw 'Provenance requires exactly one matching draft or public prerelease.'
           }
+          $Release = $Matches[0]
           if ((git rev-parse HEAD) -ne (git rev-list -n 1 $env:RELEASE_TAG)) {
               throw 'Checkout does not resolve to the release tag commit.'
           }
