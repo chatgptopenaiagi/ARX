@@ -1,15 +1,24 @@
-import json,struct
+import json
 import time
 from pathlib import Path
+
 from arx import PRODUCT_NAME, RELEASE_NAME, __version__
 from arx.core.engine import compare
 from arx.core.models import ToolRecord
-from arx.desktop.controllers import DesktopController
 from arx.desktop.app import ARXDesktopApp
+from arx.desktop.controllers import DesktopController
 from arx.desktop.ux import UIStateStore
 from arx.desktop.widgets import ReadOnlyText
+from arx.project import (
+    ExecutionContext,
+    ProviderKind,
+    inspect_project,
+    make_provider,
+    preflight,
+    resolve_python,
+)
 from arx.software.scanner import _application_evidence
-from arx.project import ExecutionContext, ProviderKind, inspect_project, make_provider, preflight, resolve_python
+
 
 def test_desktop_controller_reuses_engine_apis(monkeypatch,tmp_path):
     machine={"os":{"architecture":"AMD64"},"tools":{"python":ToolRecord("python",True)},"python_installations":[{"healthy":True}]}
@@ -123,6 +132,7 @@ def test_desktop_has_conventional_menus_and_selectable_report_surfaces(tmp_path)
         "File",
         "Edit",
         "Settings",
+        "Intelligence",
         "Help",
     ]
     assert isinstance(app.project_detail, ReadOnlyText)
@@ -157,8 +167,11 @@ def test_result_context_actions_are_path_sensitive(tmp_path):
         "Inspect with ARX",
     ]
     assert "Ask OpenAI About This…" in existing_labels
+    assert "Explain with OpenAI…" in existing_labels
+    assert "Open in OpenAI Chat…" in existing_labels
     assert "Ask Codex About This…" in existing_labels
-    assert "Suggest Safe Fix with AI…" in existing_labels
+    assert "Suggest Safe Fix with OpenAI…" in existing_labels
+    assert "Open Ask Both…" in existing_labels
     assert "Search Web About This…" in existing_labels
     assert "Search Google About This…" in existing_labels
     assert existing_labels[-2:] == ["View Raw Data", "View Details"]

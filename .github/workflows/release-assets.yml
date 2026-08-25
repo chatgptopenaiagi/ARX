@@ -17,7 +17,7 @@ on:
       tag:
         description: Existing draft prerelease tag to build and attach
         required: true
-        default: v4.0.0-b2
+        default: v4.0.0-b3
         type: string
       attach_assets:
         description: Attach verified artifacts to the existing empty draft

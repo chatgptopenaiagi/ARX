@@ -6,7 +6,7 @@ on:
       tag:
         description: Existing reviewed and published GitHub release tag
         required: true
-        default: v4.0.0-b2
+        default: v4.0.0-b3
         type: string
       target:
         description: Explicit publication gate

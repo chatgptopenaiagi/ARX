@@ -12,9 +12,11 @@ Information never crosses these boundaries automatically. AI output cannot assig
 
 ## Context selection, preview, and redaction
 
-The desktop constructs context from one user-selected structured finding, a small project summary when one is active, and at most eight relevant evidence records. Fields, serialized packets, recent conversation context, requests, and responses are bounded. ARX does not send the complete Machine DNA report, arbitrary project files, browser state, Wi-Fi credentials, private keys, credential stores, or unrelated file contents.
+The Phase C Intelligence Console constructs context from an explicit allowlist: the selected finding, relevant evidence, Machine DNA, Software DNA, Project DNA, deterministic conclusions, contradictions, and unknowns. Each section is independently selectable. The resulting packet remains capped at 16,000 characters and at most eight relevant evidence records, with smaller per-section and per-field budgets. ARX does not send the complete raw Machine DNA report, arbitrary project files, browser state, Wi-Fi credentials, private keys, credential stores, or unrelated file contents.
 
-The existing assistant provides a visible `Preview What Will Be Sent` action. Opening the assistant, Settings, provider status, or the preview performs no OpenAI request. Before the actual provider transport boundary, ARX redacts the selected packet again and enforces its serialized size bound. It removes sensitive field values and recognizable API keys, bearer tokens, GitHub tokens, JWTs, password/token assignments, usernames, control characters, private roots, user-profile paths, and arbitrary absolute local paths. Project roots use `%PROJECT_ROOT%`, the active profile uses `%USERPROFILE%`, and other local paths use `%LOCAL_PATH%` where appropriate.
+The console provides visible `View Redacted Context` and `Preview What Will Be Sent` actions. Opening the console, Settings, provider status, either preview, or transmission history performs no OpenAI request. Before the actual provider transport boundary, ARX redacts the selected packet again and enforces its serialized size bound. It removes sensitive field values and recognizable API keys, bearer tokens, GitHub tokens, JWTs, password/token assignments, usernames, control characters, private roots, user-profile paths, and arbitrary absolute local paths. Project roots use `%PROJECT_ROOT%`, the active profile uses `%USERPROFILE%`, and other local paths use `%LOCAL_PATH%` where appropriate.
+
+GENERAL CHAT explicitly carries no ARX machine, software, project, finding, compatibility, or readiness context. ARX EVIDENCE CHAT requires a visible attach action, preview capability, and per-provider/per-context consent. Changing the context identifier requires new consent. Packets are recursively detached from mutable controller objects before a provider receives them.
 
 Copying or saving context, prompts, responses, and conversations reapplies external-boundary redaction. Users should still review exported material before sharing it because no finite redactor can recognize every domain-specific secret.
 
@@ -78,6 +80,12 @@ ARX detects the official Codex CLI with executable lookup and verifies availabil
 - `shell=False`, hidden process creation on Windows, bounded output, timeout, terminate, and kill fallback.
 
 The selected project is not granted to Codex as a working directory, so the process sees only the already filtered prompt by default. ARX never simulates typing into a terminal. A missing or unauthenticated Codex installation produces a provider explanation, not an application failure. Codex remains usable when OpenAI is not configured and OpenAI remains optional when Codex is absent.
+
+## Phase C conversations and Ask Both
+
+OpenAI Chat and Codex CLI keep independent, memory-only sessions. Each session retains at most 16 turns and 24,000 characters; provider prompts use a smaller recent subset. Switching providers never transmits one provider's history to the other. New Conversation and Clear Conversation operate only on the selected provider session. Saving is an explicit user action and reapplies redaction.
+
+Ask Both requires exactly two distinct provider identities. Each receives the same approved context and question, plus only its own bounded prior turns. The default result contains two flat, unranked panels. Comparison is hidden until the user explicitly chooses `Compare Responses`; it then shows only textual overlap, differences, and unresolved statements under `COMPARISON AID — NO EVIDENCE UPGRADE`. No comparison output is written to Evidence, provenance, compatibility, readiness, or validation state.
 
 ## Web research and release boundary
 

@@ -121,12 +121,47 @@ def test_phase_b_security_document_covers_credentials_health_audit_and_uninstall
     assert "%LOCALAPPDATA%\\ARX" in installer
 
 
+def test_phase_c_document_preserves_advisory_and_provenance_boundaries():
+    phase_c = _read("docs/PHASE_C.md")
+
+    for phrase in (
+        "AI ADVISORY — NON-AUTHORITATIVE",
+        "ARX remains useful without an AI provider",
+        "GENERAL CHAT",
+        "ARX EVIDENCE CHAT",
+        "OpenAI Chat and Codex CLI keep independent",
+        "at most 16 turns and 24,000 characters",
+        "View Redacted Context",
+        "Preview What Will Be Sent",
+        "Ask Both requires exactly two distinct",
+        "two flat panels",
+        "Compare Responses",
+        "TEXTUAL OVERLAP",
+        "DIFFERENCES",
+        "UNRESOLVED",
+        "COMPARISON AID — NO EVIDENCE UPGRADE",
+        "`VERIFIED` is not an `EvidenceKind`",
+        "REQUEST_PREPARED",
+        "OUTBOUND_REQUEST_INITIATED",
+        "RESPONSE_RECEIVED",
+        "REQUEST_FAILED",
+        "CANCELLED",
+        "30 days",
+        "QUOTA_EXHAUSTED",
+        "There is deliberately no return path",
+    ):
+        assert phrase in phase_c
+
+    assert "winner, ranking, confidence boost" in phase_c
+    assert "does not claim AI independence" in phase_c
+
+
 def test_readme_is_the_complete_arx4_beta_landing_page():
     readme = _read("README.md")
 
     for phrase in (
         "# ARX 4",
-        "ARX 4.0.0 Beta 2",
+        "ARX 4.0.0 Beta 3",
         "Project-Aware Compatibility Intelligence",
         "## Why ARX 4 is different",
         "Machine DNA",
@@ -141,8 +176,8 @@ def test_readme_is_the_complete_arx4_beta_landing_page():
         "shortest trusted path to GREEN",
         "There is no return path from external advice into ARX evidence",
         "The human remains the final decision-maker",
-        "ARX-Desktop-win-x64-v4.0.0-b2.zip",
-        "ARX-Desktop-Setup-win-x64-v4.0.0-b2.exe",
+        "ARX-Desktop-win-x64-v4.0.0-b3.zip",
+        "ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe",
         "SHA256SUMS.txt",
         "Phase C",
         "Real DPI and multi-monitor acceptance is incomplete",
@@ -152,6 +187,7 @@ def test_readme_is_the_complete_arx4_beta_landing_page():
     for workflow in ("actions/workflows/ci.yml", "actions/workflows/codeql.yml"):
         assert workflow in readme
     for document in (
+        "docs/release-notes-4.0.0-b3.md",
         "docs/release-notes-4.0.0-b2.md",
         "docs/release-notes-4.0.0-b1.md",
         "docs/architecture.md",
@@ -252,6 +288,42 @@ def test_arx4_beta_release_notes_define_security_remediation_and_exclude_phase_c
         assert phrase in notes
 
 
+def test_beta3_release_notes_define_phase_c_without_upgrading_advice():
+    notes = _read("docs/release-notes-4.0.0-b3.md")
+
+    for phrase in (
+        "# ARX 4.0.0 Beta 3",
+        "Package version: `4.0.0b3`",
+        "Git tag: `v4.0.0-b3`",
+        "AI ADVISORY — NON-AUTHORITATIVE",
+        "`VERIFIED` remains outside `EvidenceKind`",
+        "GENERAL CHAT",
+        "ARX EVIDENCE CHAT",
+        "OpenAI Responses API",
+        "Windows current-user DPAPI",
+        "View Redacted Context",
+        "Ask Both requires exactly two distinct",
+        "two flat, unranked provider panels",
+        "COMPARISON AID — NO EVIDENCE UPGRADE",
+        "TEXTUAL OVERLAP",
+        "DIFFERENCES",
+        "UNRESOLVED",
+        "CREDENTIAL_UNREADABLE",
+        "QUOTA_EXHAUSTED",
+        "REQUEST_PREPARED",
+        "OUTBOUND_REQUEST_INITIATED",
+        "RESPONSE_RECEIVED",
+        "REQUEST_FAILED",
+        "CANCELLED",
+        "UNSIGNED_EXPECTED_PRE_SIGNING",
+        "production PyPI",
+    ):
+        assert phrase in notes
+
+    assert "There is no winner, provider ranking" in notes
+    assert "cannot modify Evidence, EvidenceKind" in notes
+
+
 def test_python_publishing_document_preserves_release_and_credential_boundaries():
     publishing = _read("docs/python-package-publishing.md")
 
@@ -269,7 +341,7 @@ def test_python_publishing_document_preserves_release_and_credential_boundaries(
         "outside the checkout",
         "target=testpypi",
         "target=production",
-        "python -m pip install arx-prescanner==4.0.0b2",
+        "python -m pip install arx-prescanner==4.0.0b3",
     ):
         assert phrase.casefold() in publishing.casefold()
     assert "long-lived API token" in publishing

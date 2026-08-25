@@ -19,6 +19,14 @@ Test topology follows runtime topology. ARX creates one Tk root per application 
 
 Visible desktop acceptance remains a separate layer because a headless widget assertion cannot prove focus order, clipping, DPI behavior, Explorer integration, or native installer state.
 
+## Phase C boundary testing
+
+Pure tests cover general-chat emptiness, context selection, redaction, immutable detachment from canonical objects, provenance-field preservation, conversation bounds, provider-session isolation, Ask Both's exact two-provider rule, partial provider failure, and non-authoritative comparison output. GUI tests run each Intelligence Console node in the same fresh-interpreter topology as the rest of the desktop suite. They exercise consent refusal, background provider work, cancellation, independent provider switching, context attach/detach, preview, flat Ask Both results, and the explicit Compare Responses reveal.
+
+Bounded Hypothesis properties generate local JSON-compatible context values and conversation text. They require every context preview to remain valid JSON under the 16,000-character cap, every context mapping to reject mutation, every session to honor turn/character bounds, and every comparison category to honor item bounds. These properties do not call external providers.
+
+Tests also snapshot or deep-copy deterministic inputs before adversarial provider output. A response that says `VERIFIED` or asks ARX to change readiness may be displayed as advisory text, but cannot change the original object or create an `EvidenceKind` value.
+
 ## Evidence levels must not be promoted
 
 Artifact construction evidence is not lifecycle evidence. The following claims remain distinct:

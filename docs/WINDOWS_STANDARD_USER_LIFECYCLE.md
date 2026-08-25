@@ -22,8 +22,8 @@ Run the collector from a normal, non-elevated PowerShell session for every `*_ST
 ```powershell
 .\scripts\collect-windows-lifecycle-evidence.ps1 `
   -Stage PRE_INSTALL_STANDARD_USER `
-  -ArtifactPath .\ARX-Desktop-Setup-win-x64-v4.0.0-b2.exe `
-  -ExpectedVersion 4.0.0b2 `
+  -ArtifactPath .\ARX-Desktop-Setup-win-x64-v4.0.0-b3.exe `
+  -ExpectedVersion 4.0.0b3 `
   -OutputPath .\evidence\pre-install.json
 ```
 
@@ -38,7 +38,7 @@ Perform every row independently on both required guests.
 | Installed launch | Launch ARX from Start Menu and install directory as the original standard user | ARX token is non-elevated; Program Files directory has no broad writable ACL; normal scan succeeds |
 | Denied write | Attempt to create a harmless file in the ARX installation directory from standard-user PowerShell | Access denied; no permissions are changed |
 | Credential boundary | Configure a disposable test credential through ARX, close/reopen ARX, then remove it | Credential is accessible only in the same user context; plaintext is never redisplayed; another user cannot decrypt it |
-| Upgrade | Install the Beta 2 candidate over the approved prior test build using the stable AppId | One product registration remains; expected files and versions update; ARX still launches non-elevated |
+| Upgrade | Install the Beta 3 candidate over the approved prior test build using the stable AppId | One product registration remains; expected files and versions update; ARX still launches non-elevated |
 | Already-elevated shell | Start installer from an explicitly elevated shell | Installer behavior is recorded; post-install launch is not misreported as a standard-user launch |
 | Portable | Extract the reviewed portable ZIP into a standard-user-owned directory and launch ARX | Application starts without installation or elevation; no files are written outside documented user-data locations |
 | Uninstall | Use Installed Apps and repeat with the Start Menu uninstaller on a restored snapshot | Program Files payload and shortcuts are removed; unrelated files and portable copies remain |

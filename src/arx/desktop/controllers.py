@@ -1,12 +1,16 @@
-import json
 from pathlib import Path
 
 from arx import __version__
-from arx.cli import envelope,preflight_envelope
-from arx.core.engine import capabilities,compare
+from arx.cli import envelope, preflight_envelope
+from arx.core.engine import capabilities, compare
 from arx.core.evidence import redact
 from arx.core.models import serialize
-from arx.exporters import codex_report,project_codex_report,render_json,render_summary
+from arx.exporters import (
+    codex_report,
+    project_codex_report,
+    render_json,
+    render_summary,
+)
 from arx.machine import scan_machine
 from arx.project import project_preflight
 from arx.software import scan_software
@@ -35,6 +39,138 @@ def project_readiness_view_model(report):
         "pinned_constraints":list(report.provider_roles.pinned_constraints),
         "plan_step_ids":[item.id for item in report.plan.steps],
         "plan_provider_ids":[item.provider_id for item in report.plan.steps if item.provider_id],
+    }
+
+
+def intelligence_context_components(controller) -> dict[str, object]:
+    """Bounded local projections for the advisory context builder.
+
+    This function consumes canonical controller state. It does not recompute a
+    compatibility/readiness decision and it does not expose a response write path.
+    """
+
+    machine = controller.machine or {}
+    tool_projection: dict[str, object] = {}
+    for name, record in tuple(machine.get("tools", {}).items())[:24]:
+        tool_projection[str(name)] = {
+            "detected": bool(record.detected),
+            "version": record.version,
+            "path": record.path,
+            "probe_method": record.probe_method,
+        }
+    runtime_projection = [
+        {
+            key: item.get(key)
+            for key in ("version", "path", "healthy", "health_reason", "architecture", "kind")
+            if key in item
+        }
+        for item in tuple(machine.get("python_installations", ()))[:12]
+    ]
+    capability_projection = {
+        str(name): {
+            "status": item.status.value,
+            "reason": item.reason,
+            "dependencies": list(item.dependencies),
+        }
+        for name, item in tuple(controller.capabilities.items())[:24]
+    }
+    machine_projection: dict[str, object] = {}
+    if machine:
+        machine_projection = {
+            "os": serialize(machine.get("os", {})),
+            "tools": tool_projection,
+            "python_installations": runtime_projection,
+            "capabilities": capability_projection,
+        }
+
+    software = controller.software or {}
+    software_projection = {
+        key: serialize(software.get(key))
+        for key in (
+            "filename",
+            "absolute_path",
+            "detected_file_type",
+            "application",
+            "pe",
+            "archive",
+            "requirements",
+            "signature",
+        )
+        if software.get(key) is not None
+    }
+
+    project_projection: dict[str, object] = {}
+    conclusions: dict[str, object] = {}
+    contradictions: list[dict[str, object]] = []
+    unknowns: list[str] = []
+    evidence: list[dict[str, object]] = []
+
+    for item in tuple(machine.get("evidence", ()))[:16]:
+        evidence.append(serialize(item))
+    for record in tuple(machine.get("tools", {}).values())[:24]:
+        for item in tuple(record.evidence)[:2]:
+            evidence.append(serialize(item))
+    for item in tuple(software.get("evidence", ()))[:16]:
+        evidence.append(serialize(item))
+
+    compatibility = controller.compatibility or {}
+    if compatibility:
+        conclusions["compatibility"] = {
+            "value": compatibility.get("status"),
+            "score": compatibility.get("score"),
+            "confidence": compatibility.get("confidence"),
+            "confidence_semantics": "Uncalibrated detector-author weight; not a probability.",
+            "basis": list(compatibility.get("checks", ()))[:12],
+            "validation": "Legacy compatibility composed-state rules; no separate fact-provenance upgrade.",
+        }
+        for check in compatibility.get("checks", ()):
+            if str(check.get("status", "")).casefold() == "unknown":
+                unknowns.append(str(check.get("reason") or check.get("name") or "Unknown compatibility condition"))
+
+    for name, item in controller.capabilities.items():
+        if item.status.value == "unknown":
+            unknowns.append(f"{name}: {item.reason}")
+
+    report = getattr(controller, "project_preflight", None)
+    if report is not None:
+        view = project_readiness_view_model(report)
+        project_projection = {
+            "identity": report.project.identity,
+            "project_root": str(report.project.root),
+            "languages": list(report.project.languages),
+            "ecosystems": list(report.project.ecosystems),
+            "build_systems": list(report.project.build_systems),
+            "requirements": [serialize(item) for item in report.project.requirements[:12]],
+        }
+        conclusions["project_readiness"] = {
+            "value": view["decision"],
+            "satisfaction": view["satisfaction"],
+            "current_context_satisfaction": view["current_context_satisfaction"],
+            "recoverability": view["recoverability"],
+            "blocker_ids": view["blocker_ids"],
+            "warning_ids": view["warning_ids"],
+            "basis": report.severity.reason,
+            "validation": "project semantic invariants and composed project-preflight state",
+        }
+        contradictions.extend(serialize(item) for item in report.conflicts[:12])
+        unknowns.extend(str(item) for item in report.project.unknowns)
+        unknowns.extend(str(item) for item in report.project.requirement_graph.unknowns)
+        for requirement in [*report.project.requirements, *report.project.optional_requirements]:
+            unknowns.extend(str(item) for item in requirement.unknowns)
+        for item in report.project.evidence:
+            evidence.append(serialize(item))
+        for item in report.resolution.evidence:
+            evidence.append(serialize(item))
+
+    deduplicated_unknowns = list(dict.fromkeys(item for item in unknowns if item))[:32]
+    return {
+        "machine": machine_projection,
+        "software": software_projection,
+        "project": project_projection,
+        "conclusions": conclusions,
+        "contradictions": contradictions,
+        "unknowns": deduplicated_unknowns,
+        "evidence": evidence[:32],
     }
 
 class DesktopController:

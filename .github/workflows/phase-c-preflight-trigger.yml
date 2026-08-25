@@ -1,0 +1,20 @@
+name: ARX Phase C independent preflight trigger
+
+on:
+  push:
+    branches: [arx4-phase-c]
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  independent-preflight:
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/trusted-installation-preflight.yml
+    with:
+      ref: arx4-phase-c

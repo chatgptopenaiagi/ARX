@@ -1,5 +1,5 @@
 param(
-    [string]$Version = '4.0.0b2',
+    [string]$Version = '4.0.0b3',
     [string]$ReleaseRoot,
     [long]$SourceDateEpoch = 0,
     [string]$IsccPath

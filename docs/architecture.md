@@ -27,6 +27,12 @@ The canonical report model is the sole owner of observed facts, compatibility, s
 
 Optional integrations attach after canonical validation and fail independently. They may receive a deliberately selected and redacted projection, but their output is never fed back into the evidence graph. This keeps a richer desktop or advisory surface from becoming a second evidence engine.
 
+## Decision record: Phase C is a one-way presentation boundary
+
+The Intelligence Console consumes bounded immutable copies of canonical state. Its allowlisted sections are selected finding, relevant evidence, Machine DNA, Software DNA, Project DNA, deterministic conclusions, contradictions, and unknowns. Context construction redacts and bounds those copies before a provider can observe them. Provider response objects are rendered only by the console; neither provider interface accepts a controller, scanner, model repository, exporter, or mutation callback.
+
+OpenAI and Codex sessions are separately keyed and bounded in memory. Ask Both invokes exactly two distinct provider identities with the same approved context and question, then retains the responses as two independent advisory outcomes. The optional textual overlap/differences/unresolved view is presentation analysis, not a third conclusion, validation rule, or evidence node.
+
 ## Decision record: fact provenance is separate from decision validation
 
 The ARX 4 fact-provenance enum is exactly `DECLARED / OBSERVED / INFERRED / ESTIMATED / SIMULATED / STRUCTURAL / UNKNOWN`. VERIFIED is not an `EvidenceKind` and must not be introduced as a peer fact state. `ESTIMATED` marks a value derived from explicit assumptions or a heuristic; `SIMULATED` marks a value produced by an explicitly non-authoritative simulation; `STRUCTURAL` marks a fact established by static code, schema, or artifact structure rather than runtime behavior. None may be silently promoted to `OBSERVED`. An `Evidence` record makes these claim dimensions traceable:

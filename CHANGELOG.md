@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.0.0b3 - 2026-08-25
+- Add the advisory-only ARX Intelligence Console with visibly separate deterministic evidence, contradictions, unknowns, provider status, redacted context, transcripts, and transmission-audit views.
+- Add independent, bounded, memory-only OpenAI Chat and Codex CLI conversations with multiline input, send, retry, cancellation, new/clear conversation, selection, copying, and explicit saving.
+- Add GENERAL CHAT with no ARX context and ARX EVIDENCE CHAT with explicit scope, attachment, redaction, preview, and per-provider/per-context consent.
+- Add Ask Both for exactly two distinct providers with flat, unranked responses and a separate opt-in textual-overlap/differences/unresolved comparison that cannot create evidence or validation.
+- Preserve the one-way provider boundary: advisory output cannot mutate Evidence, EvidenceKind, Machine DNA, Software DNA, Project DNA, compatibility, readiness, or semantic-invariant results.
+- Extend bounded local Hypothesis coverage for Phase C contexts, conversations, comparisons, and nested truncation; make invalid NUL-containing `setup.py` metadata fail closed as UNKNOWN.
+- Add Phase C-specific Semgrep and detect-secrets review identities without modifying historical Beta 2 evidence.
+- Preserve the Beta 2 release-security, reproducible-build, SBOM, provenance, and future Authenticode architecture while keeping production signing and Windows lifecycle acceptance independent.
+
 ## 4.0.0b2 - 2026-08-24
 - Repair the bounded Hypothesis audit harness and correct malformed PE and non-object `package.json` handling exposed once all security properties reached product code.
 - Harden index-supplied artifact downloads with exact HTTPS host/port policy, credential-free URLs, redirect rejection and destination revalidation, bounded streaming, timeout, size, and SHA-256 enforcement.

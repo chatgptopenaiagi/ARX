@@ -6,16 +6,24 @@ import hashlib
 import json
 import os
 import re
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path, PureWindowsPath
-from typing import Any, Mapping, Sequence
+from types import MappingProxyType
+from typing import Any
 
 from arx.core.evidence import SENSITIVE, redact_path
-
 
 MAX_FIELD_CHARS = 2_000
 MAX_CONTEXT_CHARS = 16_000
 MAX_EVIDENCE_ITEMS = 8
+_SELECTED_BUDGET = 1_600
+_PROJECT_BUDGET = 1_200
+_SECTION_BUDGET = 1_000
+_EVIDENCE_ITEM_BUDGET = 400
+_CONTRADICTION_BUDGET = 900
+_UNKNOWNS_BUDGET = 1_200
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 _ASSIGNMENT_SECRET = re.compile(
     r"(?i)\b(token|secret|password|passwd|api[_-]?key|private[_-]?key|credential|cookie)\s*[:=]\s*([^\s,;]+)"
@@ -46,6 +54,60 @@ ANALYSIS_MODES: Mapping[str, str] = {
     "Compare Alternatives": "Compare safe alternatives, trade-offs, prerequisites, and uncertainty without taking action.",
     "What Should I Check Next?": "List the smallest set of safe read-only checks that would reduce uncertainty.",
 }
+
+
+class AdvisoryChatMode(str, Enum):
+    """User-visible chat modes; neither value is an evidence classification."""
+
+    GENERAL_CHAT = "GENERAL_CHAT"
+    ARX_EVIDENCE_CHAT = "ARX_EVIDENCE_CHAT"
+
+
+@dataclass(frozen=True)
+class ContextSelection:
+    """Explicit allowlist for one bounded Intelligence Console packet."""
+
+    selected_finding: bool = True
+    relevant_evidence: bool = True
+    machine_dna: bool = False
+    software_dna: bool = False
+    project_dna: bool = True
+    conclusions: bool = True
+    contradictions: bool = True
+    unknowns: bool = True
+
+    def as_dict(self) -> dict[str, bool]:
+        values = {
+            "selected_finding": self.selected_finding,
+            "relevant_evidence": self.relevant_evidence,
+            "machine_dna": self.machine_dna,
+            "software_dna": self.software_dna,
+            "project_dna": self.project_dna,
+            "conclusions": self.conclusions,
+            "contradictions": self.contradictions,
+            "unknowns": self.unknowns,
+        }
+        return {key: True for key, enabled in values.items() if enabled}
+
+
+def _freeze(value: Any) -> Any:
+    """Detach a context packet from mutable deterministic application objects."""
+
+    if isinstance(value, Mapping):
+        return MappingProxyType({str(key): _freeze(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze(item) for item in value)
+    if isinstance(value, set):
+        return tuple(sorted((_freeze(item) for item in value), key=str))
+    return value
+
+
+def _thaw(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {str(key): _thaw(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return [_thaw(item) for item in value]
+    return value
 
 
 def _redact_text(
@@ -131,22 +193,69 @@ def redact_external(
     return _redact_text(str(value), private_roots, max_chars=max_text_chars)
 
 
-def _bounded_mapping(value: Mapping[str, Any], budget: int) -> dict[str, Any]:
+def _json_length(value: Any) -> int:
+    return len(json.dumps(value, ensure_ascii=False, sort_keys=True))
+
+
+def _bounded_text_value(value: str, budget: int) -> str:
+    """Return a JSON string value whose encoded representation fits *budget*."""
+
+    suffix = "… <context omitted by ARX>"
+    low = 0
+    high = len(value)
+    best = ""
+    while low <= high:
+        middle = (low + high) // 2
+        candidate = value if middle == len(value) else f"{value[:middle]}{suffix}"
+        if _json_length(candidate) <= budget:
+            best = candidate
+            low = middle + 1
+        else:
+            high = middle - 1
+    return best
+
+
+def _bounded_value(value: Any, budget: int, *, depth: int) -> Any:
+    if budget < 2:
+        return ""
+    if _json_length(value) <= budget:
+        return value
+    if depth >= 8:
+        return _bounded_text_value("<nested context omitted by ARX>", budget)
+    if isinstance(value, Mapping):
+        return _bounded_mapping(value, budget, depth=depth + 1)
+    if isinstance(value, (list, tuple)):
+        return _bounded_sequence(value, budget, depth=depth + 1)
+    return _bounded_text_value(str(value), budget)
+
+
+def _bounded_mapping(value: Mapping[str, Any], budget: int, *, depth: int = 0) -> dict[str, Any]:
     result: dict[str, Any] = {}
-    used = 2
     for key, item in value.items():
-        encoded = json.dumps({str(key): item}, ensure_ascii=False, sort_keys=True)
-        if result and used + len(encoded) > budget:
-            result["_arx_truncation"] = "Additional context omitted by ARX."
-            break
-        result[str(key)] = item
-        used += len(encoded)
+        safe_key = str(key)
+        candidate = {**result, safe_key: item}
+        if _json_length(candidate) <= budget:
+            result[safe_key] = item
+            continue
+        structural_overhead = _json_length({**result, safe_key: None}) - _json_length(None)
+        remaining = budget - structural_overhead
+        if remaining >= 2:
+            fitted = _bounded_value(item, remaining, depth=depth)
+            candidate = {**result, safe_key: fitted}
+            if _json_length(candidate) <= budget:
+                result[safe_key] = fitted
+        marker = {"_arx_truncation": "Additional context omitted by ARX."}
+        while result and _json_length({**result, **marker}) > budget:
+            result.pop(next(reversed(result)))
+        if _json_length({**result, **marker}) <= budget:
+            result.update(marker)
+        break
     return result
 
 
 @dataclass(frozen=True)
 class AdvisoryContext:
-    """A minimal redacted packet about one user-selected ARX object."""
+    """An immutable redacted packet detached from authoritative ARX state."""
 
     context_id: str
     surface: str
@@ -155,29 +264,74 @@ class AdvisoryContext:
     selected: Mapping[str, Any]
     project: Mapping[str, Any]
     evidence: tuple[Mapping[str, Any], ...]
+    chat_mode: AdvisoryChatMode = AdvisoryChatMode.ARX_EVIDENCE_CHAT
+    sections: Mapping[str, Any] = field(default_factory=dict)
+    contradictions: tuple[Mapping[str, Any], ...] = ()
+    unknowns: tuple[str, ...] = ()
+    selection: ContextSelection = field(default_factory=ContextSelection)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "selected", _freeze(self.selected))
+        object.__setattr__(self, "project", _freeze(self.project))
+        object.__setattr__(self, "evidence", tuple(_freeze(item) for item in self.evidence))
+        object.__setattr__(self, "sections", _freeze(self.sections))
+        object.__setattr__(self, "contradictions", tuple(_freeze(item) for item in self.contradictions))
+        object.__setattr__(self, "unknowns", tuple(str(item) for item in self.unknowns))
 
     @property
     def trust_domain(self) -> str:
+        if self.chat_mode is AdvisoryChatMode.GENERAL_CHAT:
+            return "GENERAL CHAT — NO ARX EVIDENCE ATTACHED"
         return "ARX DETERMINISTIC LOCAL EVIDENCE"
 
+    @property
+    def has_arx_evidence(self) -> bool:
+        return self.chat_mode is AdvisoryChatMode.ARX_EVIDENCE_CHAT and bool(
+            self.selected or self.project or self.evidence or self.sections or self.contradictions or self.unknowns
+        )
+
+    @property
+    def evidence_count(self) -> int:
+        return len(self.evidence)
+
     def as_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "context_id": self.context_id,
+            "chat_mode": self.chat_mode.value,
             "trust_domain": self.trust_domain,
             "surface": self.surface,
             "title": self.title,
             "status": self.status,
-            "selected_finding": dict(self.selected),
-            "project_context": dict(self.project),
-            "relevant_evidence": [dict(item) for item in self.evidence],
+            "selection": self.selection.as_dict(),
         }
+        if self.chat_mode is AdvisoryChatMode.GENERAL_CHAT:
+            return result
+        result.update(
+            {
+                "selected_finding": _thaw(self.selected),
+                "project_context": _thaw(self.project),
+                "relevant_evidence": _thaw(self.evidence),
+                "sections": _thaw(self.sections),
+                "contradictions": _thaw(self.contradictions),
+                "unknowns": list(self.unknowns),
+            }
+        )
+        return result
 
     def preview(self) -> str:
         return json.dumps(self.as_dict(), indent=2, ensure_ascii=False, sort_keys=True)
 
     def summary(self) -> str:
+        if self.chat_mode is AdvisoryChatMode.GENERAL_CHAT:
+            return "Mode → GENERAL CHAT\nAttached ARX Context → NONE"
         project = self.project.get("identity") or self.project.get("project") or "No project selected"
-        return f"Project → {project}\nFinding → {self.title}\nStatus → {self.status or 'UNKNOWN'}"
+        return (
+            "Mode → ARX EVIDENCE CHAT\n"
+            f"Project → {project}\n"
+            f"Finding → {self.title}\n"
+            f"Status → {self.status or 'UNKNOWN'}\n"
+            f"Evidence items → {self.evidence_count} · REDACTED + BOUNDED"
+        )
 
 
 def build_advisory_context(
@@ -236,7 +390,163 @@ def build_advisory_context(
         selected=redacted_selected,
         project=redacted_project,
         evidence=redacted_evidence,
+        selection=ContextSelection(
+            selected_finding=True,
+            relevant_evidence=bool(redacted_evidence),
+            project_dna=bool(redacted_project),
+            conclusions=False,
+            contradictions=False,
+            unknowns=False,
+        ),
     )
+
+
+def build_general_chat_context() -> AdvisoryContext:
+    """Create a provider-neutral chat context containing no ARX evidence."""
+
+    canonical = "ARX:GENERAL_CHAT:NO_CONTEXT:v1"
+    return AdvisoryContext(
+        context_id=hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16],
+        surface="General Chat",
+        title="GENERAL CHAT",
+        status="NO ARX EVIDENCE ATTACHED",
+        selected={},
+        project={},
+        evidence=(),
+        chat_mode=AdvisoryChatMode.GENERAL_CHAT,
+        selection=ContextSelection(
+            selected_finding=False,
+            relevant_evidence=False,
+            machine_dna=False,
+            software_dna=False,
+            project_dna=False,
+            conclusions=False,
+            contradictions=False,
+            unknowns=False,
+        ),
+    )
+
+
+def _bounded_sequence(value: Sequence[Any], budget: int, *, depth: int = 0) -> tuple[Any, ...]:
+    result: list[Any] = []
+    for item in value:
+        if _json_length([*result, item]) <= budget:
+            result.append(item)
+            continue
+        structural_overhead = _json_length([*result, None]) - _json_length(None)
+        remaining = budget - structural_overhead
+        if remaining >= 2:
+            fitted = _bounded_value(item, remaining, depth=depth)
+            if _json_length([*result, fitted]) <= budget:
+                result.append(fitted)
+        marker = {"_arx_truncation": "Additional items omitted by ARX."}
+        while result and _json_length([*result, marker]) > budget:
+            result.pop()
+        if _json_length([*result, marker]) <= budget:
+            result.append(marker)
+        break
+    return tuple(result)
+
+
+def build_intelligence_context(
+    *,
+    selected: Mapping[str, Any] | None = None,
+    evidence: Sequence[Mapping[str, Any]] = (),
+    machine: Mapping[str, Any] | None = None,
+    software: Mapping[str, Any] | None = None,
+    project: Mapping[str, Any] | None = None,
+    conclusions: Mapping[str, Any] | None = None,
+    contradictions: Sequence[Mapping[str, Any]] = (),
+    unknowns: Sequence[str] = (),
+    selection: ContextSelection | None = None,
+    private_roots: Sequence[str | os.PathLike[str]] = (),
+    surface: str = "ARX Intelligence Console",
+) -> AdvisoryContext:
+    """Build one explicitly selected, redacted, size-budgeted Phase C packet."""
+
+    chosen = selection or ContextSelection()
+    safe_selected = (
+        _bounded_mapping(redact_external(dict(selected or {}), private_roots), _SELECTED_BUDGET)
+        if chosen.selected_finding
+        else {}
+    )
+    safe_project = (
+        _bounded_mapping(redact_external(dict(project or {}), private_roots), _PROJECT_BUDGET)
+        if chosen.project_dna
+        else {}
+    )
+    sections: dict[str, Any] = {}
+    for enabled, key, value, budget in (
+        (chosen.machine_dna, "machine_dna", machine, _SECTION_BUDGET),
+        (chosen.software_dna, "software_dna", software, _SECTION_BUDGET),
+        (chosen.conclusions, "deterministic_conclusions", conclusions, _SECTION_BUDGET),
+    ):
+        if enabled and value:
+            sections[key] = _bounded_mapping(redact_external(dict(value), private_roots), budget)
+    safe_evidence = (
+        tuple(
+            _bounded_mapping(redact_external(dict(item), private_roots), _EVIDENCE_ITEM_BUDGET)
+            for item in tuple(evidence)[:MAX_EVIDENCE_ITEMS]
+        )
+        if chosen.relevant_evidence
+        else ()
+    )
+    safe_contradictions = (
+        _bounded_sequence(
+            [redact_external(dict(item), private_roots) for item in tuple(contradictions)[:12]],
+            _CONTRADICTION_BUDGET,
+        )
+        if chosen.contradictions
+        else ()
+    )
+    safe_unknowns = (
+        tuple(
+            str(item)
+            for item in _bounded_sequence(
+                [redact_external(item, private_roots, max_text_chars=500) for item in tuple(unknowns)[:16]],
+                _UNKNOWNS_BUDGET,
+            )
+        )
+        if chosen.unknowns
+        else ()
+    )
+    title = str(next(iter(safe_selected.values()), "Selected ARX diagnostic scope"))
+    status = ""
+    for key in ("status", "satisfaction", "classification", "relevance", "decision"):
+        if safe_selected.get(key):
+            status = str(safe_selected[key])
+            break
+    canonical = json.dumps(
+        {
+            "surface": surface,
+            "selected": safe_selected,
+            "project": safe_project,
+            "evidence": safe_evidence,
+            "sections": sections,
+            "contradictions": safe_contradictions,
+            "unknowns": safe_unknowns,
+            "selection": chosen.as_dict(),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    context = AdvisoryContext(
+        context_id=hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16],
+        surface=_redact_text(surface, private_roots),
+        title=title,
+        status=status,
+        selected=safe_selected,
+        project=safe_project,
+        evidence=safe_evidence,
+        sections=sections,
+        contradictions=safe_contradictions,
+        unknowns=safe_unknowns,
+        selection=chosen,
+    )
+    if len(context.preview()) > MAX_CONTEXT_CHARS:
+        raise ValueError("The bounded ARX advisory context exceeded its deterministic size budget.")
+    return context
 
 
 def build_advisory_prompt(
@@ -254,16 +564,21 @@ def build_advisory_prompt(
     for turn in tuple(conversation)[-6:]:
         role = "assistant" if str(turn.get("role", "")).casefold() == "assistant" else "user"
         safe_turns.append({"role": role, "text": _redact_text(str(turn.get("text", "")))})
-    packet = context.preview()
-    prompt = (
-        "ARX AI ADVISORY REQUEST\n\n"
-        "Trust boundary: the JSON below is redacted deterministic ARX evidence. Your response is advisory only. "
-        "Do not claim to have changed the machine, assign ARX fact provenance, claim ARX decision validation, or set GREEN/RED state, "
-        "and do not recommend destructive actions without clearly explaining risk. If your assumptions conflict with the supplied "
-        "evidence, state the conflict and defer to the supplied ARX observations and validated decisions.\n\n"
-        f"Analysis mode: {mode}\nMode instruction: {instruction}\n\n"
-        f"ARX CONTEXT\n{packet}\n\n"
-    )
+    prompt = "ARX AI ADVISORY REQUEST\n\n"
+    if context.chat_mode is AdvisoryChatMode.GENERAL_CHAT:
+        prompt += (
+            "Chat mode: GENERAL CHAT. No machine, software, project, compatibility, readiness, finding, or ARX evidence "
+            "is attached. Your response is advisory only and cannot modify ARX deterministic state.\n\n"
+        )
+    else:
+        prompt += (
+            "Trust boundary: the JSON below is redacted deterministic ARX evidence. Your response is advisory only. "
+            "Do not claim to have changed the machine, assign ARX fact provenance, claim ARX decision validation, or set GREEN/RED state, "
+            "and do not recommend destructive actions without clearly explaining risk. If your assumptions conflict with the supplied "
+            "evidence, state the conflict and defer to the supplied ARX observations and validated decisions.\n\n"
+            f"ARX CONTEXT\n{context.preview()}\n\n"
+        )
+    prompt += f"Analysis mode: {mode}\nMode instruction: {instruction}\n\n"
     if safe_turns:
         prompt += f"RECENT REDACTED CONVERSATION\n{json.dumps(safe_turns, ensure_ascii=False)}\n\n"
     prompt += f"USER QUESTION\n{safe_question}\n\nReturn advisory analysis only; ARX supplies the trust label in its UI."

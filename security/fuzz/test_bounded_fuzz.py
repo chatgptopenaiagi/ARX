@@ -1,4 +1,4 @@
-"""Bounded, local-only property tests for ARX Beta 2 input boundaries."""
+"""Bounded, local-only property tests for ARX-owned input boundaries."""
 
 from __future__ import annotations
 
@@ -15,9 +15,25 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from arx.advisory.context import MAX_FIELD_CHARS, redact_external
+from arx.advisory.context import (
+    MAX_CONTEXT_CHARS,
+    MAX_FIELD_CHARS,
+    ContextSelection,
+    build_intelligence_context,
+    redact_external,
+)
 from arx.advisory.health import ProviderHealthStatus
-from arx.advisory.providers import OpenAIProvider, ProviderError, parse_openai_response
+from arx.advisory.intelligence import (
+    ConversationRegistry,
+    ProviderOutcome,
+    compare_advisories,
+)
+from arx.advisory.providers import (
+    AdvisoryResponse,
+    OpenAIProvider,
+    ProviderError,
+    parse_openai_response,
+)
 from arx.core.models import Evidence, EvidenceKind, serialize
 from arx.project.scanner import _parse_setup_cfg, _parse_setup_py, _toml
 from arx.project.versions import (
@@ -185,6 +201,55 @@ def test_evidence_serialization_is_json_serializable(value: object) -> None:
     )
     assert "structural" in encoded
     assert "bounded-fuzz" in encoded
+
+
+@FUZZ_SETTINGS
+@given(JSON_VALUE, JSON_VALUE, st.lists(SHORT_TEXT, max_size=24))
+def test_phase_c_context_is_always_immutable_json_serializable_and_bounded(
+    selected_value: object,
+    section_value: object,
+    unknowns: list[str],
+) -> None:
+    context = build_intelligence_context(
+        selected={"value": selected_value},
+        evidence=[{"kind": "structural", "value": selected_value, "method": "bounded fuzz"}],
+        machine={"value": section_value},
+        software={"value": section_value},
+        project={"value": section_value},
+        conclusions={"value": section_value},
+        contradictions=[{"value": section_value}],
+        unknowns=unknowns,
+        selection=ContextSelection(machine_dna=True, software_dna=True),
+    )
+    packet = context.preview()
+    assert len(packet) <= MAX_CONTEXT_CHARS
+    assert isinstance(json.loads(packet), dict)
+    with pytest.raises(TypeError):
+        context.selected["value"] = "mutated"
+
+
+@FUZZ_SETTINGS
+@given(st.lists(SHORT_TEXT, max_size=40), SHORT_TEXT, SHORT_TEXT)
+def test_phase_c_session_and_comparison_outputs_remain_bounded(
+    turns: list[str],
+    first_text: str,
+    second_text: str,
+) -> None:
+    registry = ConversationRegistry(max_turns=8, max_chars=4_096)
+    for turn in turns:
+        registry.append("provider-one", "user", turn)
+    history = registry.history("provider-one")
+    assert len(history) <= 8
+    assert sum(len(item["text"]) for item in history) <= 4_096
+
+    comparison = compare_advisories(
+        ProviderOutcome("One", "one", response=AdvisoryResponse("One", first_text or "empty")),
+        ProviderOutcome("Two", "two", response=AdvisoryResponse("Two", second_text or "empty")),
+    )
+    assert len(comparison.textual_overlap) <= 8
+    assert len(comparison.differences) <= 8
+    assert len(comparison.unresolved) <= 8
+    assert comparison.trust_label == "COMPARISON AID — NO EVIDENCE UPGRADE"
 
 
 @FUZZ_SETTINGS

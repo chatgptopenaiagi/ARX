@@ -1,15 +1,15 @@
 # Roadmap
 
-ARX 4.0.0 Beta 2 preserves the Phase B trust foundation on top of the ARX deterministic compatibility engine and adds bounded fuzz remediation, index-download hardening, reproducible-build controls, release provenance, and trusted Windows installation preparation. The foundation still includes expanded fact provenance, dependency enforcement, provider-neutral credentials, Windows DPAPI storage, OpenAI provider health/transport, metadata-only transmission audit, and minimal provider settings.
+ARX 4.0.0 Beta 3 preserves the Phase B trust foundation and Beta 2 release-trust controls on top of the ARX deterministic compatibility engine. It adds the Phase C Intelligence Console, explicit bounded context selection, independent provider conversations, flat Ask Both results, and opt-in textual comparison without changing canonical evidence or decisions.
 
-## Phase C and future ARX 4 work
+## Phase C candidate
 
-- Build the full Intelligence Console and expanded contextual multi-turn conversation architecture.
-- Add Ask Both as an explicit additional operation with flat, unranked provider responses.
-- Keep comparison limited to textual overlap, differences, and unresolved items without consensus, confidence boosts, or provenance upgrades.
-- Preserve independent OpenAI and Codex conversations and the one-way advisory boundary.
+- The `arx4-phase-c` line implements the Intelligence Console and bounded contextual multi-turn conversation architecture for validation as Beta 3.
+- Ask Both is an explicit additional operation with flat, unranked provider responses.
+- Compare Responses remains a second explicit action limited to textual overlap, differences, and unresolved items without consensus, confidence boosts, or provenance upgrades.
+- OpenAI and Codex conversations remain independent and the provider response path remains one-way.
 
-Phase C is not part of ARX 4.0.0 Beta 2.
+Phase C remains absent from the immutable ARX 4.0.0 Beta 2 release. The Beta 3 source identity does not become a published prerelease until its release gates, tag, artifacts, and public release are independently completed.
 
 ## Manual release evidence still required
 

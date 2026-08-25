@@ -68,6 +68,11 @@ Use this checklist for a release candidate on a visible Windows 10 or Windows 11
 - [ ] With OpenAI unconfigured and with Codex unavailable, confirm a clear provider-specific explanation appears while core ARX remains usable.
 - [ ] If a test provider is authorized, send a non-sensitive fixture question, cancel a second request, and verify Completed/Cancelled/Timed out/Failed states without GUI freezing.
 - [ ] Copy a response, copy/save the conversation, and copy the diagnostic prompt. Inspect each output for the advisory label and redaction.
+- [ ] Open `Intelligence → Open Intelligence Console…` with no scan selected. Confirm GENERAL CHAT shows `Attached ARX Context → NONE` and preview contains no machine, software, project, compatibility, readiness, finding, or evidence payload.
+- [ ] Attach selected ARX evidence, toggle each scope section, apply it, and inspect `View Redacted Context`. Confirm the context identifier changes when content changes and consent is requested again for the changed provider/context pair.
+- [ ] Hold separate multi-turn conversations with OpenAI Chat and Codex CLI. Switch repeatedly and confirm neither transcript or bounded prior-turn context appears in the other provider's conversation.
+- [ ] Choose Ask Both with two controlled providers. Confirm the default view is two flat provider panels with no winner, ranking, consensus indicator, or synthesized answer. Confirm comparison remains hidden until `Compare Responses` is clicked and then shows only textual overlap, differences, and unresolved statements.
+- [ ] Open Transmission Audit, inspect the metadata-only states, refresh, and deliberately clear test history. Confirm no prompt, response, credential, secret, raw URL, or full local path appears.
 - [ ] Trigger web, Google, exact-error, and official-documentation searches with a non-sensitive fixture. Inspect the browser query and confirm private paths, usernames, tokens, and irrelevant identifiers are absent.
 
 ## Installer, uninstall, and upgrade

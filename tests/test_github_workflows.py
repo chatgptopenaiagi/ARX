@@ -162,6 +162,21 @@ def test_beta2_release_trigger_separates_attachment_from_reproduction():
     assert "attach_assets: ${{ github.ref_name == 'release-v4.0.0-b2-assets' }}" in workflow
 
 
+def test_beta3_provenance_trigger_can_read_drafts_but_cannot_mutate_releases():
+    workflow = _read("beta3-provenance-trigger.yml")
+
+    assert "release-v4.0.0-b3-provenance-*" in workflow
+    assert "uses: ./.github/workflows/release-provenance.yml" in workflow
+    assert workflow.count("contents: write") == 2
+    assert workflow.count("id-token: write") == 2
+    assert workflow.count("attestations: write") == 2
+    assert "gh release upload" not in workflow
+    assert "gh release edit" not in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert SECRET_CONTEXT.search(workflow) is None
+
+
 def test_trusted_preflight_attests_but_never_signs_or_publishes():
     workflow = _read("trusted-installation-preflight.yml")
     actions = ANY_ACTION.findall(workflow)
@@ -224,13 +239,16 @@ def test_security_gate_is_safe_automatic_nonpublishing_and_pinned():
     assert "bandit==1.9.4" in workflow
     assert "semgrep==1.174.0" in workflow
     assert "semgrep-classification.json" in workflow
+    assert "security/phase-c/evidence/semgrep-classification.json" in workflow
     assert "unreviewed_errors" in workflow
     assert "stale_reviews" in workflow
     assert 'item.get("level") == "error"' in workflow
     assert "cyclonedx-bom==7.3.1" in workflow
     assert "detect-secrets==1.5.0" in workflow
     assert "hypothesis==6.165.10" in workflow
+    assert "tests/test_advisory_intelligence.py" in workflow
     assert "detect-secrets-classification.json" in workflow
+    assert "security/phase-c/evidence/detect-secrets-classification.json" in workflow
     assert "detect-secrets-summary.json" in workflow
     assert "stale_reviews" in workflow
     assert "scan-tracked-secrets.py" in workflow
@@ -284,6 +302,11 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "Library\\bin" in workflow
     assert all(runtime in workflow for runtime in ("ffi.dll", "tcl86t.dll", "tk86t.dll"))
     assert "packaging/release-build-requirements.txt" in workflow
+    assert "releases?per_page=100" in workflow
+    assert "releases/tags/$env:RELEASE_TAG" not in workflow
+    assert "exactly one matching draft or public prerelease" in workflow
+    assert "$ReleaseMatches = @(" in workflow
+    assert "$Matches = @(" not in workflow
     assert "--require-security-bundle" in workflow
     assert "Core artifact is not bit-for-bit reproducible" in workflow
     assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
@@ -299,7 +322,8 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
     assert workflow.count("id-token: write") == 2
     assert workflow.count("attestations: write") == 2
-    assert "contents: write" not in workflow
+    assert workflow.count("contents: write") == 2
+    assert "required solely to read and download the human-gated draft subjects" in workflow
     assert "gh release upload" not in workflow
     assert "gh release edit" not in workflow
     assert "signtool sign" not in workflow.casefold()

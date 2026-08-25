@@ -27,7 +27,6 @@ from .versions import (
     python_version_satisfies,
 )
 
-
 MAX_MANIFEST_BYTES = 1024 * 1024
 PACKAGE_REQUIREMENT = re.compile(
     r"^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]+\])?\s*(.*)$"
@@ -296,7 +295,7 @@ def _parse_setup_py(
         return None, None
     try:
         tree = ast.parse(text, filename="setup.py", mode="exec")
-    except SyntaxError:
+    except (SyntaxError, ValueError):
         reason = "setup.py could not be interpreted by the static AST parser"
         evidence.append(Evidence(EvidenceKind.UNKNOWN, "setup.py", reason, "static Python AST parser"))
         unknowns.append(reason)
@@ -345,7 +344,7 @@ def _package_requirements(text: str, source: str, optional: bool) -> list[Requir
     relevance = Relevance.OPTIONAL if optional else Relevance.REQUIRED
     for number, raw in enumerate(text.splitlines(), 1):
         line = raw.strip()
-        if not line or line.startswith("#") or line.startswith(("-", "http:", "https:", "git+")):
+        if not line or line.startswith(("#", "-", "http:", "https:", "git+")):
             continue
         match = PACKAGE_REQUIREMENT.match(line)
         if not match:
