@@ -162,6 +162,21 @@ def test_beta2_release_trigger_separates_attachment_from_reproduction():
     assert "attach_assets: ${{ github.ref_name == 'release-v4.0.0-b2-assets' }}" in workflow
 
 
+def test_beta3_provenance_trigger_can_read_drafts_but_cannot_mutate_releases():
+    workflow = _read("beta3-provenance-trigger.yml")
+
+    assert "release-v4.0.0-b3-provenance-*" in workflow
+    assert "uses: ./.github/workflows/release-provenance.yml" in workflow
+    assert workflow.count("contents: write") == 2
+    assert workflow.count("id-token: write") == 2
+    assert workflow.count("attestations: write") == 2
+    assert "gh release upload" not in workflow
+    assert "gh release edit" not in workflow
+    assert "pypa/gh-action-pypi-publish" not in workflow
+    assert "signtool sign" not in workflow.casefold()
+    assert SECRET_CONTEXT.search(workflow) is None
+
+
 def test_trusted_preflight_attests_but_never_signs_or_publishes():
     workflow = _read("trusted-installation-preflight.yml")
     actions = ANY_ACTION.findall(workflow)
