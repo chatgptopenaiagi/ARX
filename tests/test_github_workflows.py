@@ -305,7 +305,8 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8" in workflow
     assert workflow.count("id-token: write") == 2
     assert workflow.count("attestations: write") == 2
-    assert "contents: write" not in workflow
+    assert workflow.count("contents: write") == 2
+    assert "required solely to read and download the human-gated draft subjects" in workflow
     assert "gh release upload" not in workflow
     assert "gh release edit" not in workflow
     assert "signtool sign" not in workflow.casefold()
