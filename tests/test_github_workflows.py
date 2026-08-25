@@ -305,6 +305,8 @@ def test_release_provenance_workflow_reproduces_without_modifying_release():
     assert "releases?per_page=100" in workflow
     assert "releases/tags/$env:RELEASE_TAG" not in workflow
     assert "exactly one matching draft or public prerelease" in workflow
+    assert "$ReleaseMatches = @(" in workflow
+    assert "$Matches = @(" not in workflow
     assert "--require-security-bundle" in workflow
     assert "Core artifact is not bit-for-bit reproducible" in workflow
     assert "--smoke-test" in workflow and "--ui-smoke-test" in workflow
