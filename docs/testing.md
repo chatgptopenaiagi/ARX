@@ -27,6 +27,12 @@ Bounded Hypothesis properties generate local JSON-compatible context values and 
 
 Tests also snapshot or deep-copy deterministic inputs before adversarial provider output. A response that says `VERIFIED` or asks ARX to change readiness may be displayed as advisory text, but cannot change the original object or create an `EvidenceKind` value.
 
+## Local AI Bridge boundary testing
+
+Local AI tests use only temporary files, fake child processes, and injected localhost transports. They cover strict loopback validation, rejection of `0.0.0.0` and non-loopback addresses, bounded model enumeration, malformed API responses, first-run approval, typed `shell=False` argument construction, hidden Windows process flags, startup success/timeout/crash/port conflict, cancellation, clean shutdown, and safe reconnect. The child environment test proves ordinary provider credentials such as `OPENAI_API_KEY` are not inherited.
+
+Capability tests use generated in-memory values and verify expiry, redacted representation, explicit clearing, and absence from profile/approval files and transmission audit. Provider tests compare the Local AI prompt with the remote provider prompt for the same immutable `AdvisoryContext`, then deep-copy canonical Machine DNA, Software DNA, Project DNA, evidence, and readiness inputs to prove advisory output cannot mutate them. GUI tests prove Settings and console opening have no discovery/start side effect, invalid wildcard endpoints fail before transport, Local AI uses the existing console in GENERAL CHAT, and the original two-provider Ask Both set remains unchanged.
+
 ## Evidence levels must not be promoted
 
 Artifact construction evidence is not lifecycle evidence. The following claims remain distinct:

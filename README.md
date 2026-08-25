@@ -11,7 +11,7 @@
 
 ARX 4 correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-This branch prepares **ARX 4.0.0 Beta 3** (`4.0.0b3`; planned tag `v4.0.0-b3`). It preserves the Phase B trust foundation and Beta 2 release-trust controls while adding the Phase C Intelligence Console, independent bounded OpenAI/Codex conversations, explicit ARX context attachment, and flat Ask Both comparison. It is not ARX 4 stable. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+**ARX 4.0.0 Beta 3** (`4.0.0b3`; tag `v4.0.0-b3`) is a published immutable prerelease containing the Phase C Intelligence Console, independent bounded OpenAI/Codex conversations, explicit ARX context attachment, and flat Ask Both comparison. The current development branch adds a post-Beta-3 Local AI Bridge for a future candidate; it does not change or republish Beta 3 and has no new release tag. ARX is not ARX 4 stable. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
@@ -235,6 +235,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 | [ARX 4 baseline](docs/arx-4-baseline-report.md) | Verified checkout, toolchain, epistemic model, import graph, and baseline tests |
 | [ARX 4 Phase B trust foundation](docs/arx-4-phase-b-trust-foundation.md) | Provenance, dependency enforcement, DPAPI credentials, provider health, OpenAI transport, and audit boundaries |
 | [ARX 4 Phase C Intelligence Console](docs/PHASE_C.md) | Advisory-only console, bounded context, independent conversations, Ask Both, comparison, privacy, and limitations |
+| [Local AI Bridge](docs/LOCAL_AI_BRIDGE.md) | Post-Beta-3 localhost discovery, typed process supervision, assistance profiles, advisory boundary, and limitations |
 | [ARX 3 final acceptance](docs/arx-3-final-acceptance.md) | Phase A evidence, blocked gates, artifacts, and release decision |
 | [Project-aware semantic engine](docs/project-semantic-engine.md) | Requirement/provider graphs, execution resolution, readiness, and planning rules |
 | [Security model](docs/security-model.md) | Local inspection, subprocess, privacy, remediation, and external trust boundaries |

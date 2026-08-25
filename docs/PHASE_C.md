@@ -2,6 +2,8 @@
 
 Phase C adds an optional, bounded advisory console to the ARX desktop application. It does not replace the deterministic compatibility engine. ARX remains useful without an AI provider, an OpenAI API credential, Codex CLI, or network access.
 
+The published `v4.0.0-b3` release is the immutable Phase C release anchor. The Local AI Bridge is later development on a separate branch and is not part of the published Beta 3 bytes. It reuses this console and its one-way advisory boundary; see [Local AI Bridge](LOCAL_AI_BRIDGE.md).
+
 The persistent UI notice is:
 
 > AI ADVISORY — NON-AUTHORITATIVE

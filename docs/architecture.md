@@ -33,6 +33,14 @@ The Intelligence Console consumes bounded immutable copies of canonical state. I
 
 OpenAI and Codex sessions are separately keyed and bounded in memory. Ask Both invokes exactly two distinct provider identities with the same approved context and question, then retains the responses as two independent advisory outcomes. The optional textual overlap/differences/unresolved view is presentation analysis, not a third conclusion, validation rule, or evidence node.
 
+## Decision record: Local AI is an optional downstream advisory layer
+
+`local_ai` depends on the provider-neutral `advisory` contract; `core`, `machine`, `software`, and `project` cannot import either layer. The desktop may select Local AI as a provider, but local backend discovery, launch, process state, and failure state never enter deterministic reports. This direction is enforced by the same import-graph and cycle gate as the other ARX layers.
+
+Local backend configuration is typed. OpenAI-compatible and generic profiles describe only an explicit loopback endpoint and never construct a process command. The llama.cpp adapter is the sole launchable profile in this milestone and constructs a fixed argument array for host, port, and model. It uses `shell=False`, a hidden Windows process flag, a minimal allowlisted child environment, and no provider/model output as executable input. First execution requires explicit approval of the exact profile fingerprint; only an approved `AUTOMATED` assistance policy may permit later automatic startup.
+
+The Local AI provider receives the same immutable `AdvisoryContext` and bounded recent conversation as remote providers. Running on the same workstation changes the transport location, not epistemic authority: local responses remain `AI ADVISORY — NON-AUTHORITATIVE` and have no controller, evidence repository, action broker, or mutation callback. The future Authority Router described in product planning is not implemented.
+
 ## Decision record: fact provenance is separate from decision validation
 
 The ARX 4 fact-provenance enum is exactly `DECLARED / OBSERVED / INFERRED / ESTIMATED / SIMULATED / STRUCTURAL / UNKNOWN`. VERIFIED is not an `EvidenceKind` and must not be introduced as a peer fact state. `ESTIMATED` marks a value derived from explicit assumptions or a heuristic; `SIMULATED` marks a value produced by an explicitly non-authoritative simulation; `STRUCTURAL` marks a fact established by static code, schema, or artifact structure rather than runtime behavior. None may be silently promoted to `OBSERVED`. An `Evidence` record makes these claim dimensions traceable:

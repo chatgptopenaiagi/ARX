@@ -29,6 +29,7 @@ from arx.advisory.credentials import (
 from arx.advisory.providers import AIProvider, CodexCLIProvider, OpenAIProvider
 from arx.advisory.web import build_search_query, build_search_url, open_search
 from arx.core.models import serialize
+from arx.local_ai import LocalAIManager, LocalAIProvider
 
 from .advisory import AdvisoryWindow
 from .controllers import (
@@ -36,6 +37,7 @@ from .controllers import (
     intelligence_context_components,
     project_readiness_view_model,
 )
+from .local_ai_settings import LocalAISettingsWindow
 from .provider_settings import OpenAIProviderSettingsWindow
 from .theme import COLORS, apply_theme
 from .ux import (
@@ -71,6 +73,7 @@ class ARXDesktopApp(tk.Tk):
         advisory_providers: Mapping[str, AIProvider] | None = None,
         openai_credential_store: WindowsDPAPICredentialStore | None = None,
         transmission_audit: TransmissionAudit | None = None,
+        local_ai_manager: LocalAIManager | None = None,
     ):
         super().__init__()
         self.controller = controller or DesktopController()
@@ -86,6 +89,8 @@ class ARXDesktopApp(tk.Tk):
         self._tooltips: list[ToolTip] = []
         self._openai_credential_store = openai_credential_store or default_openai_credential_store()
         self._transmission_audit = transmission_audit or default_transmission_audit()
+        self._local_ai_manager = local_ai_manager or LocalAIManager()
+        self._local_ai_provider = LocalAIProvider(self._local_ai_manager, audit=self._transmission_audit)
         openai_resolver = ProviderCredentialResolver(
             "openai-api",
             "OPENAI_API_KEY",
@@ -108,7 +113,7 @@ class ARXDesktopApp(tk.Tk):
         )
         self._advisory_consent: set[tuple[str, str]] = set()
         self._advisory_windows: list[AdvisoryWindow] = []
-        self._provider_settings_windows: list[OpenAIProviderSettingsWindow] = []
+        self._provider_settings_windows: list[tk.Toplevel] = []
         self._poll_id: str | None = None
         self._closed = False
 
@@ -204,12 +209,14 @@ class ARXDesktopApp(tk.Tk):
         settings_menu = tk.Menu(menu, tearoff=False)
         intelligence_menu = tk.Menu(settings_menu, tearoff=False)
         intelligence_menu.add_command(label="OpenAI API…", command=self._open_openai_settings)
+        intelligence_menu.add_command(label="Local AI…", command=self._open_local_ai_settings)
         settings_menu.add_cascade(label="Intelligence Providers", menu=intelligence_menu)
         menu.add_cascade(label="Settings", menu=settings_menu)
 
         intelligence_console_menu = tk.Menu(menu, tearoff=False)
         intelligence_console_menu.add_command(label="Open Intelligence Console…", command=self._open_intelligence_console)
         intelligence_console_menu.add_command(label="OpenAI General Chat…", command=self._open_openai_chat)
+        intelligence_console_menu.add_command(label="Local AI General Chat…", command=self._open_local_ai_chat)
         menu.add_cascade(label="Intelligence", menu=intelligence_console_menu)
 
         help_menu = tk.Menu(menu, tearoff=False)
@@ -992,6 +999,16 @@ class ARXDesktopApp(tk.Tk):
                         lambda context=advisory_context: self._open_advisory(context, self._default_provider()),
                     )
                 )
+            actions.append(
+                MenuAction(
+                    "Ask Local AI About This…",
+                    lambda context=advisory_context: self._open_advisory(
+                        context,
+                        "Local AI",
+                        providers={"Local AI": self._local_ai_provider},
+                    ),
+                )
+            )
             if advisory_context.project:
                 actions.append(
                     MenuAction(
@@ -1198,6 +1215,8 @@ class ARXDesktopApp(tk.Tk):
 
     def _open_openai_settings(self) -> None:
         for window in tuple(self._provider_settings_windows):
+            if not isinstance(window, OpenAIProviderSettingsWindow):
+                continue
             try:
                 if window.winfo_exists():
                     window.deiconify()
@@ -1219,7 +1238,42 @@ class ARXDesktopApp(tk.Tk):
     def _open_openai_chat(self) -> None:
         self._open_advisory(build_general_chat_context(), "OpenAI Chat")
 
-    def _open_advisory(self, context: AdvisoryContext, provider: str, mode: str = "Explain Technically") -> None:
+    def _open_local_ai_settings(self) -> None:
+        for window in tuple(self._provider_settings_windows):
+            if not isinstance(window, LocalAISettingsWindow):
+                continue
+            try:
+                if window.winfo_exists():
+                    window.deiconify()
+                    window.lift()
+                    window.focus_set()
+                    return
+            except tk.TclError:
+                pass
+            self._provider_settings_windows.remove(window)
+        window = LocalAISettingsWindow(
+            self,
+            self._local_ai_manager,
+            self._local_ai_provider,
+            open_chat_command=self._open_local_ai_chat,
+        )
+        self._provider_settings_windows.append(window)
+
+    def _open_local_ai_chat(self) -> None:
+        self._open_advisory(
+            build_general_chat_context(),
+            "Local AI",
+            providers={"Local AI": self._local_ai_provider},
+        )
+
+    def _open_advisory(
+        self,
+        context: AdvisoryContext,
+        provider: str,
+        mode: str = "Explain Technically",
+        *,
+        providers: Mapping[str, AIProvider] | None = None,
+    ) -> None:
         if context.has_arx_evidence and not context.sections:
             selection = ContextSelection(
                 selected_finding=True,
@@ -1236,7 +1290,7 @@ class ARXDesktopApp(tk.Tk):
         window = AdvisoryWindow(
             self,
             context,
-            self._advisory_providers,
+            providers or self._advisory_providers,
             initial_provider=provider,
             initial_mode=mode,
             consent_command=self._confirm_advisory_consent,
@@ -1259,7 +1313,7 @@ class ARXDesktopApp(tk.Tk):
         if consent_key in self._advisory_consent:
             return True
         accepted = messagebox.askyesno(
-            "ARX — External advisory consent",
+            "ARX — Advisory context consent",
             (
                 f"You chose {provider}. ARX will send the selected, bounded, redacted diagnostic context "
                 f"{context.context_id}, containing {context.evidence_count} selected evidence item(s), plus only the enabled "
@@ -1399,6 +1453,7 @@ class ARXDesktopApp(tk.Tk):
                 window._close()
             except tk.TclError:
                 pass
+        self._local_ai_manager.close()
         super().destroy()
 
 

@@ -11,11 +11,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 GUI_MODULES = (
     "tests/test_desktop.py",
     "tests/test_desktop_advisory.py",
+    "tests/test_desktop_local_ai.py",
     "tests/test_desktop_provider_settings.py",
     "tests/test_desktop_ux.py",
 )
@@ -28,6 +28,7 @@ def _run(arguments: list[str], *, capture: bool = False) -> subprocess.Completed
         text=True,
         capture_output=capture,
         shell=False,
+        check=False,
     )
 
 

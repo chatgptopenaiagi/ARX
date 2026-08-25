@@ -1,0 +1,36 @@
+{
+  "schema": "arx-local-ai-security-classification-v1",
+  "milestone": "Local AI Bridge",
+  "observed_at": "2026-08-25",
+  "tool": "Bandit 1.9.4",
+  "scope": [
+    "src/arx/local_ai",
+    "src/arx/desktop/local_ai_settings.py",
+    "src/arx/desktop/app.py",
+    "src/arx/desktop/advisory.py",
+    "src/arx/advisory/audit.py"
+  ],
+  "summary": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 1
+  },
+  "finding": {
+    "rule_id": "B404",
+    "severity": "LOW",
+    "confidence": "HIGH",
+    "path": "src/arx/local_ai/launcher.py",
+    "category": "subprocess module import",
+    "disposition": "ACCEPTED_WITH_RATIONALE",
+    "rationale": "Direct typed process creation is the required backend lifecycle boundary. The launcher uses a fixed adapter-generated argument array, shell=false, no standard input, discarded child streams, CREATE_NO_WINDOW on Windows, an allowlisted child environment, explicit first-run approval, and no AI/provider output as executable input. Removing subprocess would remove the required supervised-launch capability; suppressing the finding would discard useful scanner evidence.",
+    "supporting_tests": [
+      "test_llama_start_requires_first_run_approval_and_uses_typed_hidden_process",
+      "test_no_model_output_or_profile_text_can_become_a_shell_command"
+    ]
+  },
+  "limitations": [
+    "Bandit evidence is rule-based static analysis, not proof of total security.",
+    "The finding remains visible and is not suppressed with a nosec annotation."
+  ]
+}

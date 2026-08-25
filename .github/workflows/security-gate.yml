@@ -58,6 +58,7 @@ jobs:
             tests/test_advisory_providers.py \
             tests/test_advisory_web.py \
             tests/test_architecture_boundaries.py \
+            tests/test_local_ai.py \
             tests/test_python_hardening.py \
             tests/test_release_artifacts.py \
             tests/test_reproducible_build_controls.py \
