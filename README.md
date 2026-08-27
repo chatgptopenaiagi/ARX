@@ -1,4 +1,10 @@
-# ARX 3
+# ARX 4.0.0 Beta 4
+
+> **Current Featured ARX Release — Beta / Pre-release**
+
+[View ARX 4.0.0 Beta 4 Release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b4)
+
+ARX 4.0.0 Beta 4 supersedes ARX 2 and earlier releases as the release featured on this repository front page. It remains a prerelease and is not ARX 4 stable.
 
 [![ARX CI](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml)
@@ -8,13 +14,13 @@
 
 **Project-Aware Compatibility Intelligence for Windows**
 
-ARX 3 correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
+ARX correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-This branch presents **ARX 3.0 Release Candidate** (`3.0.0rc1`; planned tag `v3.0.0-rc1`). The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+The current featured development release is **ARX 4.0.0 Beta 4** (`v4.0.0-b4`). The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
-## Why ARX 3 is different
+## Why ARX is different
 
 Many diagnostic tools primarily tell users what exists on a machine.
 
@@ -88,9 +94,11 @@ Serialized evidence provenance remains explicit as `declared`, `observed`, `infe
 
 GREEN is deliberately scoped. The current Python readiness vertical verifies interpreter/toolchain requirements; it does not prove dependency installation, lock/site-packages synchronization, project imports, or complete application startup.
 
-## Install ARX 3
+## Historical ARX 3 RC installation reference
 
-ARX `3.0.0rc1` is a pre-release. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
+The instructions in this section are retained for historical ARX 3 RC users. They do not describe the current featured release; use the [ARX 4.0.0 Beta 4 release page](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b4) for the featured prerelease and its artifacts.
+
+ARX `3.0.0rc1` was a pre-release. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
 
 ### PyPI / Python developers
 
@@ -100,7 +108,7 @@ Install this exact release candidate from PyPI:
 python -m pip install arx-prescanner==3.0.0rc1
 ```
 
-Alternatively, allow pip to discover the newest available ARX pre-release:
+Historically, pip could be asked to discover an available ARX pre-release:
 
 ```console
 python -m pip install --pre arx-prescanner
@@ -184,7 +192,7 @@ AI and web outputs remain unverified advice. They cannot change an observed fact
 
 Read the complete [AI assistance and external-boundary security model](docs/ai-assistance-security.md).
 
-## Build the Windows RC artifacts
+## Historical ARX 3 RC artifact build
 
 ```powershell
 python -m pip install -e ".[build]"
@@ -235,7 +243,7 @@ python scripts/run-isolated-gui-tests.py
 
 GitHub Actions runs compilation and deterministic pytest coverage on Windows and Linux for Python 3.10, 3.12, and 3.14. Windows runs each Tk-backed GUI node in a fresh interpreter; Linux runs the full suite under Xvfb. A separate job builds and imports the source distribution and wheel without publishing. CodeQL analyzes Python and GitHub Actions with least-privilege workflow permissions and pinned action revisions.
 
-## Release-candidate limitations
+## Historical ARX 3 release-candidate limitations
 
 - Real DPI and multi-monitor acceptance is incomplete.
 - Screen-reader and full accessibility acceptance is incomplete.
