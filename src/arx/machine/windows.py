@@ -2,6 +2,7 @@ import json, os, platform, re, shutil, subprocess
 from pathlib import Path
 from arx.core.evidence import safe_environment
 from arx.core.models import Evidence, EvidenceKind, ToolRecord, utc_now
+from arx.machine.gpu_compute import analyze_resources, detect_gpu_compute
 
 PROBES={
 "git":("git","--version"),"github_cli":("gh","--version"),"python":("python","--version"),"pip":("pip","--version"),"conda":("conda","--version"),
@@ -121,9 +122,11 @@ def scan_machine(deep=True):
     if memory: memory={"total_bytes":int(memory.get("TotalVisibleMemorySize",0))*1024,"available_bytes":int(memory.get("FreePhysicalMemory",0))*1024}
     keys=("ANDROID_HOME","ANDROID_SDK_ROOT","ANDROID_NDK_HOME","JAVA_HOME","CUDA_PATH","VULKAN_SDK")
     os_info=_ps("Get-CimInstance Win32_OperatingSystem|Select Caption,Version,BuildNumber,OSArchitecture|ConvertTo-Json -Compress") or {}
+    gpu=_ps("Get-CimInstance Win32_VideoController|Select Name,PNPDeviceID,AdapterRAM,DriverVersion,VideoProcessor|ConvertTo-Json -Compress") if deep else None
+    storage=_ps("Get-Volume|Where DriveLetter|Select DriveLetter,FileSystem,Size,SizeRemaining,DriveType|ConvertTo-Json -Compress") if deep else None
     return {"generated_at":utc_now(),"os":{"system":platform.system(),"edition":os_info.get("Caption"),"release":platform.release(),"version":os_info.get("Version",platform.version()),"build":os_info.get("BuildNumber"),"architecture":platform.machine(),"reported_architecture":os_info.get("OSArchitecture"),"hostname":platform.node(),"wow64":bool(os.environ.get("PROCESSOR_ARCHITEW6432"))},
       "cpu":_ps("Get-CimInstance Win32_Processor|Select -First 1 Name,Manufacturer,NumberOfCores,NumberOfLogicalProcessors,Architecture,VirtualizationFirmwareEnabled|ConvertTo-Json -Compress") or {"model":platform.processor(),"logical_processors":os.cpu_count()},"memory":memory,
-      "gpu":_ps("Get-CimInstance Win32_VideoController|Select Name,AdapterRAM,DriverVersion,VideoProcessor|ConvertTo-Json -Compress") if deep else None,
-      "storage":_ps("Get-Volume|Where DriveLetter|Select DriveLetter,FileSystem,Size,SizeRemaining,DriveType|ConvertTo-Json -Compress") if deep else None,
+      "gpu":gpu,"storage":storage,
+      "gpu_compute":detect_gpu_compute(gpu) if deep else None,"resource_pressure":analyze_resources(memory,storage),
       "tools":{name:probe(name,spec) for name,spec in PROBES.items()},"python_installations":discover_python_installations(),"dotnet_runtimes":discover_dotnet_runtimes(),"sdk_hints":{k.lower():{"detected":bool(os.environ.get(k)),"path":os.environ.get(k)} for k in keys},
       "environment":safe_environment() if deep else {},"evidence":[Evidence(EvidenceKind.OBSERVED,"local Windows host","read-only scan","Python APIs and CIM")]}

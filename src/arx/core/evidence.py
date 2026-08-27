@@ -10,7 +10,7 @@ def redact_path(value:str,private_roots=None)->str:
     return re.sub(re.escape(str(Path(profile))),"%USERPROFILE%",result,flags=re.I) if profile else result
 def safe_environment(env=None):
     allowed={"PATH","PATHEXT","PROCESSOR_ARCHITECTURE","PROCESSOR_IDENTIFIER","OS","TEMP","TMP","JAVA_HOME","ANDROID_HOME","ANDROID_SDK_ROOT","CUDA_PATH","VULKAN_SDK"}
-    return {k:("<redacted>" if SENSITIVE.search(k) else redact_path(v)) for k,v in (env or dict(os.environ)).items() if k.upper() in allowed}
+    return {k:("<redacted>" if SENSITIVE.search(k) else redact_path(v)) for k,v in (env or dict(os.environ)).items() if k.upper() in allowed or re.fullmatch(r"CUDA_PATH_V\d+_\d+",k.upper())}
 def redact(value:Any,private_roots=None)->Any:
     if isinstance(value,str): return redact_path(value,private_roots)
     if isinstance(value,list): return [redact(v,private_roots) for v in value]

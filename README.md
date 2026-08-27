@@ -221,6 +221,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 |---|---|
 | [ARX 3.0 RC1 release notes](docs/release-notes-3.0.0-rc1.md) | Changes since ARX 2, compatibility, verification, and RC limitations |
 | [Architecture](docs/architecture.md) | Canonical domain, evidence boundaries, path identity, UI lifecycle, and packaging decisions |
+| [Layered GPU and CUDA intelligence](docs/gpu-compute-intelligence.md) | Driver, Toolkit, runtime, framework, resolution, compatibility, and resource semantics |
 | [Project-aware semantic engine](docs/project-semantic-engine.md) | Requirement/provider graphs, execution resolution, readiness, and planning rules |
 | [Security model](docs/security-model.md) | Local inspection, subprocess, privacy, remediation, and external trust boundaries |
 | [AI assistance security](docs/ai-assistance-security.md) | OpenAI, Codex CLI, web research, consent, redaction, and failure behavior |

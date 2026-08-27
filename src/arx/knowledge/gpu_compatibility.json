@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "knowledge_version": "2026-08-28",
+  "scope": "semantic boundaries and explicitly evidenced GPU relationships",
+  "update_policy": "reviewed repository update; never fetched during a scan",
+  "rules": [
+    {
+      "id": "nvidia-driver-cuda-ceiling-not-toolkit",
+      "authority": "NVIDIA nvidia-smi product semantics",
+      "classification": "authoritative",
+      "constraint": "nvidia-smi CUDA Version is driver API compatibility capability and never toolkit-presence evidence"
+    },
+    {
+      "id": "framework-runtime-private",
+      "authority": "ARX evidence boundary",
+      "classification": "authoritative",
+      "constraint": "framework-private CUDA libraries do not establish a globally installed CUDA Toolkit"
+    },
+    {
+      "id": "numeric-order-insufficient",
+      "authority": "ARX compatibility policy",
+      "classification": "authoritative",
+      "constraint": "CUDA compatibility cannot be inferred from ordinary numeric version ordering without an explicit relationship rule"
+    }
+  ]
+}

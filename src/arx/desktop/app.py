@@ -549,7 +549,7 @@ class ARXDesktopApp(tk.Tk):
             ("Ninja", "ninja"),
             ("Android SDK / ADB", "adb"),
             ("Flutter", "flutter"),
-            ("CUDA", "cuda"),
+            ("CUDA Toolkit compiler (nvcc)", "cuda"),
             ("Docker", "docker"),
             ("WSL", "wsl"),
         )
@@ -571,6 +571,29 @@ class ARXDesktopApp(tk.Tk):
                 ),
                 tags=(status,),
             )
+        compute = machine.get("gpu_compute") or {}
+        driver = compute.get("nvidia_driver") or {}
+        driver_capability = compute.get("cuda_driver_capability") or {}
+        compute_rows = [
+            ("gpu:hardware", "NVIDIA GPU", "ready" if compute.get("nvidia_tooling_gpus") else "unknown", "", "", "Detected" if compute.get("nvidia_tooling_gpus") else "Unknown", "Windows and nvidia-smi visibility remain separate"),
+            ("gpu:driver", "NVIDIA driver", "ready" if driver.get("nvidia_smi", {}).get("execution_health") == "healthy" else "unknown", driver.get("version") or "", driver.get("nvidia_smi", {}).get("resolved_path") or "", driver.get("nvidia_smi", {}).get("execution_health", "unknown").upper(), "Fixed bounded nvidia-smi probe"),
+            ("gpu:driver-capability", "Driver CUDA capability", "ready" if driver_capability.get("version") else "unknown", driver_capability.get("version") or "", "", "ADVERTISED", "Driver ceiling; not an installed Toolkit"),
+            ("gpu:toolkits", "CUDA Toolkit providers", "ready" if compute.get("cuda_toolkits") else "unknown", ", ".join(item.get("version") or "unknown" for item in compute.get("cuda_toolkits", [])), compute.get("resolution", {}).get("nvcc") or "", "MULTIPLE OK" if len(compute.get("cuda_toolkits", [])) > 1 else "DETECTED" if compute.get("cuda_toolkits") else "UNKNOWN", "Available and resolved providers are distinct"),
+            ("gpu:cudnn", "cuDNN", "ready" if compute.get("cudnn", {}).get("providers") else "unknown", "", "", compute.get("cudnn", {}).get("status", "unknown").upper(), "Independent CUDA capability"),
+            ("gpu:tensorrt", "TensorRT", "ready" if compute.get("tensorrt", {}).get("status") == "present" else "unknown", (compute.get("tensorrt", {}).get("python") or {}).get("version", ""), "", compute.get("tensorrt", {}).get("status", "unknown").upper(), "Compatibility remains independent/UNKNOWN without an explicit rule"),
+        ]
+        pytorch = (compute.get("frameworks") or {}).get("pytorch")
+        if pytorch:
+            compute_rows.append(("gpu:pytorch", "PyTorch CUDA", "ready" if pytorch.get("cuda_available") else "partial", pytorch.get("compiled_cuda") or "CPU-only", compute.get("resolution", {}).get("python") or "", pytorch.get("initialization_status", "unknown").upper(), f"Architecture: {pytorch.get('architecture_status', {}).get('state', 'unknown').upper()}; VRAM: UNKNOWN"))
+        pressure = machine.get("resource_pressure") or {}
+        memory_pressure = pressure.get("memory") or {}
+        system_disk = pressure.get("system_drive") or {}
+        compute_rows.extend([
+            ("resource:memory", "Current memory pressure", "blocked" if memory_pressure.get("state") == "critical" else "partial" if memory_pressure.get("state") == "low" else "ready" if memory_pressure.get("state") == "normal" else "unknown", f"{memory_pressure.get('percent_used')}% used" if memory_pressure.get("percent_used") is not None else "", "", str(memory_pressure.get("state", "unknown")).upper(), "Current pressure; not permanent incompatibility"),
+            ("resource:system-disk", "System drive pressure", "blocked" if system_disk.get("state") == "critical" else "partial" if system_disk.get("state") == "low" else "ready" if system_disk.get("state") == "normal" else "unknown", f"{system_disk.get('percent_free')}% free" if system_disk.get("percent_free") is not None else "", f"{system_disk.get('drive', '')}:", str(system_disk.get("state", "unknown")).upper(), "Build/install impact depends on an explicit disk preflight"),
+        ])
+        for iid, label, status, version, path, health, evidence in compute_rows:
+            self.machine_tree.insert("", "end", iid=iid, values=(label, status.upper(), version, path, health, evidence), tags=(status,))
         for index, item in enumerate(machine.get("python_installations", [])):
             health = item.get("health_status") or (
                 "healthy" if item.get("healthy") else "unhealthy" if item.get("healthy") is False else "unknown"
@@ -784,6 +807,12 @@ class ARXDesktopApp(tk.Tk):
         for runtime in (self.controller.machine or {}).get("python_installations", []):
             for item in runtime.get("evidence", []):
                 add(item, f"Python: {runtime.get('path')}")
+        compute = (self.controller.machine or {}).get("gpu_compute") or {}
+        for item in (compute.get("nvidia_driver") or {}).get("evidence", []):
+            add(item, "GPU Compute: NVIDIA driver")
+        for toolkit in compute.get("cuda_toolkits", []):
+            for item in toolkit.get("evidence", []):
+                add(item, f"GPU Compute: CUDA Toolkit {toolkit.get('version') or 'unknown'}")
         for item in (self.controller.software or {}).get("evidence", []):
             add(item, "Software DNA")
         project_report = getattr(self.controller, "project_preflight", None)
@@ -803,6 +832,8 @@ class ARXDesktopApp(tk.Tk):
             record = (self.controller.machine or {}).get("tools", {}).get(key)
             if record:
                 self._select_evidence_source(f"Tool: {record.name}")
+        elif selection and selection[0] == "gpu:driver":
+            self._select_evidence_source("GPU Compute: NVIDIA driver")
 
     def _capability_selected(self, _event: tk.Event | None) -> None:
         selection = self.cap_tree.selection()

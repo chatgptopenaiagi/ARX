@@ -40,6 +40,7 @@ $VersionInfoText = $VersionInfoText -replace "StringStruct\('ProductVersion', '[
 
 & $PythonPath -m PyInstaller --noconfirm --clean --windowed --onedir --name ARX `
     --contents-directory _internal --version-file $VersionInfo `
+    --collect-data arx.knowledge `
     --paths (Join-Path $ProjectRoot 'src') --distpath $ReleaseRoot --workpath $Work `
     --specpath $Work $Entry
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE." }

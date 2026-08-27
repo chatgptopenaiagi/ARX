@@ -86,4 +86,4 @@ def test_readme_documents_every_supported_release_installation_path():
         "ARX-Desktop-win-x64-v3.0.0-rc1.zip",
     ):
         assert command_or_asset in readme
-    assert "ARX `3.0.0rc1` is a pre-release" in readme
+    assert "ARX `3.0.0rc1` was a pre-release" in readme

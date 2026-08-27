@@ -18,11 +18,15 @@ def capabilities(machine):
         ok=bool(tools.get(tool) and tools[tool].detected)
         if cap=="python.available" and machine.get("python_installations"):ok=any(item.get("healthy") for item in machine["python_installations"])
         if cap=="android.sdk" and not ok:ok=any(hints.get(k,{}).get("detected") for k in ("android_home","android_sdk_root"))
-        label="healthy Python runtime" if cap=="python.available" and machine.get("python_installations") else "Android SDK" if cap=="android.sdk" else tool
+        label="healthy Python runtime" if cap=="python.available" and machine.get("python_installations") else "Android SDK" if cap=="android.sdk" else "CUDA Toolkit compiler (nvcc)" if cap=="cuda" else tool
         result[cap]=Capability(cap,Status.READY if ok else Status.MISSING,f"{label} {'detected' if ok else 'not detected'}")
     composites={"python_development":["python.available"],"node_development":["node.available"],"android_java_build":["java.jdk","android.sdk"],"android.native.build":["java.jdk","android.sdk","cmake","ninja"],"flutter.android.build":["flutter","java.jdk","android.sdk","adb"],"windows_cpp_build":["visualstudio.cpp","cmake"],"cuda_compute":["cuda"]}
     for name,deps in composites.items():
         states=[result[d].status for d in deps];status=Status.READY if all(x==Status.READY for x in states) else Status.BLOCKED if all(x==Status.MISSING for x in states) else Status.PARTIAL;missing=[d for d in deps if result[d].status!=Status.READY];result[name]=Capability(name,status,"All dependencies detected" if not missing else "Missing: "+", ".join(missing),deps)
+    if result["cuda"].status==Status.READY:
+        result["cuda_compute"]=Capability("cuda_compute",Status.PARTIAL,"CUDA Toolkit compiler detected; driver, GPU, framework, project compatibility, and resource feasibility remain separate",["cuda"])
+    else:
+        result["cuda_compute"]=Capability("cuda_compute",Status.UNKNOWN,"CUDA compute chain is unknown; nvcc absence does not prove the NVIDIA driver or framework runtime is absent",["cuda"])
     return result
 
 def compare(machine,software):

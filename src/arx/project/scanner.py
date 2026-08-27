@@ -32,6 +32,16 @@ MAX_MANIFEST_BYTES = 1024 * 1024
 PACKAGE_REQUIREMENT = re.compile(
     r"^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]+\])?\s*(.*)$"
 )
+GPU_PACKAGE_CAPABILITIES = {
+    "torch": "gpu.framework.pytorch",
+    "pytorch": "gpu.framework.pytorch",
+    "onnxruntime-gpu": "gpu.framework.onnxruntime",
+    "tensorrt": "gpu.framework.tensorrt",
+    "nvidia-cudnn-cu11": "gpu.cudnn",
+    "nvidia-cudnn-cu12": "gpu.cudnn",
+    "nvidia-cuda-runtime-cu11": "gpu.cuda.runtime",
+    "nvidia-cuda-runtime-cu12": "gpu.cuda.runtime",
+}
 
 
 def _relative(path: Path, root: Path) -> str:
@@ -358,8 +368,7 @@ def _package_requirements(text: str, source: str, optional: bool) -> list[Requir
             line,
             f"static requirements line {number}",
         )
-        items.append(
-            Requirement.create(
+        package_requirement = Requirement.create(
                 capability=f"python.package:{package}",
                 constraint=constraint,
                 source=source,
@@ -369,8 +378,39 @@ def _package_requirements(text: str, source: str, optional: bool) -> list[Requir
                 confidence=1.0,
                 evidence=[item_evidence],
             )
-        )
+        items.append(package_requirement)
+        gpu_capability = GPU_PACKAGE_CAPABILITIES.get(package)
+        if gpu_capability:
+            items.append(
+                Requirement.create(
+                    capability=gpu_capability,
+                    constraint=constraint,
+                    source=source,
+                    field=f"line:{number}",
+                    relevance=relevance,
+                    evidence_purpose="dependency_requirement",
+                    confidence=1.0,
+                    evidence=[item_evidence],
+                    relation="requires",
+                )
+            )
     return items
+
+
+def _pyproject_dependencies(text: str | None, evidence: list[Evidence], unknowns: list[str]) -> tuple[list[Requirement], list[Requirement]]:
+    if text is None:
+        return [], []
+    data = _toml(text, "pyproject.toml", evidence, unknowns)
+    if data is None:
+        return [], []
+    project = data.get("project") if isinstance(data.get("project"), dict) else {}
+    required_text = "\n".join(str(item) for item in project.get("dependencies", []) if isinstance(item, str))
+    required = _package_requirements(required_text, "pyproject.toml", False)
+    optional = []
+    groups = project.get("optional-dependencies") if isinstance(project.get("optional-dependencies"), dict) else {}
+    for group, values in groups.items():
+        optional.extend(_package_requirements("\n".join(str(item) for item in values if isinstance(item, str)), f"pyproject.toml optional-dependencies.{group}", True))
+    return required, optional
 
 
 def inspect_project(
@@ -425,6 +465,11 @@ def inspect_project(
         )
         required.append(runtime)
         evidence.extend(runtime.evidence)
+        project_required, project_optional = _pyproject_dependencies(texts["pyproject.toml"], evidence, unknowns)
+        required.extend(project_required)
+        optional.extend(project_optional)
+        for item in [*project_required, *project_optional]:
+            evidence.extend(item.evidence)
     if ".python-version" in texts:
         selected = _parse_python_version(texts[".python-version"])
         if selected:
