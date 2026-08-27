@@ -4,18 +4,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$VersionMatch = [regex]::Match($Version, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:rc(?<rc>\d+))?$')
-if (-not $VersionMatch.Success) {
-    throw 'Version must use the package form X.Y.Z or X.Y.ZrcN.'
-}
-$BaseVersion = "$($VersionMatch.Groups['major'].Value).$($VersionMatch.Groups['minor'].Value).$($VersionMatch.Groups['patch'].Value)"
-$ReleaseComponent = if ($VersionMatch.Groups['rc'].Success) { $VersionMatch.Groups['rc'].Value } else { '0' }
-$FileVersion = "$BaseVersion.$ReleaseComponent"
-$ArtifactVersion = if ($VersionMatch.Groups['rc'].Success) {
-    "$BaseVersion-rc$ReleaseComponent"
-} else {
-    $BaseVersion
-}
+. (Join-Path $PSScriptRoot 'versioning.ps1')
+$ReleaseVersion = ConvertTo-ArxReleaseVersion -Version $Version
+$FileVersion = $ReleaseVersion.FileVersion
+$ArtifactVersion = $ReleaseVersion.ArtifactVersion
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $ReleaseRoot = Join-Path $ProjectRoot 'release'
 $PortableRoot = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
@@ -54,7 +46,7 @@ if (-not $Compiler) {
     throw 'Inno Setup 6 or 7 compiler (ISCC.exe) was not found. Install Inno Setup or pass -IsccPath.'
 }
 
-& $Compiler "/DMyAppVersion=$Version" "/DMyAppFileVersion=$FileVersion" "/DMyArtifactVersion=$ArtifactVersion" $InstallerScript
+& $Compiler "/DMyAppVersion=$Version" "/DMyAppFileVersion=$FileVersion" "/DMyArtifactVersion=$ArtifactVersion" "/DMyAppProductName=$($ReleaseVersion.ProductName)" "/DMyAppDisplayName=$($ReleaseVersion.DisplayName)" $InstallerScript
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup failed with exit code $LASTEXITCODE."
 }

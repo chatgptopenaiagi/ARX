@@ -11,8 +11,12 @@
 #endif
 
 #define MyAppName "ARX"
-#define MyAppProductName "ARX 3"
-#define MyAppDisplayName "ARX 3.0 Release Candidate"
+#ifndef MyAppProductName
+  #define MyAppProductName "ARX 3"
+#endif
+#ifndef MyAppDisplayName
+  #define MyAppDisplayName "ARX 3.0 Release Candidate 1"
+#endif
 #define MyAppPublisher "chatgptopenaiagi"
 #define MyAppURL "https://github.com/chatgptopenaiagi/ARX"
 #define MyAppExeName "ARX.exe"
@@ -62,9 +66,9 @@ Source: "{#MyAppSourceDir}\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\ARX 3"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
+Name: "{group}\ARX"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{group}\Uninstall ARX"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\ARX 3"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autodesktop}\ARX"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch ARX 3"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch ARX"; Flags: nowait postinstall skipifsilent

@@ -1,14 +1,17 @@
 param(
-    [string]$PythonExecutable = 'python'
+    [string]$PythonExecutable = 'python',
+    [string]$Version = '3.0.0rc1'
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'versioning.ps1')
+$ReleaseVersion = ConvertTo-ArxReleaseVersion -Version $Version
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $ReleaseRoot = Join-Path $ProjectRoot 'release'
 $Output = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
 $Work = Join-Path $ProjectRoot 'build\desktop'
 $Entry = Join-Path $ProjectRoot 'packaging\arx_desktop_entry.py'
-$VersionInfo = Join-Path $ProjectRoot 'packaging\windows-version-info.txt'
+$VersionInfoTemplate = Join-Path $ProjectRoot 'packaging\windows-version-info.txt'
 
 $PythonCommand = Get-Command $PythonExecutable -ErrorAction Stop
 $PythonPath = $PythonCommand.Source
@@ -24,6 +27,16 @@ if (-not $OutputFullPath.StartsWith($ReleaseFullPath, [StringComparison]::Ordina
 }
 if (Test-Path -LiteralPath $Output) { Remove-Item -LiteralPath $Output -Recurse }
 New-Item -ItemType Directory -Path $ReleaseRoot,$Work -Force | Out-Null
+$VersionInfo = Join-Path $Work 'windows-version-info.txt'
+$VersionParts = $ReleaseVersion.FileVersion.Split('.')
+$VersionInfoText = Get-Content -LiteralPath $VersionInfoTemplate -Raw
+$VersionInfoText = $VersionInfoText -replace 'filevers=\(\d+, \d+, \d+, \d+\)', "filevers=($($VersionParts -join ', '))"
+$VersionInfoText = $VersionInfoText -replace 'prodvers=\(\d+, \d+, \d+, \d+\)', "prodvers=($($VersionParts -join ', '))"
+$VersionInfoText = $VersionInfoText -replace "StringStruct\('FileDescription', '[^']*'\)", "StringStruct('FileDescription', '$($ReleaseVersion.DisplayName) Project-Aware Compatibility Intelligence')"
+$VersionInfoText = $VersionInfoText -replace "StringStruct\('FileVersion', '[^']*'\)", "StringStruct('FileVersion', '$Version')"
+$VersionInfoText = $VersionInfoText -replace "StringStruct\('ProductName', '[^']*'\)", "StringStruct('ProductName', '$($ReleaseVersion.ProductName)')"
+$VersionInfoText = $VersionInfoText -replace "StringStruct\('ProductVersion', '[^']*'\)", "StringStruct('ProductVersion', '$Version')"
+[IO.File]::WriteAllText($VersionInfo,$VersionInfoText,[Text.UTF8Encoding]::new($false))
 
 & $PythonPath -m PyInstaller --noconfirm --clean --windowed --onedir --name ARX `
     --contents-directory _internal --version-file $VersionInfo `

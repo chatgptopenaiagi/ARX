@@ -3,16 +3,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$VersionMatch = [regex]::Match($Version, '^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?:rc(?<rc>\d+))?$')
-if (-not $VersionMatch.Success) {
-    throw 'Version must use the package form X.Y.Z or X.Y.ZrcN.'
-}
-$BaseVersion = "$($VersionMatch.Groups['major'].Value).$($VersionMatch.Groups['minor'].Value).$($VersionMatch.Groups['patch'].Value)"
-$ArtifactVersion = if ($VersionMatch.Groups['rc'].Success) {
-    "$BaseVersion-rc$($VersionMatch.Groups['rc'].Value)"
-} else {
-    $BaseVersion
-}
+. (Join-Path $PSScriptRoot 'versioning.ps1')
+$ReleaseVersion = ConvertTo-ArxReleaseVersion -Version $Version
+$ArtifactVersion = $ReleaseVersion.ArtifactVersion
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $ReleaseRoot = Join-Path $ProjectRoot 'release'
 $DesktopDirectory = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
