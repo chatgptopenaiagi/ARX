@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -12,6 +13,7 @@ BUILD_SCRIPT = (ROOT / "scripts" / "build-installer.ps1").read_text(encoding="ut
 PACKAGE_SCRIPT = (ROOT / "scripts" / "package-desktop-release.ps1").read_text(encoding="utf-8")
 VERSIONING_SCRIPT = ROOT / "scripts" / "versioning.ps1"
 VERSION_INFO = (ROOT / "packaging" / "windows-version-info.txt").read_text(encoding="utf-8")
+POWERSHELL = shutil.which("pwsh") or shutil.which("powershell")
 
 
 def test_installer_has_stable_upgrade_and_x64_identity():
@@ -60,12 +62,13 @@ def test_rc_version_and_artifact_identity_are_consistent():
     ],
 )
 def test_release_version_normalization(package_version, artifact_version, file_version):
+    assert POWERSHELL, "PowerShell is required to validate release build scripts"
     command = (
         f". '{VERSIONING_SCRIPT}'; "
         f"ConvertTo-ArxReleaseVersion -Version '{package_version}' | ConvertTo-Json -Compress"
     )
     completed = subprocess.run(
-        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+        [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
         check=True,
         capture_output=True,
         text=True,
@@ -81,9 +84,10 @@ def test_release_version_normalization(package_version, artifact_version, file_v
     ["4", "4.0", "4.0.0beta4", "4.0.0b", "4.0.0rc0", "04.0.0", "4.0.0-b4", "4.0.0.dev1"],
 )
 def test_release_version_normalization_rejects_malformed_versions(malformed):
+    assert POWERSHELL, "PowerShell is required to validate release build scripts"
     command = f". '{VERSIONING_SCRIPT}'; ConvertTo-ArxReleaseVersion -Version '{malformed}'"
     completed = subprocess.run(
-        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+        [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
         capture_output=True,
         text=True,
     )
