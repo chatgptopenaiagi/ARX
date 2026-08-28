@@ -6,7 +6,7 @@ Agent DNA is not a list of claims made by an AI. Its central law is:
 
 > Self-report is not capability. Availability is not resolution; resolution is not permission; permission is not authorization; authorization is not execution; execution is not success; and a scoped success is not a general capability.
 
-This Phase 1 foundation imports evidence. It does not scan agents, execute their output, or decide whether an agent can satisfy a Project DNA requirement.
+Beta 6 established the passive Phase 1 foundation. Beta 7 development Phase 2.0 adds a manual active challenge protocol that prepares bounded fixtures and independently validates receipts and artifacts. It does not launch an agent, execute receipt prose, update an Agent DNA snapshot automatically, or decide whether an agent can satisfy a Project DNA requirement.
 
 ## Phase 0 design analysis
 
@@ -97,8 +97,12 @@ arx agent summary .\codex-capability-baseline.json
 
 The repository schema is `schemas/agent-dna.schema.json` (JSON Schema Draft 2020-12). Agent DNA remains experimental and additive.
 
-## Challenge protocol boundary
+## Active challenge protocol boundary
 
-The future challenge protocol has typed challenge and receipt seams: challenge ID, capability, scope, allowed and forbidden operations, timeout, expected evidence, artifact expectations, result claim, evidence references, and artifact hashes. An adapter only transports a challenge or receipt. ARX must independently validate receipts.
+The experimental `agent-challenge/0.1` protocol has separate challenge, untrusted receipt, and ARX-owned validation records. A challenge fixes its capability, scope, allowed and forbidden operations, timeout, expected evidence, fixture hashes, artifact expectations, and validator. A receipt is an agent claim plus bounded execution observations. It cannot redefine challenge policy or validator rules. ARX validates challenge identity, workspace containment, fixture integrity, actual artifact bytes, sizes and hashes, expected output, reported operations, and timeout consistency.
 
-Phase 1 does not execute arbitrary AI output, implement vendor adapters, or automate challenges. The default security profile remains bounded and read-only where possible, uses disposable workspaces for permitted mutation tests, never exposes credentials, never weakens controls, and never probes destructive capabilities merely because an administrator permission exists.
+`receipt.claimed_state = PASS` is not a validated PASS. Missing or mismatched artifacts fail validation. Every validated result remains scoped to the disposable workspace, agent, machine reference, execution context, policy, and time represented by the run.
+
+The initial `coding-core` catalog covers tiny artifact/workspace writes, PowerShell, Python, local-only Git, C++ compile/execute, and CUDA compile/runtime initialization. Compilation and execution prerequisites remain distinct. Failed compilation blocks binary creation and execution; it does not make them conceptually inapplicable. CUDA compilation and CUDA runtime initialization remain separate capability outcomes.
+
+See [Agent capability challenges](agent-capability-challenges.md) for the manual lifecycle and security contract. Phase 2.0 does not execute arbitrary AI output, implement vendor adapters, activate `vcvars64.bat`, or automate challenges. Dangerous capabilities remain NOT_TESTED.
