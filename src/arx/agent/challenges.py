@@ -21,6 +21,8 @@ from .protocol import (
     ChallengeFixture,
     ChallengeScope,
     ReceiptArtifact,
+    ExecutionProvenanceState,
+    TrustedExecutionObservation,
 )
 
 MAX_DOCUMENT_BYTES = 1024 * 1024
@@ -272,7 +274,39 @@ def _evidence_id(challenge_id: str, code: str, subject: str = "") -> str:
     return EVIDENCE_PREFIX + hashlib.sha256(f"{challenge_id}\x1f{code}\x1f{subject}".encode()).hexdigest()[:20]
 
 
-def validate_challenge_receipt(challenge: AgentCapabilityChallenge, receipt: AgentCapabilityReceipt, *, workspace: str | Path | None = None) -> AgentChallengeValidation:
+def _trusted_observation_valid(
+    observation: TrustedExecutionObservation | None,
+    challenge: AgentCapabilityChallenge,
+    receipt: AgentCapabilityReceipt,
+    actual_hashes: dict[str, str],
+) -> bool:
+    if observation is None:
+        return False
+    sha256 = re.compile(r"^[a-f0-9]{64}$")
+    return (
+        observation.observation_id.startswith("agent-execution-observation:")
+        and observation.challenge_id == challenge.challenge_id
+        and observation.execution_context_reference == receipt.execution_context_reference
+        and observation.evidence_kind is EvidenceKind.OBSERVED
+        and observation.observer.get("name") == "ARX trusted execution observer"
+        and bool(observation.provider_id)
+        and bool(observation.resolved_executable_class)
+        and bool(sha256.fullmatch(observation.command_fingerprint))
+        and bool(sha256.fullmatch(observation.working_directory_fingerprint))
+        and bool(sha256.fullmatch(observation.stdout_sha256))
+        and bool(sha256.fullmatch(observation.stderr_sha256))
+        and observation.exit_code == 0
+        and observation.artifact_hashes == actual_hashes
+    )
+
+
+def validate_challenge_receipt(
+    challenge: AgentCapabilityChallenge,
+    receipt: AgentCapabilityReceipt,
+    *,
+    workspace: str | Path | None = None,
+    trusted_execution_observation: TrustedExecutionObservation | None = None,
+) -> AgentChallengeValidation:
     reasons: list[str] = []
     evidence: list[dict[str, Any]] = []
     root = Path(workspace or challenge.workspace).resolve()
@@ -302,6 +336,7 @@ def validate_challenge_receipt(challenge: AgentCapabilityChallenge, receipt: Age
     artifacts_ok = True
     hashes_ok = True
     receipt_by_path = {item.relative_path: item for item in receipt.artifacts}
+    actual_hashes: dict[str, str] = {}
     for fixture in challenge.fixtures:
         try:
             path = _safe_artifact(root, fixture.relative_path)
@@ -338,6 +373,7 @@ def validate_challenge_receipt(challenge: AgentCapabilityChallenge, receipt: Age
             continue
         data = path.read_bytes()
         digest = _sha256(data)
+        actual_hashes[item.relative_path] = digest
         if len(data) != item.size or digest.lower() != item.sha256.lower():
             hashes_ok = False
             reasons.append("ARTIFACT_RECEIPT_MISMATCH")
@@ -393,9 +429,33 @@ def validate_challenge_receipt(challenge: AgentCapabilityChallenge, receipt: Age
     if receipt.claimed_state is AgentOperationalState.PASS and receipt.exit_code not in {None, 0}:
         expected_output = False
         reasons.append("NONZERO_EXIT_CODE_FOR_PASS_CLAIM")
-    gates = identity and structural and policy and boundary and fixtures_ok and artifacts_ok and unique and hashes_ok and expected_output and timeout_ok and required_evidence
+    outcome_validated = identity and structural and policy and boundary and fixtures_ok and artifacts_ok and unique and hashes_ok and expected_output and timeout_ok and required_evidence
+    execution_family = challenge.family in {"powershell", "python", "git", "cpp", "cuda"}
+    if not execution_family:
+        execution_provenance = ExecutionProvenanceState.NOT_APPLICABLE
+    elif _trusted_observation_valid(trusted_execution_observation, challenge, receipt, actual_hashes):
+        execution_provenance = ExecutionProvenanceState.OBSERVED
+        evidence.append({
+            "id": _evidence_id(challenge.challenge_id, "TRUSTED_EXECUTION_OBSERVED", trusted_execution_observation.observation_id),
+            "kind": EvidenceKind.OBSERVED.value,
+            "source": trusted_execution_observation.observer,
+            "method": "arx-trusted-execution-observation",
+            "observation_ref": trusted_execution_observation.observation_id,
+            "provider_id": trusted_execution_observation.provider_id,
+            "execution_context_reference": trusted_execution_observation.execution_context_reference,
+        })
+    elif receipt.tool_observations or receipt.exit_code is not None or receipt.stdout_summary or receipt.execution_context:
+        execution_provenance = ExecutionProvenanceState.RECEIPT_REPORTED
+    else:
+        execution_provenance = ExecutionProvenanceState.UNKNOWN
     if receipt.claimed_state is AgentOperationalState.PASS:
-        validated = AgentOperationalState.PASS if gates else AgentOperationalState.FAIL
+        if not outcome_validated:
+            validated = AgentOperationalState.FAIL
+        elif execution_family and execution_provenance is not ExecutionProvenanceState.OBSERVED:
+            validated = AgentOperationalState.UNKNOWN
+            reasons.append("PROVIDER_EXECUTION_NOT_INDEPENDENTLY_OBSERVED")
+        else:
+            validated = AgentOperationalState.PASS
     elif receipt.claimed_state is AgentOperationalState.BLOCKED:
         validated = AgentOperationalState.BLOCKED if identity and structural and policy else AgentOperationalState.UNKNOWN
     elif receipt.claimed_state is AgentOperationalState.NOT_TESTED:
@@ -406,10 +466,11 @@ def validate_challenge_receipt(challenge: AgentCapabilityChallenge, receipt: Age
         validated = AgentOperationalState.FAIL if identity and structural else AgentOperationalState.UNKNOWN
     else:
         validated = AgentOperationalState.UNKNOWN
-    execution_family = challenge.family in {"powershell", "python", "git", "cpp", "cuda"}
     uncertainty = []
-    if execution_family:
+    if execution_provenance is ExecutionProvenanceState.RECEIPT_REPORTED:
         uncertainty.append("Process/provider provenance is receipt-reported; ARX independently validated the bounded artifacts and markers.")
+    elif execution_provenance is ExecutionProvenanceState.UNKNOWN:
+        uncertainty.append("Process/provider provenance was not independently observed or established by the receipt.")
     if validated is not AgentOperationalState.PASS:
         uncertainty.append("The operation remains unvalidated outside this challenge scope and context.")
     return AgentChallengeValidation(
@@ -431,6 +492,8 @@ def validate_challenge_receipt(challenge: AgentCapabilityChallenge, receipt: Age
         artifact_hashes_valid=hashes_ok,
         expected_output_valid=expected_output,
         timeout_consistent=timeout_ok,
+        outcome_validated=outcome_validated,
+        execution_provenance=execution_provenance,
         claimed_state=receipt.claimed_state,
         validated_state=validated,
         reason_codes=list(dict.fromkeys(reasons)),
@@ -441,12 +504,23 @@ def validate_challenge_receipt(challenge: AgentCapabilityChallenge, receipt: Age
 
 
 def validation_summary(validation: AgentChallengeValidation) -> str:
-    return "\n".join(["ARX - AGENT CAPABILITY CHALLENGE", "", f"Challenge: {validation.challenge_id}", f"Claimed state: {validation.claimed_state.value}", f"ARX validated state: {validation.validated_state.value}", "Reasons: " + (", ".join(validation.reason_codes) or "none"), "Scope: bounded disposable challenge workspace only"])
+    return "\n".join([
+        "ARX - AGENT CAPABILITY CHALLENGE", "",
+        f"Capability: {validation.capability_id}",
+        f"Challenge: {validation.challenge_id}",
+        f"Agent claimed state: {validation.claimed_state.value}",
+        f"Outcome validation: {'PASS' if validation.outcome_validated else 'FAIL'}",
+        f"Execution provenance: {validation.execution_provenance.value}",
+        f"ARX capability state: {validation.validated_state.value}",
+        "Reasons: " + (", ".join(validation.reason_codes) or "none"),
+        "Scope: bounded disposable workspace / recorded context only",
+    ])
 
 
 def validation_from_dict(raw: dict[str, Any]) -> AgentChallengeValidation:
     value = dict(raw)
     value["claimed_state"] = AgentOperationalState(value["claimed_state"])
     value["validated_state"] = AgentOperationalState(value["validated_state"])
+    value["execution_provenance"] = ExecutionProvenanceState(value["execution_provenance"])
     value["scope"] = ChallengeScope(**value["scope"])
     return AgentChallengeValidation(**value)

@@ -137,10 +137,15 @@ def test_agent_challenge_document_preserves_phase2_security_boundary():
         "Technical permission never supplies authorization",
         "Dangerous tests stay NOT_TESTED",
         "does not activate it",
+        "ARTIFACT VALIDATION != EXECUTION ATTRIBUTION",
+        "RECEIPT-REPORTED PROVIDER != OBSERVED PROVIDER",
+        "execution_provenance = RECEIPT_REPORTED",
+        "Phase 2.1 will add the bounded ARX-owned observer",
     ):
         assert phrase in challenges
     assert "Beta 6 established the passive Phase 1 foundation" in agent_dna
     assert "does not launch an agent" in agent_dna
+    assert "Phase 2.0.1 deliberately tightens attribution" in agent_dna
 
 
 def test_rc_release_notes_preserve_history_and_disclose_manual_limits():

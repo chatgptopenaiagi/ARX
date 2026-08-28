@@ -16,8 +16,14 @@ from arx.agent.challenges import (
     validate_challenge_receipt,
 )
 from arx.agent.models import AgentOperationalState
-from arx.agent.protocol import CHALLENGE_PROTOCOL_VERSION, AgentCapabilityReceipt, ReceiptArtifact
-from arx.core.models import serialize
+from arx.agent.protocol import (
+    CHALLENGE_PROTOCOL_VERSION,
+    AgentCapabilityReceipt,
+    ExecutionProvenanceState,
+    ReceiptArtifact,
+    TrustedExecutionObservation,
+)
+from arx.core.models import EvidenceKind, serialize
 from arx.cli import main
 
 
@@ -55,6 +61,27 @@ def _write_expected(challenge, workspace: Path, *, content: str | None = None):
     return ReceiptArtifact(expected.relative_path, len(data), hashlib.sha256(data).hexdigest())
 
 
+def _trusted_observation(challenge, receipt, artifacts):
+    hashes = {item.relative_path: item.sha256 for item in artifacts}
+    return TrustedExecutionObservation(
+        observation_id="agent-execution-observation:fixture",
+        challenge_id=challenge.challenge_id,
+        provider_id=f"provider:{challenge.family}:fixture",
+        resolved_executable_class=f"trusted-{challenge.family}-provider",
+        command_fingerprint="1" * 64,
+        working_directory_fingerprint="2" * 64,
+        started_at=receipt.started_at,
+        finished_at=receipt.finished_at,
+        exit_code=0,
+        stdout_sha256="3" * 64,
+        stderr_sha256="4" * 64,
+        artifact_hashes=hashes,
+        execution_context_reference=receipt.execution_context_reference,
+        evidence_kind=EvidenceKind.OBSERVED,
+        observer={"name": "ARX trusted execution observer", "version": "fixture"},
+    )
+
+
 def test_catalog_is_small_safe_and_dependency_aware():
     assert set(CATALOG) == {
         "artifact.create", "filesystem.workspace.write", "powershell.execute", "python.execute",
@@ -89,10 +116,95 @@ def test_arx_validates_exact_artifact_instead_of_trusting_pass(tmp_path):
     artifact = _write_expected(challenge, workspace)
     valid = validate_challenge_receipt(challenge, _receipt(challenge, artifacts=[artifact]))
     assert valid.validated_state is AgentOperationalState.PASS
+    assert valid.outcome_validated is True
+    assert valid.execution_provenance is ExecutionProvenanceState.NOT_APPLICABLE
     assert valid.artifact_hashes_valid and valid.expected_output_valid
     assert valid.evidence[0]["kind"] == "observed"
     assert valid.scope.kind == "workspace"
     assert valid.execution_context_reference == "context:fixture"
+
+
+@pytest.mark.parametrize(
+    "capability,content,tool_observations",
+    [
+        ("powershell.execute", None, []),
+        ("python.execute", None, [{"provider_id": "python:fixture", "resolution": "RESOLVED"}]),
+        ("git.local.repository", "fixture-commit-id\n", []),
+        ("cpp.compile", None, []),
+        ("cpp.execute", None, []),
+        ("cuda.compile", None, []),
+        ("cuda.runtime_initialize", "ARX_AGENT_CHALLENGE_CUDA_STATUS=0 DEVICE_COUNT=1\n", []),
+    ],
+)
+def test_execution_outcome_does_not_prove_provider_attribution(tmp_path, capability, content, tool_observations):
+    challenge, workspace = prepare_challenge(capability, workspace_root=tmp_path)
+    artifact = _write_expected(challenge, workspace, content=content)
+    receipt = _receipt(challenge, artifacts=[artifact], tool_observations=tool_observations)
+    result = validate_challenge_receipt(challenge, receipt)
+    assert result.outcome_validated is True
+    assert result.execution_provenance is ExecutionProvenanceState.RECEIPT_REPORTED
+    assert result.validated_state is AgentOperationalState.UNKNOWN
+    assert "PROVIDER_EXECUTION_NOT_INDEPENDENTLY_OBSERVED" in result.reason_codes
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"tool_observations": [{"provider_id": "python:fixture", "resolution": "RESOLVED"}]},
+        {"exit_code": 0},
+        {"stdout_summary": "ARX_AGENT_CHALLENGE_PYTHON_OK"},
+        {"execution_context": {"executor": "python.exe", "working_directory_class": "disposable-workspace"}},
+    ],
+)
+def test_receipt_authored_process_fields_cannot_upgrade_provenance(tmp_path, overrides):
+    challenge, workspace = prepare_challenge("python.execute", workspace_root=tmp_path)
+    artifact = _write_expected(challenge, workspace)
+    defaults = {"tool_observations": [], "exit_code": None, "stdout_summary": "", "execution_context": {}}
+    defaults.update(overrides)
+    receipt = _receipt(challenge, artifacts=[artifact], **defaults)
+    result = validate_challenge_receipt(challenge, receipt)
+    assert result.execution_provenance is ExecutionProvenanceState.RECEIPT_REPORTED
+
+
+def test_absent_execution_provenance_remains_unknown(tmp_path):
+    challenge, workspace = prepare_challenge("powershell.execute", workspace_root=tmp_path)
+    artifact = _write_expected(challenge, workspace)
+    receipt = _receipt(
+        challenge,
+        artifacts=[artifact],
+        execution_context={},
+        tool_observations=[],
+        exit_code=None,
+        stdout_summary="",
+    )
+    result = validate_challenge_receipt(challenge, receipt)
+    assert result.execution_provenance is ExecutionProvenanceState.UNKNOWN
+    assert "not independently observed or established" in result.remaining_uncertainty[0]
+
+
+def test_arx_owned_execution_observation_can_establish_scoped_pass(tmp_path):
+    challenge, workspace = prepare_challenge("python.execute", workspace_root=tmp_path)
+    artifact = _write_expected(challenge, workspace)
+    receipt = _receipt(
+        challenge,
+        artifacts=[artifact],
+        tool_observations=[{"provider_id": "python:fixture", "resolution": "RESOLVED"}],
+    )
+    observation = _trusted_observation(challenge, receipt, [artifact])
+    result = validate_challenge_receipt(
+        challenge,
+        receipt,
+        trusted_execution_observation=observation,
+    )
+    assert result.outcome_validated is True
+    assert result.execution_provenance is ExecutionProvenanceState.OBSERVED
+    assert result.validated_state is AgentOperationalState.PASS
+    assert "PROVIDER_EXECUTION_NOT_INDEPENDENTLY_OBSERVED" not in result.reason_codes
+    assert any(
+        item.get("observation_ref") == observation.observation_id
+        and item["method"] == "arx-trusted-execution-observation"
+        for item in result.evidence
+    )
 
 
 @pytest.mark.parametrize("change,reason", [
@@ -245,4 +357,7 @@ def test_cli_catalog_prepare_validate_and_summary(tmp_path, capsys, monkeypatch)
     assert json.loads(validation_path.read_text())["validated_state"] == "PASS"
     capsys.readouterr()
     assert main(["agent", "challenge", "summarize", str(validation_path)]) == 0
-    assert "ARX validated state: PASS" in capsys.readouterr().out
+    summary = capsys.readouterr().out
+    assert "Outcome validation: PASS" in summary
+    assert "Execution provenance: NOT_APPLICABLE" in summary
+    assert "ARX capability state: PASS" in summary

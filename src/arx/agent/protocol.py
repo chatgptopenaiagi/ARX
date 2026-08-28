@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol
+
+from arx.core.models import EvidenceKind
 
 from .models import AgentOperationalState
 
 
 CHALLENGE_PROTOCOL_VERSION = "agent-challenge/0.1"
+
+
+class ExecutionProvenanceState(str, Enum):
+    OBSERVED = "OBSERVED"
+    RECEIPT_REPORTED = "RECEIPT_REPORTED"
+    UNKNOWN = "UNKNOWN"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
 
 
 @dataclass(frozen=True)
@@ -90,6 +100,25 @@ class AgentCapabilityReceipt:
     reason: str | None = None
 
 
+@dataclass(frozen=True)
+class TrustedExecutionObservation:
+    observation_id: str
+    challenge_id: str
+    provider_id: str
+    resolved_executable_class: str
+    command_fingerprint: str
+    working_directory_fingerprint: str
+    started_at: str
+    finished_at: str
+    exit_code: int
+    stdout_sha256: str
+    stderr_sha256: str
+    artifact_hashes: dict[str, str]
+    execution_context_reference: str
+    evidence_kind: EvidenceKind
+    observer: dict[str, str]
+
+
 @dataclass
 class AgentChallengeValidation:
     protocol_version: str
@@ -110,6 +139,8 @@ class AgentChallengeValidation:
     artifact_hashes_valid: bool
     expected_output_valid: bool
     timeout_consistent: bool
+    outcome_validated: bool
+    execution_provenance: ExecutionProvenanceState
     claimed_state: AgentOperationalState
     validated_state: AgentOperationalState
     reason_codes: list[str]
@@ -131,8 +162,14 @@ def validate_receipt(
     receipt: AgentCapabilityReceipt,
     *,
     workspace: str | Path | None = None,
+    trusted_execution_observation: TrustedExecutionObservation | None = None,
 ) -> AgentChallengeValidation:
     """Validate a receipt and workspace artifacts without executing receipt content."""
     from .challenges import validate_challenge_receipt
 
-    return validate_challenge_receipt(challenge, receipt, workspace=workspace)
+    return validate_challenge_receipt(
+        challenge,
+        receipt,
+        workspace=workspace,
+        trusted_execution_observation=trusted_execution_observation,
+    )

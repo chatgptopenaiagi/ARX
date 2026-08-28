@@ -15,9 +15,20 @@ ARX prepare
   -> independent AgentChallengeValidation
 ```
 
-The receipt's `claimed_state` remains separate from ARX's `validated_state`. A PASS claim with a missing artifact, wrong content, wrong hash, escaped path, changed fixture, policy violation, identity mismatch, or inconsistent timeout is not a validated PASS. Validation establishes only the bounded result in the recorded scope and context; it does not establish universal competence.
+The receipt's `claimed_state` remains separate from ARX's bounded outcome validation, execution provenance, and final `validated_state`. A PASS claim with a missing artifact, wrong content, wrong hash, escaped path, changed fixture, policy violation, identity mismatch, or inconsistent timeout is not a validated PASS. Validation establishes only the bounded result in the recorded scope and context; it does not establish universal competence.
 
-Phase 2.0 deliberately stops at independent validation records. It does not mutate an `AgentDNASnapshot`. Relating validated results to snapshots and eventually to Machine DNA + Project DNA is deferred until real-agent protocol evidence has been reviewed.
+Two rules are explicit in Phase 2.0.1:
+
+```text
+ARTIFACT VALIDATION != EXECUTION ATTRIBUTION
+RECEIPT-REPORTED PROVIDER != OBSERVED PROVIDER
+```
+
+For an artifact-semantic proposition such as `artifact.create`, independently observing the exact authorized path, bytes, size, and SHA-256 can establish PASS. For execution-family propositions (`powershell`, `python`, `git`, `cpp`, and `cuda`), correct artifacts and markers establish a valid bounded outcome, but not which provider or process produced it. Receipt-authored tool observations, exit codes, output summaries, and execution-context labels remain useful claims; none upgrades execution provenance to `OBSERVED`.
+
+An execution-family result requires an ARX-owned trusted execution observation before a validated provider-specific PASS is possible. With a valid outcome but only receipt-reported provenance, ARX reports `execution_provenance = RECEIPT_REPORTED` and `validated_state = UNKNOWN`, not FAIL. Lack of attribution does not erase the real artifact result.
+
+Phase 2.0 introduced challenge, receipt, and independent bounded-outcome validation. Phase 2.0.1 tightens execution attribution before real-agent execution. Phase 2.1 will add the bounded ARX-owned observer that can record provider/process evidence against a real participating agent. This protocol does not mutate an `AgentDNASnapshot`; relating validated results to snapshots and eventually to Machine DNA + Project DNA remains deferred.
 
 ## Challenge identity and fixtures
 

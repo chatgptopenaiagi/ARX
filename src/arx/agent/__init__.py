@@ -12,6 +12,8 @@ from .protocol import (
     AgentCapabilityChallenge,
     AgentCapabilityReceipt,
     AgentChallengeValidation,
+    ExecutionProvenanceState,
+    TrustedExecutionObservation,
 )
 
 __all__ = [
@@ -24,6 +26,8 @@ __all__ = [
     "AgentCapabilityChallenge",
     "AgentCapabilityReceipt",
     "AgentChallengeValidation",
+    "ExecutionProvenanceState",
+    "TrustedExecutionObservation",
     "import_experimental_baseline",
     "load_experimental_baseline",
 ]

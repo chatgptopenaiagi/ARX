@@ -3,7 +3,7 @@
   "$id": "https://github.com/chatgptopenaiagi/ARX/schemas/agent-capability-validation.schema.json",
   "title": "ARX Agent Capability Validation",
   "type": "object",
-  "required": ["protocol_version", "challenge_id", "capability_id", "scope", "agent_reference", "execution_context_reference", "generated_at", "validator", "receipt_structurally_valid", "identity_match", "policy_compliant", "workspace_boundary_valid", "required_evidence_valid", "fixture_integrity_valid", "artifacts_valid", "artifact_hashes_valid", "expected_output_valid", "timeout_consistent", "claimed_state", "validated_state", "reason_codes", "evidence", "limitations", "remaining_uncertainty"],
+  "required": ["protocol_version", "challenge_id", "capability_id", "scope", "agent_reference", "execution_context_reference", "generated_at", "validator", "receipt_structurally_valid", "identity_match", "policy_compliant", "workspace_boundary_valid", "required_evidence_valid", "fixture_integrity_valid", "artifacts_valid", "artifact_hashes_valid", "expected_output_valid", "timeout_consistent", "outcome_validated", "execution_provenance", "claimed_state", "validated_state", "reason_codes", "evidence", "limitations", "remaining_uncertainty"],
   "properties": {
     "protocol_version": {"const": "agent-challenge/0.1"},
     "challenge_id": {"type": "string", "pattern": "^agent-challenge:[a-f0-9]{24}$"},
@@ -18,6 +18,8 @@
     "required_evidence_valid": {"type": "boolean"}, "fixture_integrity_valid": {"type": "boolean"}, "artifacts_valid": {"type": "boolean"},
     "artifact_hashes_valid": {"type": "boolean"}, "expected_output_valid": {"type": "boolean"},
     "timeout_consistent": {"type": "boolean"},
+    "outcome_validated": {"type": "boolean"},
+    "execution_provenance": {"enum": ["OBSERVED", "RECEIPT_REPORTED", "UNKNOWN", "NOT_APPLICABLE"]},
     "claimed_state": {"$ref": "#/$defs/state"}, "validated_state": {"$ref": "#/$defs/state"},
     "reason_codes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
     "evidence": {"type": "array", "items": {"type": "object", "required": ["id", "kind", "source", "method"], "properties": {"id": {"type": "string", "pattern": "^agent-challenge-evidence:"}, "kind": {"enum": ["declared", "observed", "inferred", "unknown"]}}, "additionalProperties": true}},
