@@ -1,6 +1,6 @@
 ARX 4
-ARX 4.0.0 Beta 5
-Package version 4.0.0b5
+ARX 4.0.0 Beta 6
+Package version 4.0.0b6
 
 PURPOSE
 ARX is a read-only project-aware compatibility and resolution engine. It scans
@@ -17,7 +17,7 @@ Extract the complete folder, then double-click ARX.exe. Keep the _internal
 folder beside ARX.exe; it contains the standalone Python/Tk runtime.
 
 INSTALLER DISTRIBUTION
-When ARX is distributed as ARX-Desktop-Setup-win-x64-v4.0.0-b5.exe, the installer provides
+When ARX is distributed as ARX-Desktop-Setup-win-x64-v4.0.0-b6.exe, the installer provides
 Start Menu and uninstall entries, offers an optional desktop shortcut, and can
 launch ARX after an interactive install. The portable extracted-folder workflow
 remains supported. Installer builds are currently unsigned; verify the published

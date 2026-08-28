@@ -1,6 +1,6 @@
 param(
     [string]$PythonExecutable = 'python',
-    [string]$Version = '4.0.0b5'
+    [string]$Version = '4.0.0b6'
 )
 
 $ErrorActionPreference = 'Stop'

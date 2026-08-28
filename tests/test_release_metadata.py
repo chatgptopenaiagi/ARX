@@ -10,8 +10,8 @@ from arx.cli import envelope
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_VERSION = "4.0.0b5"
-ARTIFACT_VERSION = "4.0.0-b5"
+PACKAGE_VERSION = "4.0.0b6"
+ARTIFACT_VERSION = "4.0.0-b6"
 
 
 def _read(relative: str) -> str:
@@ -45,24 +45,24 @@ def test_active_product_and_package_versions_are_consistent():
     }
     assert __version__ == PACKAGE_VERSION
     assert PRODUCT_NAME == "ARX 4"
-    assert RELEASE_NAME == "ARX 4.0.0 Beta 5"
+    assert RELEASE_NAME == "ARX 4.0.0 Beta 6"
     assert envelope()["scanner"]["version"] == PACKAGE_VERSION
 
 
-def test_windows_and_release_surfaces_use_the_beta5_identity():
+def test_windows_and_release_surfaces_use_the_beta6_identity():
     installer = _read("packaging/arx-desktop.iss")
     version_info = _read("packaging/windows-version-info.txt")
     portable_readme = _read("packaging/README.txt")
     readme = _read("README.md")
     changelog = _read("CHANGELOG.md")
-    notes = _read("docs/release-notes-4.0.0-b5.md")
+    notes = _read("docs/release-notes-4.0.0-b6.md")
 
     for content in (installer, version_info, portable_readme, readme, changelog, notes):
         assert PACKAGE_VERSION in content
     for content in (installer, readme, notes):
         assert ARTIFACT_VERSION in content
-    assert "filevers=(4, 0, 0, 5)" in version_info
-    assert "ARX 4.0.0 Beta 5" in portable_readme
+    assert "filevers=(4, 0, 0, 6)" in version_info
+    assert "ARX 4.0.0 Beta 6" in portable_readme
 
 
 def test_application_and_contract_versions_remain_independent():

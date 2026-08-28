@@ -1,12 +1,12 @@
-# ARX 4.0.0 Beta 5
+# ARX 4.0.0 Beta 6
 
-> **Current Featured ARX Release — Beta / GitHub Latest**
+> **Current Featured ARX Release Candidate - Beta / GitHub prerelease**
 
-[View ARX 4.0.0 Beta 5 Release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b5)
+[View ARX 4.0.0 Beta 6 Release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6)
 
-ARX 4.0.0 Beta 5 is a Beta release and is not ARX 4 stable. GitHub designates it Latest so it occupies the repository's current release position.
+ARX 4.0.0 Beta 6 is a Beta release candidate and is not ARX 4 stable. Its GitHub prerelease will be published only after packaged acceptance succeeds.
 
-Package version: `4.0.0b5` · Artifact version: `4.0.0-b5` · Windows version: `4.0.0.5`
+Package version: `4.0.0b6` · Artifact version: `4.0.0-b6` · Windows version: `4.0.0.6`
 
 [![ARX CI](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml)
@@ -18,7 +18,7 @@ Package version: `4.0.0b5` · Artifact version: `4.0.0-b5` · Windows version: `
 
 ARX correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-The current featured development release is **ARX 4.0.0 Beta 5** (`v4.0.0-b5`). The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+The current frozen release candidate is **ARX 4.0.0 Beta 6** (reserved tag `v4.0.0-b6`). The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
@@ -98,7 +98,7 @@ GREEN is deliberately scoped. The current Python readiness vertical verifies int
 
 ## Historical ARX 3 RC installation reference
 
-The instructions in this section are retained for historical ARX 3 RC users. They do not describe the current featured release; use the [ARX 4.0.0 Beta 5 release page](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b5) for the featured Beta and its artifacts.
+The instructions in this section are retained for historical ARX 3 RC users. They do not describe the current release candidate; use the [ARX 4.0.0 Beta 6 release page](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6) after publication for its artifacts.
 
 ARX `3.0.0rc1` was a pre-release. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
 
@@ -221,7 +221,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 
 | Document | Purpose |
 |---|---|
-| [ARX 4.0.0 Beta 5 release notes](docs/release-notes-4.0.0-b5.md) | Layered GPU/CUDA intelligence, packaging, evidence, security, and limitations |
+| [ARX 4.0.0 Beta 6 release notes](docs/release-notes-4.0.0-b6.md) | Agent DNA foundation, execution-context intelligence, GPU hardening, security, and limitations |
 | [ARX 3.0 RC1 release notes](docs/release-notes-3.0.0-rc1.md) | Changes since ARX 2, compatibility, verification, and RC limitations |
 | [Architecture](docs/architecture.md) | Canonical domain, evidence boundaries, path identity, UI lifecycle, and packaging decisions |
 | [Layered GPU and CUDA intelligence](docs/gpu-compute-intelligence.md) | Driver, Toolkit, runtime, framework, resolution, compatibility, and resource semantics |

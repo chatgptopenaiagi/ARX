@@ -1,5 +1,16 @@
 # Changelog
 
+## 4.0.0b6 - 2026-08-28
+- Add the vendor-neutral Agent DNA foundation with contextual capability dimensions, scoped evidence, dependency graphs, policy authorization, calibration, contradictions, interventions, snapshot transitions, and safe Phase 0 import/validation/summary commands.
+- Preserve permission versus authorization and machine-provider presence versus execution-context resolution as independent facts.
+- Model the demonstrated MSVC/CUDA context transition without rewriting the original failures or automatically activating Visual Studio developer environments.
+- Prevent frozen `ARX.exe` from masquerading as Python and select a healthy discovered Python provider for bounded framework probes.
+- Discover and deduplicate standalone TensorRT providers with explicit version provenance and independent native-runtime, development-link, and Python-package roles.
+- Preserve WMI and NVIDIA VRAM observations independently and emit structured source disagreement for safely correlated adapters.
+- Separate CUDA runtime DLLs from import/link libraries and retain honest UNKNOWN results when runtime presence or compatibility is unobserved.
+- Normalize bounded retained Windows diagnostic output across UTF-8, UTF-16, and legacy encodings without NUL interleaving, BOM leakage, or avoidable mojibake.
+- Distinguish installed MSVC/Windows SDK providers, current `cl.exe` resolution, and observed supported developer-environment entry points without mutating the process or system environment.
+
 ## 4.0.0b5 - 2026-08-28
 - Add layered GPU/CUDA Machine DNA that separates NVIDIA hardware, driver-advertised CUDA capability, installed Toolkit providers, runtime libraries, cuDNN, TensorRT, and framework GPU providers.
 - Preserve multiple CUDA Toolkit providers and distinguish the resolved `nvcc` executable from `CUDA_PATH` selection and other available providers.
