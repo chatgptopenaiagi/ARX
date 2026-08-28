@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from arx.agent.assessment import calibration_outcome
+from arx.agent.assessment import calibration_outcome, validate_context_transition
 from arx.agent.importer import (
     AgentDNAImportError,
     import_experimental_baseline,
@@ -15,7 +15,11 @@ from arx.agent.importer import (
     validate_experimental_baseline,
 )
 from arx.agent.models import AgentOperationalState, CalibrationOutcome
-from arx.agent.models import AgentCapabilityStateTransition, AgentContextDescriptor
+from arx.agent.models import (
+    AgentCapabilityStateTransition,
+    AgentContextDescriptor,
+    stable_context_transition_id,
+)
 from arx.core.models import EvidenceKind, serialize
 from arx.cli import main
 
@@ -297,3 +301,98 @@ def test_msvc_cuda_transition_fixture_is_contextual_and_read_only():
     assert transitions["cuda.runtime_initialize"]["before_state"] == "PASS"
     assert fixture["after_context"]["activation"].endswith("invoked by human operator")
     assert fixture["security"]["persistent_environment_modified_by_arx"] is False
+
+
+def test_msvc_cuda_transition_has_stable_identity_and_snapshot_ordering():
+    fixture = json.loads(
+        (Path(__file__).parents[1] / "examples" / "msvc-cuda-context-transition.json").read_text()
+    )
+    before, after = fixture["snapshots"]
+    assert before["sequence"] < after["sequence"]
+    assert before["agent_reference_id"] == after["agent_reference_id"]
+    assert before["machine_reference_id"] == after["machine_reference_id"]
+    expected = stable_context_transition_id(
+        before["id"], after["id"], before["agent_reference_id"], before["machine_reference_id"],
+        list(after["capabilities"]),
+    )
+    assert fixture["id"] == expected
+    assert fixture["ordering"] == "before_then_after"
+
+
+def test_msvc_provider_presence_resolution_and_install_are_independent():
+    fixture = json.loads(
+        (Path(__file__).parents[1] / "examples" / "msvc-cuda-context-transition.json").read_text()
+    )
+    before, after = fixture["snapshots"]
+    assert before["capabilities"]["cpp.compiler.physical_provider"] == "PASS"
+    assert before["capabilities"]["cpp.compiler.resolution"] == "FAIL"
+    assert after["capabilities"]["cpp.compiler.resolution"] == "PASS"
+    assert fixture["software_install_performed"] is False
+    assert fixture["after_context"]["activation"].startswith("supported vcvars64.bat")
+
+
+def test_transition_fixture_redacts_environment_sensitive_values():
+    path = Path(__file__).parents[1] / "examples" / "msvc-cuda-context-transition.json"
+    text = path.read_text()
+    fixture = json.loads(text)
+    assert "C:\\Users\\" not in text
+    assert "Administrator" not in text
+    assert fixture["machine_provider_facts"]["physical_compiler_path"].startswith("%PROGRAMFILES(X86)%")
+    assert fixture["security"]["environment_capture"].startswith("selected marker names only")
+    assert set(fixture["after_context"]["environment_markers"]) == {
+        "PATH", "INCLUDE", "LIB", "VCToolsInstallDir", "WindowsSdkDir"
+    }
+
+
+def _transition_fixture_models():
+    fixture = json.loads(
+        (Path(__file__).parents[1] / "examples" / "msvc-cuda-context-transition.json").read_text()
+    )
+    before = AgentContextDescriptor(**fixture["before_context"])
+    after = AgentContextDescriptor(**fixture["after_context"])
+    before.evidence_kind = EvidenceKind(before.evidence_kind)
+    after.evidence_kind = EvidenceKind(after.evidence_kind)
+    transitions = [
+        AgentCapabilityStateTransition(
+            capability_id=item["capability_id"],
+            before_context_id=item["before_context_id"],
+            before_state=AgentOperationalState(item["before_state"]),
+            after_context_id=item["after_context_id"],
+            after_state=AgentOperationalState(item["after_state"]),
+            interpretation=item["interpretation"],
+            evidence_refs=item["evidence_refs"],
+            blocked_by=item["blocked_by"],
+        )
+        for item in fixture["capability_transitions"]
+    ]
+    return fixture, before, after, transitions
+
+
+def test_blocked_binary_transition_preserves_causal_prerequisites():
+    fixture, before, after, transitions = _transition_fixture_models()
+    by_id = {item.capability_id: item for item in transitions}
+    assert by_id["cpp.binary.created"].before_state is AgentOperationalState.BLOCKED
+    assert by_id["cpp.binary.created"].blocked_by == ["cpp.compile"]
+    assert by_id["cpp.execute"].before_state is AgentOperationalState.BLOCKED
+    assert by_id["cpp.execute"].blocked_by == ["cpp.binary.created"]
+    validate_context_transition(before, after, transitions, capability_ids=set(fixture["snapshots"][1]["capabilities"]))
+
+
+@pytest.mark.parametrize("mutation,match", [
+    (lambda before, after, items: setattr(after, "id", before.id), "must differ"),
+    (lambda before, after, items: setattr(items[0], "before_state", "FAIL"), "canonical operational"),
+    (lambda before, after, items: items[0].evidence_refs.append("cuda.compile"), "non-evidence"),
+    (lambda before, after, items: items.append(items[0]), "duplicate"),
+    (lambda before, after, items: setattr(before, "evidence_kind", "OBSERVED"), "EvidenceKind"),
+])
+def test_transition_validation_rejects_invalid_semantics(mutation, match):
+    fixture, before, after, transitions = _transition_fixture_models()
+    mutation(before, after, transitions)
+    with pytest.raises(ValueError, match=match):
+        validate_context_transition(before, after, transitions, capability_ids=set(fixture["snapshots"][1]["capabilities"]))
+
+
+def test_transition_validation_requires_snapshot_capability_membership():
+    _, before, after, transitions = _transition_fixture_models()
+    with pytest.raises(ValueError, match="does not exist"):
+        validate_context_transition(before, after, transitions, capability_ids={"cpp.compile"})

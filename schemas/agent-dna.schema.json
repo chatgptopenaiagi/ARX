@@ -82,11 +82,17 @@
     },
     "intervention": {
       "type": "object",
-      "required": ["id", "reason", "actor", "before", "action", "after", "effect_on_agent_capability", "scope"],
+      "required": ["id", "reason", "actor", "before", "action", "after", "effect_on_agent_capability", "scope", "ordering"],
       "properties": {
         "before_context": {"anyOf": [{"$ref": "#/$defs/contextDescriptor"}, {"type": "null"}]},
         "after_context": {"anyOf": [{"$ref": "#/$defs/contextDescriptor"}, {"type": "null"}]},
-        "capability_transitions": {"type": "array", "items": {"$ref": "#/$defs/capabilityTransition"}}
+        "capability_transitions": {"type": "array", "items": {"$ref": "#/$defs/capabilityTransition"}},
+        "before_snapshot_id": {"type": ["string", "null"]},
+        "after_snapshot_id": {"type": ["string", "null"]},
+        "agent_reference_id": {"type": ["string", "null"]},
+        "machine_reference_id": {"type": ["string", "null"]},
+        "ordering": {"const": "before_then_after"},
+        "software_install_performed": {"type": ["boolean", "null"]}
       }
     },
     "contextDescriptor": {
@@ -96,11 +102,12 @@
     },
     "capabilityTransition": {
       "type": "object",
-      "required": ["capability_id", "before_context_id", "before_state", "after_context_id", "after_state", "interpretation", "evidence_refs"],
+      "required": ["capability_id", "before_context_id", "before_state", "after_context_id", "after_state", "interpretation", "evidence_refs", "blocked_by"],
       "properties": {
         "before_state": {"$ref": "#/$defs/state"},
         "after_state": {"$ref": "#/$defs/state"},
-        "evidence_refs": {"type": "array", "items": {"type": "string"}}
+        "evidence_refs": {"type": "array", "items": {"type": "string", "pattern": "^agent-evidence:"}},
+        "blocked_by": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
       }
     }
   },

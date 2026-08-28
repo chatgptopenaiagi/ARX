@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import hashlib
 from typing import Any
 
 from arx.core.models import EvidenceKind
@@ -160,6 +161,7 @@ class AgentCapabilityStateTransition:
     after_state: AgentOperationalState
     interpretation: str
     evidence_refs: list[str] = field(default_factory=list)
+    blocked_by: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -176,6 +178,27 @@ class AgentIntervention:
     before_context: AgentContextDescriptor | None = None
     after_context: AgentContextDescriptor | None = None
     capability_transitions: list[AgentCapabilityStateTransition] = field(default_factory=list)
+    before_snapshot_id: str | None = None
+    after_snapshot_id: str | None = None
+    agent_reference_id: str | None = None
+    machine_reference_id: str | None = None
+    ordering: str = "before_then_after"
+    software_install_performed: bool | None = None
+
+
+def stable_context_transition_id(
+    before_snapshot_id: str,
+    after_snapshot_id: str,
+    agent_reference_id: str,
+    machine_reference_id: str,
+    capability_ids: list[str],
+) -> str:
+    """Return a deterministic identity without environment values or other secrets."""
+    payload = "\x1f".join(
+        [before_snapshot_id, after_snapshot_id, agent_reference_id, machine_reference_id, *sorted(capability_ids)]
+    )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+    return f"agent-context-transition:{digest}"
 
 
 @dataclass

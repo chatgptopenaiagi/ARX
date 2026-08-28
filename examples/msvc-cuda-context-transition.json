@@ -1,6 +1,12 @@
 {
-  "id": "operator-intervention:msvc-x64-developer-environment",
+  "id": "agent-context-transition:875fb50cb93069b9",
   "actor": "human-operator",
+  "before_snapshot_id": "snapshot:t0-original-codex-context",
+  "after_snapshot_id": "snapshot:t1-vs-x64-developer-context",
+  "agent_reference_id": "agent:codex-phase0",
+  "machine_reference_id": "machine:phase0-windows-host",
+  "ordering": "before_then_after",
+  "software_install_performed": false,
   "reason": "Test whether the original compiler failures were execution-context resolution failures.",
   "before_context": {
     "id": "context:t0-normal-codex-shell",
@@ -20,20 +26,47 @@
     "visual_studio_build_tools": "18",
     "msvc_toolset": "14.51.36231",
     "compiler_version": "19.51.36256 x64",
-    "windows_sdk": "10.0.26100.0"
+    "windows_sdk": "10.0.26100.0",
+    "physical_compiler_path": "%PROGRAMFILES(X86)%\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\cl.exe",
+    "gpu": "RTX 3050",
+    "compute_capability": "8.6",
+    "driver": "616.56",
+    "driver_cuda_capability": "13.4",
+    "installed_cuda_toolkit": "13.3",
+    "semantic_invariant": "driver CUDA capability != installed CUDA Toolkit"
   },
+  "snapshots": [
+    {
+      "id": "snapshot:t0-original-codex-context",
+      "sequence": 0,
+      "agent_reference_id": "agent:codex-phase0",
+      "machine_reference_id": "machine:phase0-windows-host",
+      "execution_context_id": "context:t0-normal-codex-shell",
+      "capabilities": {"cpp.compiler.physical_provider": "PASS", "cpp.compiler.resolution": "FAIL", "cpp.compile": "FAIL", "cpp.binary.created": "BLOCKED", "cpp.execute": "BLOCKED", "cuda.nvcc_resolution": "PASS", "cuda.compile": "FAIL", "cuda.runtime_initialize": "PASS", "cuda.device_visible": "PASS"}
+    },
+    {
+      "id": "snapshot:t1-vs-x64-developer-context",
+      "sequence": 1,
+      "agent_reference_id": "agent:codex-phase0",
+      "machine_reference_id": "machine:phase0-windows-host",
+      "execution_context_id": "context:t1-vs-x64-developer-environment",
+      "capabilities": {"cpp.compiler.physical_provider": "PASS", "cpp.compiler.resolution": "PASS", "cpp.standard_library.available": "PASS", "cpp.compile": "PASS", "cpp.binary.created": "PASS", "cpp.execute": "PASS", "cuda.source_creation": "PASS", "cuda.nvcc_resolution": "PASS", "cuda.host_compiler.resolution": "PASS", "cuda.compile": "PASS", "cuda.runtime_initialize": "PASS", "cuda.device_visible": "PASS"}
+    }
+  ],
   "capability_transitions": [
-    {"capability_id": "cpp.host_compiler.resolution", "before_context_id": "context:t0-normal-codex-shell", "before_state": "FAIL", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "Installed MSVC provider became resolved through supported developer-environment activation.", "evidence_refs": []},
-    {"capability_id": "cpp.compile", "before_context_id": "context:t0-normal-codex-shell", "before_state": "FAIL", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "C++ compilation passed in T1; T0 remains a valid scoped failure.", "evidence_refs": []},
-    {"capability_id": "cpp.binary.execute", "before_context_id": "context:t0-normal-codex-shell", "before_state": "NOT_APPLICABLE", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "The T1 executable produced ARX_MSVC_OK.", "evidence_refs": []},
-    {"capability_id": "cuda.host_compiler.resolution", "before_context_id": "context:t0-normal-codex-shell", "before_state": "FAIL", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "nvcc resolved its supported MSVC host compiler in T1.", "evidence_refs": []},
-    {"capability_id": "cuda.compile", "before_context_id": "context:t0-normal-codex-shell", "before_state": "FAIL", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "CUDA compilation passed in T1; T0 remains a valid scoped failure.", "evidence_refs": []},
-    {"capability_id": "cuda.runtime_initialize", "before_context_id": "context:t0-normal-codex-shell", "before_state": "PASS", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "Runtime initialization remained available across both contexts.", "evidence_refs": []},
-    {"capability_id": "cuda.device_visible", "before_context_id": "context:t0-normal-codex-shell", "before_state": "PASS", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "One CUDA device remained visible; T1 runtime reported CUDA_STATUS=0.", "evidence_refs": []}
+    {"capability_id": "cpp.compiler.resolution", "before_context_id": "context:t0-normal-codex-shell", "before_state": "FAIL", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "Installed MSVC provider became resolved through supported developer-environment activation.", "evidence_refs": [], "blocked_by": []},
+    {"capability_id": "cpp.compile", "before_context_id": "context:t0-normal-codex-shell", "before_state": "FAIL", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "C++ compilation passed in T1; T0 remains a valid scoped failure.", "evidence_refs": [], "blocked_by": []},
+    {"capability_id": "cpp.binary.created", "before_context_id": "context:t0-normal-codex-shell", "before_state": "BLOCKED", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "No binary could be created in T0 because compilation failed.", "evidence_refs": [], "blocked_by": ["cpp.compile"]},
+    {"capability_id": "cpp.execute", "before_context_id": "context:t0-normal-codex-shell", "before_state": "BLOCKED", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "Execution applied in T0 but was blocked because compilation produced no binary; T1 produced ARX_MSVC_OK.", "evidence_refs": [], "blocked_by": ["cpp.binary.created"]},
+    {"capability_id": "cuda.host_compiler.resolution", "before_context_id": "context:t0-normal-codex-shell", "before_state": "FAIL", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "nvcc resolved its supported MSVC host compiler in T1.", "evidence_refs": [], "blocked_by": []},
+    {"capability_id": "cuda.compile", "before_context_id": "context:t0-normal-codex-shell", "before_state": "FAIL", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "CUDA compilation passed in T1; T0 remains a valid scoped failure.", "evidence_refs": [], "blocked_by": []},
+    {"capability_id": "cuda.runtime_initialize", "before_context_id": "context:t0-normal-codex-shell", "before_state": "PASS", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "Runtime initialization remained available across both contexts.", "evidence_refs": [], "blocked_by": []},
+    {"capability_id": "cuda.device_visible", "before_context_id": "context:t0-normal-codex-shell", "before_state": "PASS", "after_context_id": "context:t1-vs-x64-developer-environment", "after_state": "PASS", "interpretation": "One CUDA device remained visible; T1 runtime reported CUDA_STATUS=0.", "evidence_refs": [], "blocked_by": []}
   ],
   "security": {
     "persistent_environment_modified_by_arx": false,
     "activation_performed_by": "human-operator",
-    "arx_role": "read-only evidence normalization"
+    "arx_role": "read-only evidence normalization",
+    "environment_capture": "selected marker names only; no arbitrary environment values"
   }
 }

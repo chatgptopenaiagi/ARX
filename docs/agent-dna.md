@@ -81,6 +81,8 @@ A failed operation in one shell is not a permanent machine incapability. Phase 0
 
 Agent DNA preserves T0 and T1 as separate context-scoped outcomes using an intervention with explicit before/after context descriptors and per-capability transitions. It does not rewrite T0, describe activation as merely adding `cl.exe` to PATH, or generalize T1 beyond the activated developer environment. Machine DNA owns the installed MSVC/Windows SDK providers; Agent DNA owns whether the agent resolved and used them in each context.
 
+At T0, binary creation and execution are `BLOCKED`, not `NOT_APPLICABLE`: both operations apply, but failed compilation prevents the binary prerequisite. The evidenced chain is `cpp.compile FAIL` → `cpp.binary.created BLOCKED` → `cpp.execute BLOCKED`; at T1 each becomes PASS. `NOT_APPLICABLE` is reserved for a capability that does not apply to the situation.
+
 ARX may safely detect known entry points such as `vcvars64.bat` or `VsDevCmd.bat` and explain a recoverable context transition. Detection does not authorize ARX to activate a shell, mutate persistent environment variables, or execute builds.
 
 ## Import and CLI
