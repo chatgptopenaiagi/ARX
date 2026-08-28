@@ -7,6 +7,12 @@ from .models import (
     AgentOperationalState,
     CalibrationOutcome,
 )
+from .protocol import (
+    CHALLENGE_PROTOCOL_VERSION,
+    AgentCapabilityChallenge,
+    AgentCapabilityReceipt,
+    AgentChallengeValidation,
+)
 
 __all__ = [
     "AgentCapability",
@@ -14,6 +20,10 @@ __all__ = [
     "AgentDNASnapshot",
     "AgentOperationalState",
     "CalibrationOutcome",
+    "CHALLENGE_PROTOCOL_VERSION",
+    "AgentCapabilityChallenge",
+    "AgentCapabilityReceipt",
+    "AgentChallengeValidation",
     "import_experimental_baseline",
     "load_experimental_baseline",
 ]

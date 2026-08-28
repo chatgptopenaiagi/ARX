@@ -1,37 +1,138 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Protocol
+from pathlib import Path
+from typing import Any, Protocol
+
+from .models import AgentOperationalState
+
+
+CHALLENGE_PROTOCOL_VERSION = "agent-challenge/0.1"
+
+
+@dataclass(frozen=True)
+class ChallengeScope:
+    kind: str
+    target: str
+    qualifiers: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ChallengeFixture:
+    relative_path: str
+    size: int
+    sha256: str
+    role: str = "input"
+
+
+@dataclass(frozen=True)
+class ArtifactExpectation:
+    relative_path: str
+    required: bool = True
+    expected_size: int | None = None
+    expected_sha256: str | None = None
+    expected_text: str | None = None
+    executable: bool = False
 
 
 @dataclass
 class AgentCapabilityChallenge:
+    protocol_version: str
     challenge_id: str
     capability_id: str
-    scope: str
+    family: str
+    purpose: str
+    scope: ChallengeScope
+    workspace_id: str
+    workspace: str
     allowed_operations: list[str]
     forbidden_operations: list[str]
     timeout_seconds: int
     expected_evidence: list[str]
-    artifact_expectations: list[str] = field(default_factory=list)
+    artifact_expectations: list[ArtifactExpectation]
+    validator: dict[str, str]
+    fixture_version: str
+    fixtures: list[ChallengeFixture] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    machine_reference: str | None = None
+    execution_context_requirements: dict[str, str] = field(default_factory=dict)
+    safety_profile: str = "bounded-disposable-workspace"
+    producer: dict[str, str] = field(default_factory=lambda: {"name": "ARX"})
+    generated_at: str | None = None
+
+
+@dataclass(frozen=True)
+class ReceiptArtifact:
+    relative_path: str
+    size: int
+    sha256: str
 
 
 @dataclass
 class AgentCapabilityReceipt:
+    protocol_version: str
     challenge_id: str
-    claimed_state: str
+    agent_reference: str
+    execution_context_reference: str
+    execution_context: dict[str, str]
+    claimed_state: AgentOperationalState
+    started_at: str | None
+    finished_at: str | None
+    duration_ms: int | float | None
+    exit_code: int | None
+    stdout_summary: str
+    stderr_summary: str
     evidence_refs: list[str]
-    artifact_hashes: dict[str, str] = field(default_factory=dict)
+    artifacts: list[ReceiptArtifact]
+    performed_operations: list[str] = field(default_factory=list)
+    tool_observations: list[dict[str, str]] = field(default_factory=list)
+    limitations: list[str] = field(default_factory=list)
+    reason: str | None = None
+
+
+@dataclass
+class AgentChallengeValidation:
+    protocol_version: str
+    challenge_id: str
+    capability_id: str
+    scope: ChallengeScope
+    agent_reference: str
+    execution_context_reference: str
+    generated_at: str
+    validator: dict[str, str]
+    receipt_structurally_valid: bool
+    identity_match: bool
+    policy_compliant: bool
+    workspace_boundary_valid: bool
+    required_evidence_valid: bool
+    fixture_integrity_valid: bool
+    artifacts_valid: bool
+    artifact_hashes_valid: bool
+    expected_output_valid: bool
+    timeout_consistent: bool
+    claimed_state: AgentOperationalState
+    validated_state: AgentOperationalState
+    reason_codes: list[str]
+    evidence: list[dict[str, Any]]
+    limitations: list[str] = field(default_factory=list)
+    remaining_uncertainty: list[str] = field(default_factory=list)
 
 
 class AgentAdapter(Protocol):
-    """Future vendor-neutral transport seam; adapters may not validate their own claims."""
+    """Vendor-neutral transport seam; adapters may not validate their own claims."""
 
     def describe(self) -> dict[str, str]: ...
 
     def submit_challenge(self, challenge: AgentCapabilityChallenge) -> AgentCapabilityReceipt: ...
 
 
-def validate_receipt(challenge: AgentCapabilityChallenge, receipt: AgentCapabilityReceipt) -> bool:
-    """Structural validation only; executing arbitrary receipt content is intentionally excluded."""
-    return challenge.challenge_id == receipt.challenge_id and bool(receipt.evidence_refs)
+def validate_receipt(
+    challenge: AgentCapabilityChallenge,
+    receipt: AgentCapabilityReceipt,
+    *,
+    workspace: str | Path | None = None,
+) -> AgentChallengeValidation:
+    """Validate a receipt and workspace artifacts without executing receipt content."""
+    from .challenges import validate_challenge_receipt
+
+    return validate_challenge_receipt(challenge, receipt, workspace=workspace)

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/chatgptopenaiagi/ARX/schemas/agent-capability-receipt.schema.json",
+  "title": "ARX Agent Capability Receipt (untrusted claim)",
+  "type": "object",
+  "required": ["protocol_version", "challenge_id", "agent_reference", "execution_context_reference", "execution_context", "claimed_state", "started_at", "finished_at", "duration_ms", "exit_code", "stdout_summary", "stderr_summary", "evidence_refs", "artifacts", "performed_operations", "tool_observations", "limitations", "reason"],
+  "properties": {
+    "protocol_version": {"const": "agent-challenge/0.1"},
+    "challenge_id": {"type": "string", "pattern": "^agent-challenge:[a-f0-9]{24}$"},
+    "agent_reference": {"type": "string", "minLength": 1, "maxLength": 256},
+    "execution_context_reference": {"type": "string", "minLength": 1, "maxLength": 256},
+    "execution_context": {"type": "object", "minProperties": 1, "propertyNames": {"enum": ["process_architecture", "working_directory_class", "executor", "privilege_class", "provider_resolution", "developer_environment", "policy_profile", "sandbox_profile"]}, "additionalProperties": {"type": "string", "maxLength": 512}},
+    "claimed_state": {"enum": ["PASS", "FAIL", "BLOCKED", "UNKNOWN", "NOT_TESTED", "NOT_APPLICABLE"]},
+    "started_at": {"type": ["string", "null"]}, "finished_at": {"type": ["string", "null"]},
+    "duration_ms": {"type": ["number", "null"], "minimum": 0}, "exit_code": {"type": ["integer", "null"]},
+    "stdout_summary": {"type": "string", "maxLength": 16384}, "stderr_summary": {"type": "string", "maxLength": 16384},
+    "evidence_refs": {"type": "array", "items": {"type": "string", "maxLength": 256}, "maxItems": 64, "uniqueItems": true},
+    "artifacts": {"type": "array", "maxItems": 32, "items": {"type": "object", "required": ["relative_path", "size", "sha256"], "properties": {"relative_path": {"type": "string", "pattern": "^(?!/|[A-Za-z]:|.*\\.\\.).+$"}, "size": {"type": "integer", "minimum": 0, "maximum": 16777216}, "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}}, "additionalProperties": false}},
+    "performed_operations": {"type": "array", "items": {"type": "string"}, "maxItems": 64, "uniqueItems": true},
+    "tool_observations": {"type": "array", "items": {"type": "object", "propertyNames": {"enum": ["provider_id", "provider_path_class", "version", "resolution", "architecture", "source"]}, "additionalProperties": {"type": "string", "maxLength": 512}}, "maxItems": 32},
+    "limitations": {"type": "array", "items": {"type": "string", "maxLength": 1024}, "maxItems": 32},
+    "reason": {"type": ["string", "null"], "maxLength": 2048}
+  },
+  "additionalProperties": false
+}
