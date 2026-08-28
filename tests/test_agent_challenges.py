@@ -122,7 +122,7 @@ def test_hash_and_content_mismatch_are_independent_failures(tmp_path):
     assert "ARTIFACT_RECEIPT_MISMATCH" in result.reason_codes
 
 
-@pytest.mark.parametrize("relative", ["../outside.txt", "C:/outside.txt", "/outside.txt"])
+@pytest.mark.parametrize("relative", ["../outside.txt", "C:/outside.txt", "C:outside.txt", "/outside.txt"])
 def test_artifact_escape_is_rejected(tmp_path, relative):
     challenge, _ = prepare_challenge("artifact.create", workspace_root=tmp_path)
     artifact = ReceiptArtifact(relative, 0, hashlib.sha256(b"").hexdigest())

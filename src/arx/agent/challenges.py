@@ -252,7 +252,7 @@ def load_receipt(path: str | Path) -> AgentCapabilityReceipt:
 
 def _safe_artifact(root: Path, relative: str) -> Path:
     candidate = Path(relative)
-    if candidate.is_absolute() or ".." in candidate.parts or not relative or "\\" in relative:
+    if candidate.is_absolute() or re.match(r"^[A-Za-z]:", relative) or ".." in candidate.parts or not relative or "\\" in relative:
         raise ValueError("ARTIFACT_PATH_ESCAPE")
     resolved = (root / candidate).resolve(strict=False)
     try:
