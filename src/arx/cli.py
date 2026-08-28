@@ -11,6 +11,16 @@ from arx.agent.importer import (
     normalized_dict,
 )
 from arx.agent.summary import summary_text as agent_summary_text
+from arx.agent.challenges import (
+    PROFILES,
+    catalog_summary,
+    load_challenge,
+    load_receipt,
+    prepare_challenge,
+    validation_from_dict,
+    validation_summary,
+)
+from arx.agent.protocol import validate_receipt
 from arx.core.engine import capabilities, compare
 from arx.core.evidence import redact
 from arx.core.models import serialize, utc_now
@@ -84,6 +94,16 @@ def parser():
     for name in ("validate", "import", "summary"):
         command = agent_commands.add_parser(name)
         command.add_argument("baseline", type=Path)
+    challenge = agent_commands.add_parser("challenge", help="prepare and validate bounded capability challenges")
+    challenge_commands = challenge.add_subparsers(dest="challenge_command", required=True)
+    challenge_commands.add_parser("catalog")
+    prepare = challenge_commands.add_parser("prepare")
+    prepare.add_argument("challenge_or_profile")
+    validate = challenge_commands.add_parser("validate")
+    validate.add_argument("challenge", type=Path)
+    validate.add_argument("receipt", type=Path)
+    summarize = challenge_commands.add_parser("summarize")
+    summarize.add_argument("validation", type=Path)
     return root
 
 
@@ -210,22 +230,46 @@ def main(argv=None):
     args = parser().parse_args(argv)
     try:
         if args.command == "agent":
-            baseline = load_experimental_baseline(args.baseline)
-            snapshot = import_experimental_baseline(baseline)
-            data = normalized_dict(snapshot)
-            if args.agent_command == "validate":
-                data = {
-                    "valid": True,
-                    "source_schema": baseline["schema_version"],
-                    "normalized_schema": snapshot.schema_version,
-                    "snapshot_id": snapshot.snapshot_id,
-                    "capability_record_count": len(snapshot.capabilities),
-                }
-                text = json.dumps(data, indent=2)
-            elif args.agent_command == "summary":
-                text = agent_summary_text(snapshot)
+            if args.agent_command == "challenge":
+                if args.challenge_command == "catalog":
+                    data = catalog_summary()
+                    text = json.dumps(data, indent=2)
+                elif args.challenge_command == "prepare":
+                    identifiers = PROFILES.get(args.challenge_or_profile, [args.challenge_or_profile])
+                    prepared = []
+                    for identifier in identifiers:
+                        challenge, workspace = prepare_challenge(identifier)
+                        prepared.append({"capability_id": identifier, "challenge_id": challenge.challenge_id, "workspace": str(workspace), "challenge": str(workspace / "challenge.json")})
+                    data = {"protocol_version": "agent-challenge/0.1", "prepared": prepared}
+                    text = json.dumps(data, indent=2)
+                elif args.challenge_command == "validate":
+                    challenge = load_challenge(args.challenge)
+                    receipt = load_receipt(args.receipt)
+                    validation = validate_receipt(challenge, receipt)
+                    data = serialize(validation)
+                    text = json.dumps(data, indent=2)
+                else:
+                    raw = json.loads(args.validation.read_text(encoding="utf-8"))
+                    validation = validation_from_dict(raw)
+                    data = raw
+                    text = validation_summary(validation)
             else:
-                text = json.dumps(data, indent=2)
+                baseline = load_experimental_baseline(args.baseline)
+                snapshot = import_experimental_baseline(baseline)
+                data = normalized_dict(snapshot)
+                if args.agent_command == "validate":
+                    data = {
+                        "valid": True,
+                        "source_schema": baseline["schema_version"],
+                        "normalized_schema": snapshot.schema_version,
+                        "snapshot_id": snapshot.snapshot_id,
+                        "capability_record_count": len(snapshot.capabilities),
+                    }
+                    text = json.dumps(data, indent=2)
+                elif args.agent_command == "summary":
+                    text = agent_summary_text(snapshot)
+                else:
+                    text = json.dumps(data, indent=2)
         elif args.command == "quick":
             machine = scan_machine(False)
             caps = capabilities(machine)
@@ -266,7 +310,7 @@ def main(argv=None):
             print(f"Report written to {args.output}", file=sys.stderr)
         print(text)
         return 0
-    except (FileNotFoundError, NotADirectoryError, PermissionError, AgentDNAImportError) as exc:
+    except (FileNotFoundError, NotADirectoryError, PermissionError, ValueError, json.JSONDecodeError, AgentDNAImportError) as exc:
         print(f"arx: {exc}", file=sys.stderr)
         return 2
     except KeyboardInterrupt:
