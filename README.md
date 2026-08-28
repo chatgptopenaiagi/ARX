@@ -1,12 +1,12 @@
 # ARX 4.0.0 Beta 6
 
-> **Current Featured ARX Release Candidate - Beta / GitHub prerelease**
+> **Current Featured ARX Release - Beta / GitHub prerelease**
 
 [View ARX 4.0.0 Beta 6 Release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6)
 
-ARX 4.0.0 Beta 6 is a Beta release candidate and is not ARX 4 stable. Its GitHub prerelease will be published only after packaged acceptance succeeds.
+ARX 4.0.0 Beta 6 is the current ARX 4 GitHub Beta prerelease. It is publicly available for evaluation and development feedback and is not ARX 4 stable.
 
-Package version: `4.0.0b6` · Artifact version: `4.0.0-b6` · Windows version: `4.0.0.6`
+Package version: `4.0.0b6` · Artifact version: `4.0.0-b6` · Windows version: `4.0.0.6` · Git tag: `v4.0.0-b6`
 
 [![ARX CI](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml)
@@ -18,7 +18,7 @@ Package version: `4.0.0b6` · Artifact version: `4.0.0-b6` · Windows version: `
 
 ARX correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-The current frozen release candidate is **ARX 4.0.0 Beta 6** (reserved tag `v4.0.0-b6`). The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+The current featured release is **ARX 4.0.0 Beta 6**, published under tag `v4.0.0-b6`. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
@@ -98,7 +98,7 @@ GREEN is deliberately scoped. The current Python readiness vertical verifies int
 
 ## Historical ARX 3 RC installation reference
 
-The instructions in this section are retained for historical ARX 3 RC users. They do not describe the current release candidate; use the [ARX 4.0.0 Beta 6 release page](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6) after publication for its artifacts.
+The instructions in this section are retained for historical ARX 3 RC users. They do not describe the current release; use the [published ARX 4.0.0 Beta 6 release page](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6) for its artifacts.
 
 ARX `3.0.0rc1` was a pre-release. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
 

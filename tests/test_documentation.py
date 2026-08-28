@@ -82,7 +82,8 @@ def test_readme_features_beta6_and_preserves_historical_arx3_material():
 
     for phrase in (
         "# ARX 4.0.0 Beta 6",
-        "Current Featured ARX Release",
+        "Current Featured ARX Release - Beta / GitHub prerelease",
+        "publicly available for evaluation and development feedback",
         "https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6",
         "Historical ARX 3 RC installation reference",
         "Project-Aware Compatibility Intelligence",
@@ -104,6 +105,13 @@ def test_readme_features_beta6_and_preserves_historical_arx3_material():
         "aggregate Definition of Done remains partial",
     ):
         assert phrase in readme
+    for stale_phrase in (
+        "Current Featured ARX Release Candidate",
+        "will be published only after packaged acceptance succeeds",
+        "current frozen release candidate",
+        "reserved tag `v4.0.0-b6`",
+    ):
+        assert stale_phrase not in readme
     for workflow in ("actions/workflows/ci.yml", "actions/workflows/codeql.yml"):
         assert workflow in readme
     for document in (
