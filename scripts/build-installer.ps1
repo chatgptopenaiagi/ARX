@@ -1,5 +1,5 @@
 param(
-    [string]$Version = '3.0.0rc1',
+    [string]$Version = '4.0.0b5',
     [string]$IsccPath
 )
 

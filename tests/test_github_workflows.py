@@ -54,12 +54,13 @@ def test_package_validation_builds_but_normal_ci_never_publishes():
     assert "secrets." not in workflow
 
 
-def test_python_publish_workflow_is_release_controlled_pinned_and_oidc_only():
+def test_python_publish_workflow_is_manually_controlled_pinned_and_oidc_only():
     workflow = _read("publish-pypi.yml")
     actions = ANY_ACTION.findall(workflow)
 
-    assert "types: [published]" in workflow
     assert "workflow_dispatch:" in workflow
+    assert "types: [published]" not in workflow
+    assert "release:" not in workflow
     assert "push:" not in workflow
     assert "pull_request" not in workflow
     assert "pull_request_target" not in workflow

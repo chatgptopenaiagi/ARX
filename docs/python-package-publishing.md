@@ -16,7 +16,7 @@ The PyPI package, portable Windows ZIP, and Inno Setup installer are separate de
 The workflow follows this sequence:
 
 ```text
-published release tag / explicit existing release tag
+explicit existing published release tag
                     |
                     v
        unprivileged build and metadata checks
@@ -62,7 +62,7 @@ The `pypi` GitHub environment should require a maintainer approval. TestPyPI is 
 
 ## Release identity and artifact invariants
 
-Automatic runs accept only a published GitHub Release. A manual run is available for an already published release, such as the RC release that predates the workflow. In either case the workflow:
+Registry publication is never triggered automatically by a GitHub Release. An authorized maintainer must manually dispatch the workflow with an already published release tag. This prevents a GitHub-only release from being uploaded to TestPyPI or PyPI. The workflow then:
 
 1. accepts only a `vX.Y.Z`, `vX.Y.Z-aN`, `vX.Y.Z-bN`, or `vX.Y.Z-rcN` tag;
 2. checks out that tag with full history and verifies that `HEAD` is the tag target;

@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.0.0b5 - 2026-08-28
+- Add layered GPU/CUDA Machine DNA that separates NVIDIA hardware, driver-advertised CUDA capability, installed Toolkit providers, runtime libraries, cuDNN, TensorRT, and framework GPU providers.
+- Preserve multiple CUDA Toolkit providers and distinguish the resolved `nvcc` executable from `CUDA_PATH` selection and other available providers.
+- Add bounded PyTorch, ONNX Runtime GPU, and TensorRT Python probes, including CUDA initialization, device identity, and compute-capability/SM evidence where deterministically available.
+- Detect precise cross-layer contradictions and preserve explicit UNKNOWN results instead of manufacturing compatibility certainty.
+- Recognize static project GPU dependencies and report VRAM feasibility, system-drive pressure, and current RAM pressure independently from compatibility.
+- Integrate structured GPU compute intelligence into JSON reports, Machine DNA summaries, the desktop GPU/AI Compute view, and evidence inspection.
+- Add Beta-aware Windows packaging and shared stable/RC/Beta version normalization for package, artifact, display, and numeric Windows versions.
+- Expand deterministic regression coverage for CUDA semantics, provider resolution, framework-private runtimes, malformed probes, resource pressure, GUI integration, and packaging versions.
+
 ## 3.0.0rc1 - 2026-08-24
 - Present ARX 3 as Project-Aware Compatibility Intelligence across package metadata, CLI text, the Windows application, portable resources, installer metadata, and public documentation.
 - Complete the Windows desktop interaction layer with reusable selectable reports, contextual evidence/path actions, keyboard behavior, responsive background work, cancellation, errors, state handling, and lifecycle cleanup.

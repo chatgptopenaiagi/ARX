@@ -1,21 +1,21 @@
 ; ARX Desktop x64 installer. Build through scripts/build-installer.ps1.
 
 #ifndef MyAppVersion
-  #define MyAppVersion "3.0.0rc1"
+  #define MyAppVersion "4.0.0b5"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "3.0.0.1"
+  #define MyAppFileVersion "4.0.0.5"
 #endif
 #ifndef MyArtifactVersion
-  #define MyArtifactVersion "3.0.0-rc1"
+  #define MyArtifactVersion "4.0.0-b5"
 #endif
 
 #define MyAppName "ARX"
 #ifndef MyAppProductName
-  #define MyAppProductName "ARX 3"
+  #define MyAppProductName "ARX 4"
 #endif
 #ifndef MyAppDisplayName
-  #define MyAppDisplayName "ARX 3.0 Release Candidate 1"
+  #define MyAppDisplayName "ARX 4.0.0 Beta 5"
 #endif
 #define MyAppPublisher "chatgptopenaiagi"
 #define MyAppURL "https://github.com/chatgptopenaiagi/ARX"

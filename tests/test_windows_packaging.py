@@ -35,21 +35,21 @@ def test_installer_uses_real_license_and_complete_windows_entries():
     assert 'Description: "Launch ARX"; Flags: nowait postinstall skipifsilent' in INSTALLER
 
 
-def test_rc_version_and_artifact_identity_are_consistent():
-    assert '#define MyAppVersion "3.0.0rc1"' in INSTALLER
-    assert '#define MyAppFileVersion "3.0.0.1"' in INSTALLER
-    assert '#define MyArtifactVersion "3.0.0-rc1"' in INSTALLER
-    assert '#define MyAppDisplayName "ARX 3.0 Release Candidate 1"' in INSTALLER
+def test_beta5_version_and_artifact_identity_are_consistent():
+    assert '#define MyAppVersion "4.0.0b5"' in INSTALLER
+    assert '#define MyAppFileVersion "4.0.0.5"' in INSTALLER
+    assert '#define MyArtifactVersion "4.0.0-b5"' in INSTALLER
+    assert '#define MyAppDisplayName "ARX 4.0.0 Beta 5"' in INSTALLER
     assert "VersionInfoVersion={#MyAppFileVersion}" in INSTALLER
     assert "VersionInfoProductVersion={#MyAppFileVersion}" in INSTALLER
     assert "OutputBaseFilename=ARX-Desktop-Setup-win-x64-v{#MyArtifactVersion}" in INSTALLER
-    assert "[string]$Version = '3.0.0rc1'" in BUILD_SCRIPT
+    assert "[string]$Version = '4.0.0b5'" in BUILD_SCRIPT
     assert "ARX-Desktop-Setup-win-x64-v$ArtifactVersion.exe" in BUILD_SCRIPT
-    assert "[string]$Version = '3.0.0rc1'" in PACKAGE_SCRIPT
+    assert "[string]$Version = '4.0.0b5'" in PACKAGE_SCRIPT
     assert "ARX-Desktop-win-x64-v$ArtifactVersion.zip" in PACKAGE_SCRIPT
-    assert "StringStruct('ProductName', 'ARX 3')" in VERSION_INFO
-    assert "StringStruct('ProductVersion', '3.0.0rc1')" in VERSION_INFO
-    assert "filevers=(3, 0, 0, 1)" in VERSION_INFO
+    assert "StringStruct('ProductName', 'ARX 4')" in VERSION_INFO
+    assert "StringStruct('ProductVersion', '4.0.0b5')" in VERSION_INFO
+    assert "filevers=(4, 0, 0, 5)" in VERSION_INFO
 
 
 @pytest.mark.parametrize(
@@ -59,6 +59,7 @@ def test_rc_version_and_artifact_identity_are_consistent():
         ("3.0.0rc1", "3.0.0-rc1", "3.0.0.1"),
         ("4.0.0b1", "4.0.0-b1", "4.0.0.1"),
         ("4.0.0b4", "4.0.0-b4", "4.0.0.4"),
+        ("4.0.0b5", "4.0.0-b5", "4.0.0.5"),
     ],
 )
 def test_release_version_normalization(package_version, artifact_version, file_version):
