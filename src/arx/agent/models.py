@@ -104,6 +104,8 @@ class AgentCapability:
     reason_code: str | None = None
     limitations: list[str] = field(default_factory=list)
     dependency_ids: list[str] = field(default_factory=list)
+    source_dependency_ids: list[str] = field(default_factory=list)
+    canonical_dependency_ids: list[str] = field(default_factory=list)
     evidence: list[AgentCapabilityEvidence] = field(default_factory=list)
     started_at: str | None = None
     finished_at: str | None = None
@@ -130,6 +132,7 @@ class AgentContradiction:
     id: str
     code: str
     subject_capability_id: str | None
+    capability_refs: list[str]
     evidence_refs: list[str]
     scope: str
     severity: str

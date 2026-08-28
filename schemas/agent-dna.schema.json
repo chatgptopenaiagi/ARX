@@ -26,7 +26,7 @@
         "unresolved_dependency_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
       }
     },
-    "contradictions": {"type": "array"},
+    "contradictions": {"type": "array", "items": {"$ref": "#/$defs/contradiction"}},
     "interventions": {"type": "array"},
     "calibration": {"type": "object", "required": ["entries", "counts", "note"]},
     "unknowns": {"type": "array", "items": {"type": "string"}},
@@ -59,6 +59,8 @@
           "required": ["declared", "availability", "resolution", "permission", "authorization", "attempt", "execution", "success"]
         },
         "dependency_ids": {"type": "array", "items": {"type": "string"}},
+        "source_dependency_ids": {"type": "array", "items": {"type": "string"}},
+        "canonical_dependency_ids": {"type": "array", "items": {"type": "string"}},
         "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
       },
       "allOf": [{"if": {"properties": {"state": {"const": "PASS"}}}, "then": {"properties": {"scope": {"$ref": "#/$defs/scope"}}}}]
@@ -67,6 +69,16 @@
       "type": "object",
       "required": ["source_id", "target_id", "relation"],
       "properties": {"source_id": {"type": "string"}, "target_id": {"type": "string"}, "relation": {"const": "requires"}}
+    },
+    "contradiction": {
+      "type": "object",
+      "required": ["id", "code", "subject_capability_id", "capability_refs", "evidence_refs", "source_record"],
+      "properties": {
+        "subject_capability_id": {"type": ["string", "null"]},
+        "capability_refs": {"type": "array", "items": {"type": "string"}},
+        "evidence_refs": {"type": "array", "items": {"type": "string", "pattern": "^agent-evidence:"}},
+        "source_record": {"type": "object"}
+      }
     }
   },
   "additionalProperties": false

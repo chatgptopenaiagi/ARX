@@ -126,12 +126,28 @@ def _evidence(capability_id: str, item: dict[str, Any], kind: EvidenceKind) -> l
     return output
 
 
-def _authorization(permission: str) -> str:
+def _authorization(permission: str, explicit: Any = None) -> str:
+    if explicit in {"AUTHORIZED", "AUTHORIZED_BY_CHALLENGE", "AUTHORIZED_BY_POLICY", "AUTHORIZED_BY_HUMAN"}:
+        return "AUTHORIZED"
+    if explicit in {"NOT_AUTHORIZED", "DENIED_BY_POLICY"}:
+        return "NOT_AUTHORIZED"
     upper = permission.upper()
     if "PROHIBITED" in upper or "NOT_AUTHORIZED" in upper:
         return "NOT_AUTHORIZED"
     # Technical permission is never evidence of policy/task authorization.
     return "UNKNOWN"
+
+
+def _permission(permission: str, availability: str) -> str:
+    """Remove policy language from the canonical technical-permission dimension."""
+    upper = permission.upper()
+    if "PROHIBITED" in upper or "NOT_AUTHORIZED" in upper:
+        if availability == "OBSERVED_PERMISSION":
+            return "OBSERVED_AVAILABLE"
+        if availability in {"UNAVAILABLE", "ABSENT"}:
+            return "ABSENT"
+        return "UNKNOWN"
+    return permission
 
 
 def _resolution(identifier: str, availability: str, result: str) -> str:
@@ -179,15 +195,19 @@ def _capability(family: str, item: dict[str, Any]) -> AgentCapability:
     identifier = str(item["id"])
     state = AgentOperationalState(item["status"])
     evidence_kind = EvidenceKind(str(item.get("evidence_kind", "UNKNOWN")).lower())
-    permission = str(item.get("permission", "UNKNOWN"))
+    legacy_permission = str(item.get("permission", "UNKNOWN"))
+    availability = str(item.get("availability", "UNKNOWN"))
+    permission = _permission(legacy_permission, availability)
     execution = str(item.get("execution", "NOT_EXECUTED"))
     result = str(item.get("result", "")) or None
     known = {
         "id", "name", "status", "scope", "declared_state", "availability", "permission",
         "execution", "result", "reason_code", "evidence_kind", "evidence", "started_at",
-        "finished_at", "duration_ms", "dependencies", "limitations",
+        "finished_at", "duration_ms", "dependencies", "limitations", "authorization",
     }
-    dependencies = list(item.get("dependencies", DEPENDENCIES.get(identifier, [])))
+    source_dependencies = [str(value) for value in item.get("dependencies", [])]
+    canonical_dependencies = list(DEPENDENCIES.get(identifier, []))
+    dependencies = list(dict.fromkeys([*source_dependencies, *canonical_dependencies]))
     return AgentCapability(
         id=identifier,
         family=family,
@@ -196,10 +216,10 @@ def _capability(family: str, item: dict[str, Any]) -> AgentCapability:
         scope=_scope(str(item.get("scope", "unspecified"))),
         dimensions=AgentCapabilityDimensions(
             declared=str(item.get("declared_state", "UNKNOWN")),
-            availability=str(item.get("availability", "UNKNOWN")),
-            resolution=_resolution(identifier, str(item.get("availability", "")), result or ""),
+            availability=availability,
+            resolution=_resolution(identifier, availability, result or ""),
             permission=permission,
-            authorization=_authorization(permission),
+            authorization=_authorization(legacy_permission, item.get("authorization")),
             attempt="ATTEMPTED" if execution == "EXECUTED" else "NOT_TESTED",
             execution=execution,
             success="YES" if state is AgentOperationalState.PASS else "NO" if state is AgentOperationalState.FAIL else "UNKNOWN",
@@ -208,19 +228,25 @@ def _capability(family: str, item: dict[str, Any]) -> AgentCapability:
         reason_code=str(item.get("reason_code", "")) or None,
         limitations=[str(value) for value in item.get("limitations", [])],
         dependency_ids=dependencies,
+        source_dependency_ids=source_dependencies,
+        canonical_dependency_ids=canonical_dependencies,
         evidence=_evidence(identifier, item, evidence_kind),
         started_at=item.get("started_at"),
         finished_at=item.get("finished_at"),
         duration_ms=item.get("duration_ms"),
-        extensions={key: item[key] for key in item.keys() - known},
+        extensions={
+            **{key: item[key] for key in item.keys() - known},
+            "source_dimensions": {"permission": legacy_permission, "authorization": item.get("authorization")},
+        },
     )
 
 
 def _contradiction(raw: dict[str, Any], capabilities: dict[str, AgentCapability]) -> AgentContradiction:
     identifier = str(raw.get("id", stable_id("agent-contradiction", raw)))
     refs = [str(value) for value in raw.get("evidence_refs", [])]
-    states = {ref: capabilities[ref].state for ref in refs if ref in capabilities}
-    reasons = {ref: capabilities[ref].reason_code for ref in refs if ref in capabilities}
+    capability_refs = [ref for ref in refs if ref in capabilities]
+    states = {ref: capabilities[ref].state for ref in capability_refs}
+    reasons = {ref: capabilities[ref].reason_code for ref in capability_refs}
     code = "OBSERVED_FACT_CONFLICT"
     if states.get("cuda.toolkit") is AgentOperationalState.PASS and states.get("cuda.compile") is AgentOperationalState.FAIL:
         code = "CUDA_COMPILE_CHAIN_INCOMPLETE"
@@ -230,11 +256,15 @@ def _contradiction(raw: dict[str, Any], capabilities: dict[str, AgentCapability]
         code = "PROVIDER_AVAILABLE_BUT_OPERATION_BLOCKED"
     elif any(state is AgentOperationalState.PASS for state in states.values()) and any(state is AgentOperationalState.FAIL for state in states.values()):
         code = "TOOL_VISIBLE_BUT_UNUSABLE"
+    expanded_refs = list(dict.fromkeys([*capability_refs, *(dependency for ref in capability_refs for dependency in capabilities[ref].dependency_ids)]))
+    evidence_refs = list(dict.fromkeys(evidence.id for ref in capability_refs for evidence in capabilities[ref].evidence))
+    failed_subjects = [ref for ref in capability_refs if capabilities[ref].state in {AgentOperationalState.FAIL, AgentOperationalState.BLOCKED}]
     return AgentContradiction(
         id=identifier,
         code=code,
-        subject_capability_id=None,
-        evidence_refs=refs,
+        subject_capability_id=failed_subjects[0] if len(failed_subjects) == 1 else None,
+        capability_refs=expanded_refs,
+        evidence_refs=evidence_refs,
         scope="phase0-execution-context",
         severity="advisory",
         impact=str(raw.get("summary", "")),

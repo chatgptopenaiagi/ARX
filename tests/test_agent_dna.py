@@ -58,7 +58,8 @@ def baseline():
                 record("cuda.toolkit", result="toolkit 13.3"),
                 record("cuda.nvcc_resolution"),
                 record("cuda.compile", "FAIL", result="cl.exe unresolved"),
-                record("cuda.runtime_initialize"),
+                record("cuda.runtime_initialize", dependencies=[]),
+                record("cuda.device_visible"),
             ],
             "github": [
                 record("github.repository.write_permission", availability="OBSERVED_PERMISSION", execution="NOT_EXECUTED", reason_code="PERMISSION_METADATA_ONLY"),
@@ -96,7 +97,10 @@ def test_graph_preserves_failed_prerequisite_chain(baseline):
     assert ("cpp.compiler_resolution", "cpp.compile") in edges
     assert "cpp.standard_library.available" in snapshot.capability_graph.unresolved_dependency_ids
     assert "cuda.host_compiler.resolution" in snapshot.capability_graph.unresolved_dependency_ids
-    assert ("cuda.runtime_initialize", "cuda.device_visible") not in edges
+    assert ("cuda.runtime_initialize", "cuda.device_visible") in edges
+    runtime = next(item for item in snapshot.capabilities if item.id == "cuda.runtime_initialize")
+    assert runtime.source_dependency_ids == []
+    assert runtime.canonical_dependency_ids == ["cuda.driver_capability", "cuda.runtime.provider"]
 
 
 def test_unknown_prediction_resolved_by_pass():
@@ -116,6 +120,41 @@ def test_permission_does_not_imply_authorization(baseline):
     item = next(item for item in snapshot.capabilities if item.id == "cuda.toolkit")
     assert item.dimensions.permission == "PERMITTED"
     assert item.dimensions.authorization == "UNKNOWN"
+
+
+def test_legacy_policy_marker_is_not_canonical_permission(baseline):
+    snapshot = import_experimental_baseline(baseline)
+    push = next(item for item in snapshot.capabilities if item.id == "github.push")
+    assert push.dimensions.permission == "OBSERVED_AVAILABLE"
+    assert push.dimensions.authorization == "NOT_AUTHORIZED"
+    assert push.extensions["source_dimensions"]["permission"] == "PROHIBITED_BY_EXPERIMENT"
+
+
+def test_unknown_permission_can_still_be_not_authorized(baseline):
+    push = next(item for item in baseline["capability_families"]["github"] if item["id"] == "github.push")
+    push["availability"] = "UNKNOWN"
+    snapshot = import_experimental_baseline(baseline)
+    canonical = next(item for item in snapshot.capabilities if item.id == "github.push")
+    assert canonical.dimensions.permission == "UNKNOWN"
+    assert canonical.dimensions.authorization == "NOT_AUTHORIZED"
+
+
+def test_technical_permission_absent(baseline):
+    push = next(item for item in baseline["capability_families"]["github"] if item["id"] == "github.push")
+    push.update(availability="UNAVAILABLE", permission="PROHIBITED_BY_EXPERIMENT")
+    snapshot = import_experimental_baseline(baseline)
+    canonical = next(item for item in snapshot.capabilities if item.id == "github.push")
+    assert canonical.dimensions.permission == "ABSENT"
+    assert canonical.dimensions.authorization == "NOT_AUTHORIZED"
+
+
+def test_authorized_challenge_with_permission_present(baseline):
+    push = next(item for item in baseline["capability_families"]["github"] if item["id"] == "github.push")
+    push.update(availability="OBSERVED_PERMISSION", permission="PERMITTED", authorization="AUTHORIZED_BY_CHALLENGE")
+    snapshot = import_experimental_baseline(baseline)
+    canonical = next(item for item in snapshot.capabilities if item.id == "github.push")
+    assert canonical.dimensions.permission == "PERMITTED"
+    assert canonical.dimensions.authorization == "AUTHORIZED"
 
 
 def test_graph_cycle_rejected():
@@ -152,8 +191,13 @@ def test_contradiction_subject_and_evidence_domains_are_separate(baseline):
     snapshot = import_experimental_baseline(baseline)
     contradiction = snapshot.contradictions[0]
     assert contradiction.code == "CUDA_COMPILE_CHAIN_INCOMPLETE"
-    assert contradiction.subject_capability_id is None
-    assert contradiction.evidence_refs == ["cuda.toolkit", "cuda.compile"]
+    assert contradiction.subject_capability_id == "cuda.compile"
+    assert "cuda.toolkit" in contradiction.capability_refs
+    assert "cuda.compile" in contradiction.capability_refs
+    assert "cuda.host_compiler.resolution" in contradiction.capability_refs
+    assert contradiction.evidence_refs
+    assert all(value.startswith("agent-evidence:") for value in contradiction.evidence_refs)
+    assert not set(contradiction.evidence_refs) & set(contradiction.capability_refs)
     assert contradiction.source_record["summary"] == "visible but unusable"
 
 
