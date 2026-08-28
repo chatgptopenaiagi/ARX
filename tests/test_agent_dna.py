@@ -15,6 +15,8 @@ from arx.agent.importer import (
     validate_experimental_baseline,
 )
 from arx.agent.models import AgentOperationalState, CalibrationOutcome
+from arx.agent.models import AgentCapabilityStateTransition, AgentContextDescriptor
+from arx.core.models import EvidenceKind, serialize
 from arx.cli import main
 
 
@@ -262,3 +264,36 @@ def test_real_phase0_baseline_imports_when_available():
     assert snapshot.summary["status_counts"] == {
         "BLOCKED": 1, "FAIL": 10, "NOT_APPLICABLE": 3, "NOT_TESTED": 8, "PASS": 102, "UNKNOWN": 5
     }
+
+
+def test_context_transition_preserves_before_and_after_results():
+    before = AgentContextDescriptor(
+        "context:t0", "normal shell", "inherited process environment", evidence_kind=EvidenceKind.OBSERVED
+    )
+    after = AgentContextDescriptor(
+        "context:t1", "VS x64 developer environment", "vcvars64.bat",
+        ["PATH", "INCLUDE", "LIB", "VCToolsInstallDir", "WindowsSdkDir"], EvidenceKind.OBSERVED,
+    )
+    transition = AgentCapabilityStateTransition(
+        "cuda.compile", before.id, AgentOperationalState.FAIL,
+        after.id, AgentOperationalState.PASS,
+        "Provider resolution changed with execution context.",
+    )
+    value = serialize(transition)
+    assert value["before_state"] == "FAIL"
+    assert value["after_state"] == "PASS"
+    assert before.id != after.id
+
+
+def test_msvc_cuda_transition_fixture_is_contextual_and_read_only():
+    fixture = json.loads(
+        (Path(__file__).parents[1] / "examples" / "msvc-cuda-context-transition.json").read_text()
+    )
+    transitions = {item["capability_id"]: item for item in fixture["capability_transitions"]}
+    assert transitions["cpp.compile"]["before_state"] == "FAIL"
+    assert transitions["cpp.compile"]["after_state"] == "PASS"
+    assert transitions["cuda.compile"]["before_state"] == "FAIL"
+    assert transitions["cuda.compile"]["after_state"] == "PASS"
+    assert transitions["cuda.runtime_initialize"]["before_state"] == "PASS"
+    assert fixture["after_context"]["activation"].endswith("invoked by human operator")
+    assert fixture["security"]["persistent_environment_modified_by_arx"] is False

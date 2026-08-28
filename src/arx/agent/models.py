@@ -143,6 +143,26 @@ class AgentContradiction:
 
 
 @dataclass
+class AgentContextDescriptor:
+    id: str
+    label: str
+    activation: str
+    environment_markers: list[str] = field(default_factory=list)
+    evidence_kind: EvidenceKind = EvidenceKind.OBSERVED
+
+
+@dataclass
+class AgentCapabilityStateTransition:
+    capability_id: str
+    before_context_id: str
+    before_state: AgentOperationalState
+    after_context_id: str
+    after_state: AgentOperationalState
+    interpretation: str
+    evidence_refs: list[str] = field(default_factory=list)
+
+
+@dataclass
 class AgentIntervention:
     id: str
     timestamp: str | None
@@ -153,6 +173,9 @@ class AgentIntervention:
     after: dict[str, Any]
     effect_on_agent_capability: str
     scope: str
+    before_context: AgentContextDescriptor | None = None
+    after_context: AgentContextDescriptor | None = None
+    capability_transitions: list[AgentCapabilityStateTransition] = field(default_factory=list)
 
 
 @dataclass

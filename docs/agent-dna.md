@@ -75,6 +75,14 @@ Calibration is a categorical comparison between declaration and observation, nev
 
 Snapshots include identity, generation time, agent identity, execution context, policy, and an optional Machine DNA reference. Operator interventions preserve before/action/after/effect data. This permits later comparison without building a temporal database or erasing earlier observations.
 
+### Supported developer-environment transitions
+
+A failed operation in one shell is not a permanent machine incapability. Phase 0 follow-up established this with an installed Visual Studio Build Tools provider. In the original Codex process, `cl.exe` was unresolved, so C++ and CUDA compilation correctly failed while CUDA runtime initialization passed. After the human activated the supported x64 Visual Studio developer environment through `vcvars64.bat`, the coordinated `PATH`, `INCLUDE`, `LIB`, `VCToolsInstallDir`, and `WindowsSdkDir` environment resolved MSVC, C++ compilation and execution passed, and CUDA compilation and runtime execution passed.
+
+Agent DNA preserves T0 and T1 as separate context-scoped outcomes using an intervention with explicit before/after context descriptors and per-capability transitions. It does not rewrite T0, describe activation as merely adding `cl.exe` to PATH, or generalize T1 beyond the activated developer environment. Machine DNA owns the installed MSVC/Windows SDK providers; Agent DNA owns whether the agent resolved and used them in each context.
+
+ARX may safely detect known entry points such as `vcvars64.bat` or `VsDevCmd.bat` and explain a recoverable context transition. Detection does not authorize ARX to activate a shell, mutate persistent environment variables, or execute builds.
+
 ## Import and CLI
 
 Phase 1 safely imports `agent-dna-experiment/0.1`. Import is bounded to 8 MiB and 5,000 capabilities, parses JSON without executing it, rejects invalid structure/statuses/duplicate IDs, and redacts private roots in normalized output. Unknown input fields may survive only as bounded extensions; they cannot redefine canonical semantics.
