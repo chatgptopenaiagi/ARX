@@ -1,9 +1,13 @@
 # ARX 4.0.0 Beta 5
 
-Package version: `4.0.0b5`  
-Artifact version: `4.0.0-b5`  
-Windows file/product version: `4.0.0.5`  
-Git tag: `v4.0.0-b5`  
+Package version: `4.0.0b5`
+
+Artifact version: `4.0.0-b5`
+
+Windows file/product version: `4.0.0.5`
+
+Git tag: `v4.0.0-b5`
+
 Release channel: **Beta / GitHub Latest; not ARX 4 stable**
 
 ARX 4.0.0 Beta 5 rebuilds GPU and CUDA compatibility intelligence around a layered, evidence-backed provider model. ARX no longer treats CUDA as one installed/not-installed fact. The compatibility chain now keeps NVIDIA GPU hardware, the NVIDIA driver, the driver-advertised CUDA capability, installed CUDA Toolkit providers, resolved `nvcc`, CUDA runtime libraries, cuDNN, TensorRT, framework GPU providers, GPU compute capability/SM, project requirements, and resource feasibility distinct.
