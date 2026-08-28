@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/chatgptopenaiagi/ARX/schemas/agent-dna.schema.json",
+  "title": "ARX Agent DNA Snapshot (experimental)",
+  "type": "object",
+  "required": ["schema_version", "snapshot_id", "producer", "generated_at", "agent", "machine_reference", "execution_context", "policy", "capabilities", "capability_graph", "contradictions", "interventions", "calibration", "unknowns", "summary"],
+  "properties": {
+    "schema_version": {"const": "agent-dna/0.1"},
+    "snapshot_id": {"type": "string", "pattern": "^agent-dna-snapshot:"},
+    "producer": {"type": "object", "required": ["name", "version", "source_schema"]},
+    "generated_at": {"type": "string"},
+    "agent": {"type": "object", "required": ["name"]},
+    "machine_reference": {"type": "object", "required": ["status"]},
+    "execution_context": {"type": "object"},
+    "policy": {"type": "object", "required": ["profile", "mutation_boundary", "remote_mutation", "dangerous_probes"]},
+    "capabilities": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/capability"}
+    },
+    "capability_graph": {
+      "type": "object",
+      "required": ["node_ids", "edges", "unresolved_dependency_ids"],
+      "properties": {
+        "node_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}},
+        "unresolved_dependency_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "contradictions": {"type": "array"},
+    "interventions": {"type": "array"},
+    "calibration": {"type": "object", "required": ["entries", "counts", "note"]},
+    "unknowns": {"type": "array", "items": {"type": "string"}},
+    "summary": {"type": "object", "required": ["capability_record_count", "status_counts"]},
+    "extensions": {"type": "object"}
+  },
+  "$defs": {
+    "state": {"enum": ["PASS", "FAIL", "UNKNOWN", "NOT_TESTED", "NOT_APPLICABLE", "BLOCKED"]},
+    "scope": {
+      "type": "object",
+      "required": ["kind", "target"],
+      "properties": {"kind": {"type": "string", "minLength": 1}, "target": {"type": "string", "minLength": 1}, "qualifiers": {"type": "object"}}
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["id", "kind", "source", "method"],
+      "properties": {"kind": {"enum": ["declared", "observed", "inferred", "unknown"]}}
+    },
+    "capability": {
+      "type": "object",
+      "required": ["id", "family", "name", "state", "scope", "dimensions", "evidence"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "family": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "state": {"$ref": "#/$defs/state"},
+        "scope": {"$ref": "#/$defs/scope"},
+        "dimensions": {
+          "type": "object",
+          "required": ["declared", "availability", "resolution", "permission", "authorization", "attempt", "execution", "success"]
+        },
+        "dependency_ids": {"type": "array", "items": {"type": "string"}},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
+      },
+      "allOf": [{"if": {"properties": {"state": {"const": "PASS"}}}, "then": {"properties": {"scope": {"$ref": "#/$defs/scope"}}}}]
+    },
+    "edge": {
+      "type": "object",
+      "required": ["source_id", "target_id", "relation"],
+      "properties": {"source_id": {"type": "string"}, "target_id": {"type": "string"}, "relation": {"const": "requires"}}
+    }
+  },
+  "additionalProperties": false
+}

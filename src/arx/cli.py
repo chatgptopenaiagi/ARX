@@ -4,6 +4,13 @@ import sys
 from pathlib import Path
 
 from arx import PRODUCT_NAME, __version__
+from arx.agent.importer import (
+    AgentDNAImportError,
+    import_experimental_baseline,
+    load_experimental_baseline,
+    normalized_dict,
+)
+from arx.agent.summary import summary_text as agent_summary_text
 from arx.core.engine import capabilities, compare
 from arx.core.evidence import redact
 from arx.core.models import serialize, utc_now
@@ -72,6 +79,11 @@ def parser():
     for name in ("project", "resolve", "preflight"):
         command = subcommands.add_parser(name)
         command.add_argument("path")
+    agent = subcommands.add_parser("agent", help="validate and normalize Agent DNA evidence")
+    agent_commands = agent.add_subparsers(dest="agent_command", required=True)
+    for name in ("validate", "import", "summary"):
+        command = agent_commands.add_parser(name)
+        command.add_argument("baseline", type=Path)
     return root
 
 
@@ -197,7 +209,24 @@ def preflight_text(report, *, resolution_only=False):
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
-        if args.command == "quick":
+        if args.command == "agent":
+            baseline = load_experimental_baseline(args.baseline)
+            snapshot = import_experimental_baseline(baseline)
+            data = normalized_dict(snapshot)
+            if args.agent_command == "validate":
+                data = {
+                    "valid": True,
+                    "source_schema": baseline["schema_version"],
+                    "normalized_schema": snapshot.schema_version,
+                    "snapshot_id": snapshot.snapshot_id,
+                    "capability_record_count": len(snapshot.capabilities),
+                }
+                text = json.dumps(data, indent=2)
+            elif args.agent_command == "summary":
+                text = agent_summary_text(snapshot)
+            else:
+                text = json.dumps(data, indent=2)
+        elif args.command == "quick":
             machine = scan_machine(False)
             caps = capabilities(machine)
             data = envelope(machine=machine)
@@ -237,7 +266,7 @@ def main(argv=None):
             print(f"Report written to {args.output}", file=sys.stderr)
         print(text)
         return 0
-    except (FileNotFoundError, NotADirectoryError, PermissionError) as exc:
+    except (FileNotFoundError, NotADirectoryError, PermissionError, AgentDNAImportError) as exc:
         print(f"arx: {exc}", file=sys.stderr)
         return 2
     except KeyboardInterrupt:
