@@ -6,7 +6,7 @@ ARX never reduces NVIDIA compute readiness to “CUDA installed: yes.” Machine
 2. NVIDIA driver health and `nvidia-smi` resolution
 3. the CUDA API/runtime ceiling advertised by the driver
 4. independently discovered CUDA Toolkit providers and the `nvcc` that resolves in the current environment
-5. CUDA runtime-library providers, including their global or framework-private scope
+5. CUDA runtime-library providers, kept distinct from development import/link libraries
 6. independent cuDNN and TensorRT providers
 7. framework builds and actual backend initialization
 8. GPU compute-capability coverage when the framework reports its compiled architectures
@@ -18,7 +18,15 @@ The CUDA version printed by `nvidia-smi` is a driver compatibility level. It is 
 
 Multiple CUDA Toolkits are normal. ARX preserves every provider, the provider selected by `CUDA_PATH`, and the provider reached by command resolution. A difference becomes a precise contradiction only when it creates ambiguity or breaks a required relationship. ARX does not automatically remove, reinstall, or reconfigure providers.
 
-Trusted probes use fixed executable paths and argument arrays, `shell=False`, timeouts, bounded UTF-8 output, and explicit failure states. The framework probe runs through the selected trusted Python with isolated interpreter flags. It checks only recognized PyTorch, ONNX Runtime, and TensorRT APIs and never imports project code.
+Runtime-loadable DLLs and development import/link libraries are different facts. A `.lib` such as `cudart.lib` does not prove that a CUDA runtime DLL is present or usable. The same classification applies to bounded cuDNN and TensorRT inventories. Standalone TensorRT roots may be discovered from explicit environment values, relevant `PATH` entries, or bounded NVIDIA AI installation roots; discovery sources are retained and normalized roots are deduplicated. Version evidence from a directory such as `TensorRT-11.2.1.2` identifies the provider but does not establish compatibility.
+
+A frozen ARX desktop executable is never used as a Python interpreter. Framework probes select a healthy discovered Python provider, exclude unhealthy WindowsApps aliases, and report the exact tested environment. Absence in that provider is not global absence; when no usable provider exists the probe remains not tested.
+
+Machine DNA distinguishes an installed MSVC provider and physical `cl.exe` from command resolution in the current process. A discovered `vcvars64.bat` or `VsDevCmd.bat` can support a read-only explanation of a recoverable Visual Studio developer context, but ARX does not activate it or mutate the environment. Thus provider presence is not current resolution, and current-context failure is not permanent machine incapability.
+
+Trusted probes use fixed executable paths and argument arrays, `shell=False`, timeouts, bounded retained/report output, and explicit failure states. Captured bytes are normalized for UTF-8, UTF-16, and bounded Windows legacy output; the current subprocess wrapper does not claim streaming-bounded OS pipe capture. The framework probe runs through the selected trusted Python with isolated interpreter flags. It checks only recognized PyTorch, ONNX Runtime, and TensorRT APIs and never imports project code.
+
+When Windows and healthy NVIDIA tooling report materially different VRAM values for a safely correlated NVIDIA adapter, both observations remain evidence and ARX emits `GPU_VRAM_SOURCE_DISAGREEMENT`. This is source disagreement, not a hardware-fault diagnosis; WMI `AdapterRAM` can be limited or unreliable for modern adapters.
 
 ## Independent verdict dimensions
 

@@ -2,6 +2,7 @@ import json, os, platform, re, shutil, subprocess
 from pathlib import Path
 from arx.core.evidence import safe_environment
 from arx.core.models import Evidence, EvidenceKind, ToolRecord, utc_now
+from arx.core.subprocess import run_bounded
 from arx.machine.gpu_compute import analyze_resources, detect_gpu_compute
 
 PROBES={
@@ -16,9 +17,9 @@ def probe(name, spec, timeout=5):
     path=shutil.which(spec[0]) or _known_tool_path(name)
     if not path: return ToolRecord(name,False,evidence=[Evidence(EvidenceKind.OBSERVED,"PATH","not found","shutil.which")])
     try:
-        p=subprocess.run([path,*spec[1:]],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
-        output=(p.stdout+"\n"+p.stderr).strip(); match=re.search(r"(?<!\d)(\d+(?:\.\d+){1,3}(?:[-+._a-zA-Z0-9]*)?)",output)
-        return ToolRecord(name,p.returncode==0,match.group(1) if match else None,path,[Evidence(EvidenceKind.OBSERVED,path,(output.splitlines() or [f"exit {p.returncode}"])[0][:300],"safe version probe")],confidence=1 if p.returncode==0 else .7,notes=[] if p.returncode==0 else [f"exit {p.returncode}"])
+        p=run_bounded([path,*spec[1:]],timeout=timeout,limit=64*1024,runner=subprocess.run)
+        output=(p["stdout"]+"\n"+p["stderr"]).strip(); match=re.search(r"(?<!\d)(\d+(?:\.\d+){1,3}(?:[-+._a-zA-Z0-9]*)?)",output)
+        return ToolRecord(name,p["returncode"]==0,match.group(1) if match else None,path,[Evidence(EvidenceKind.OBSERVED,path,(output.splitlines() or [f"exit {p['returncode']}"])[0][:300],"safe version probe")],confidence=1 if p["returncode"]==0 else .7,notes=[] if p["returncode"]==0 else [f"exit {p['returncode']}"])
     except (OSError,subprocess.TimeoutExpired) as exc:
         return ToolRecord(name,True,path=path,evidence=[Evidence(EvidenceKind.UNKNOWN,path,type(exc).__name__,"safe version probe",.5)],confidence=.5,notes=["probe failed"])
 
@@ -109,6 +110,33 @@ def discover_dotnet_runtimes(timeout=8):
         return records
     except (OSError,subprocess.TimeoutExpired):return []
 
+def discover_msvc():
+    """Bounded physical-provider and current-context inventory; never activates a shell."""
+    base=Path(os.environ.get("ProgramFiles(x86)",r"C:\Program Files (x86)"))/"Microsoft Visual Studio"
+    providers=[]
+    if base.is_dir():
+        try: editions=[item for version in list(base.iterdir())[:32] if version.is_dir() for item in list(version.iterdir())[:32] if item.is_dir()]
+        except OSError: editions=[]
+        for installation in editions:
+            tools=installation/"VC"/"Tools"/"MSVC"
+            try: versions=sorted((item for item in tools.iterdir() if item.is_dir()),reverse=True)[:8] if tools.is_dir() else []
+            except OSError: versions=[]
+            for toolset in versions:
+                compiler=toolset/"bin"/"Hostx64"/"x64"/"cl.exe"
+                if compiler.is_file(): providers.append({"installation_root":str(installation),"toolset_version":toolset.name,"compiler_path":str(compiler),"architecture":"x64","evidence":[Evidence(EvidenceKind.OBSERVED,"Visual Studio bounded installation roots",str(compiler),"physical file presence")]})
+    resolved=shutil.which("cl.exe") or shutil.which("cl")
+    selected=providers[0] if providers else None
+    installation=Path(selected["installation_root"]) if selected else None
+    vcvars=installation/"VC"/"Auxiliary"/"Build"/"vcvars64.bat" if installation else None
+    vsdev=installation/"Common7"/"Tools"/"VsDevCmd.bat" if installation else None
+    sdk_root=Path(os.environ.get("WindowsSdkDir",r"C:\Program Files (x86)\Windows Kits\10"))
+    include=sdk_root/"Include"
+    try: sdk_versions=sorted((item.name for item in include.iterdir() if item.is_dir()),reverse=True)[:16] if include.is_dir() else []
+    except OSError: sdk_versions=[]
+    active=bool(os.environ.get("VCToolsInstallDir") and os.environ.get("WindowsSdkDir"))
+    entry=next((str(item) for item in (vcvars,vsdev) if item and item.is_file()),None)
+    return {"provider_installed":bool(providers),"providers":providers,"current_resolution":{"resolved":bool(resolved),"path":resolved},"developer_environment":{"observed_active":active,"selected_markers":{"VCToolsInstallDir":bool(os.environ.get("VCToolsInstallDir")),"WindowsSdkDir":bool(os.environ.get("WindowsSdkDir")),"INCLUDE":bool(os.environ.get("INCLUDE")),"LIB":bool(os.environ.get("LIB"))}},"developer_environment_entry_point":{"available":bool(entry),"path":entry,"automatic_activation":False},"windows_sdk":{"root":str(sdk_root),"versions":sdk_versions,"selected_version":next((value for value in sdk_versions if str(sdk_root/value).casefold() in os.environ.get("INCLUDE","").casefold()),None)},"recoverable_context":"Visual Studio x64 Developer Environment" if entry else None}
+
 def _ps(script,timeout=15):
     exe=shutil.which("pwsh") or shutil.which("powershell")
     if not exe:return None
@@ -124,9 +152,10 @@ def scan_machine(deep=True):
     os_info=_ps("Get-CimInstance Win32_OperatingSystem|Select Caption,Version,BuildNumber,OSArchitecture|ConvertTo-Json -Compress") or {}
     gpu=_ps("Get-CimInstance Win32_VideoController|Select Name,PNPDeviceID,AdapterRAM,DriverVersion,VideoProcessor|ConvertTo-Json -Compress") if deep else None
     storage=_ps("Get-Volume|Where DriveLetter|Select DriveLetter,FileSystem,Size,SizeRemaining,DriveType|ConvertTo-Json -Compress") if deep else None
+    python_installations=discover_python_installations();msvc=discover_msvc()
     return {"generated_at":utc_now(),"os":{"system":platform.system(),"edition":os_info.get("Caption"),"release":platform.release(),"version":os_info.get("Version",platform.version()),"build":os_info.get("BuildNumber"),"architecture":platform.machine(),"reported_architecture":os_info.get("OSArchitecture"),"hostname":platform.node(),"wow64":bool(os.environ.get("PROCESSOR_ARCHITEW6432"))},
       "cpu":_ps("Get-CimInstance Win32_Processor|Select -First 1 Name,Manufacturer,NumberOfCores,NumberOfLogicalProcessors,Architecture,VirtualizationFirmwareEnabled|ConvertTo-Json -Compress") or {"model":platform.processor(),"logical_processors":os.cpu_count()},"memory":memory,
       "gpu":gpu,"storage":storage,
-      "gpu_compute":detect_gpu_compute(gpu) if deep else None,"resource_pressure":analyze_resources(memory,storage),
-      "tools":{name:probe(name,spec) for name,spec in PROBES.items()},"python_installations":discover_python_installations(),"dotnet_runtimes":discover_dotnet_runtimes(),"sdk_hints":{k.lower():{"detected":bool(os.environ.get(k)),"path":os.environ.get(k)} for k in keys},
+      "gpu_compute":detect_gpu_compute(gpu,python_providers=python_installations,msvc=msvc) if deep else None,"resource_pressure":analyze_resources(memory,storage),"msvc":msvc,
+      "tools":{name:probe(name,spec) for name,spec in PROBES.items()},"python_installations":python_installations,"dotnet_runtimes":discover_dotnet_runtimes(),"sdk_hints":{k.lower():{"detected":bool(os.environ.get(k)),"path":os.environ.get(k)} for k in keys},
       "environment":safe_environment() if deep else {},"evidence":[Evidence(EvidenceKind.OBSERVED,"local Windows host","read-only scan","Python APIs and CIM")]}

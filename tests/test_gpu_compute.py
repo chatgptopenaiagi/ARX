@@ -4,6 +4,7 @@ import pytest
 
 from arx.machine.gpu_compute import (
     _framework_probe,
+    _libraries,
     _pytorch_architecture_status,
     detect_gpu_compute,
     disk_preflight,
@@ -23,7 +24,7 @@ def test_driver_cuda_capability_is_never_an_installed_toolkit(monkeypatch):
     monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: r"C:\NVIDIA\nvidia-smi.exe" if name == "nvidia-smi" else None)
 
     def runner(args, timeout):
-        if "--query-gpu" in args:
+        if any(item.startswith("--query-gpu") for item in args):
             return result("NVIDIA RTX Test, GPU-1, 00000000:01:00.0, 590.00, 16384, 8.9\n")
         return result("NVIDIA-SMI 590.00 Driver Version: 590.00 CUDA Version: 13.3")
 
@@ -124,3 +125,105 @@ def test_project_gpu_requirements_are_extracted_statically(tmp_path):
     capabilities = {item.capability for item in project.requirements}
     assert {"gpu.framework.pytorch", "gpu.framework.onnxruntime", "gpu.framework.tensorrt"} <= capabilities
     assert all(item.evidence[0].kind.value == "declared" for item in project.requirements if item.capability.startswith("gpu."))
+
+
+def test_frozen_arx_executable_is_never_framework_python(monkeypatch):
+    invoked = []
+    monkeypatch.setattr("arx.machine.gpu_compute.sys.executable", r"C:\Program Files\ARX\ARX.exe")
+    monkeypatch.setattr("arx.machine.gpu_compute.sys.frozen", True, raising=False)
+    monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: None)
+    providers = [{"path": r"C:\Python314\python.exe", "healthy": True}]
+    report = detect_gpu_compute([], env={}, python_providers=providers, runner=lambda args, timeout: invoked.append(args) or result('{"python":"C:\\\\Python314\\\\python.exe"}'))
+    assert invoked[0][0] == r"C:\Python314\python.exe"
+    assert report["resolution"]["python"] != r"C:\Program Files\ARX\ARX.exe"
+
+
+def test_frozen_scan_without_healthy_python_is_not_tested(monkeypatch):
+    invoked = []
+    monkeypatch.setattr("arx.machine.gpu_compute.sys.executable", r"C:\Program Files\ARX\ARX.exe")
+    monkeypatch.setattr("arx.machine.gpu_compute.sys.frozen", True, raising=False)
+    monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: None)
+    report = detect_gpu_compute([], env={}, python_providers=[{"path": r"C:\WindowsApps\python.exe", "healthy": False}], runner=lambda args, timeout: invoked.append(args) or result())
+    assert invoked == []
+    assert report["frameworks"]["probe_status"] == "not_tested"
+    assert report["resolution"]["python"] is None
+
+
+def test_standalone_tensorrt_path_provider_is_discovered(tmp_path, monkeypatch):
+    root = tmp_path / "NVIDIA-AI" / "TensorRT-11.2.1.2"
+    (root / "bin").mkdir(parents=True)
+    (root / "lib").mkdir()
+    (root / "bin" / "nvinfer_11.dll").write_bytes(b"")
+    (root / "bin" / "nvonnxparser_11.dll").write_bytes(b"")
+    (root / "lib" / "nvinfer.lib").write_bytes(b"")
+    monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: None)
+    report = detect_gpu_compute([], env={"PATH": str(root / "bin")}, python_executable="python.exe", runner=lambda args, timeout: result("{}"))
+    assert report["tensorrt"]["native_providers"][0]["version"] == "11.2.1.2"
+    assert report["tensorrt"]["native_providers"][0]["version_source"] == "installation_directory_name"
+    assert all(item["runtime_loadable"] for item in report["tensorrt"]["runtime_libraries"])
+    assert all(item["development_link_role"] for item in report["tensorrt"]["import_libraries"])
+    assert report["tensorrt"]["compatibility"] == "unknown"
+
+
+def test_cuda_runtime_and_import_libraries_are_not_conflated(tmp_path):
+    root = tmp_path / "CUDA" / "v13.3"
+    (root / "bin").mkdir(parents=True)
+    (root / "lib" / "x64").mkdir(parents=True)
+    (root / "bin" / "cudart64_13.dll").write_bytes(b"")
+    (root / "lib" / "x64" / "cudart.lib").write_bytes(b"")
+    libraries = _libraries(root, ("cudart",))
+    runtime = next(item for item in libraries if item["path"].endswith(".dll"))
+    import_library = next(item for item in libraries if item["path"].endswith(".lib"))
+    assert runtime["artifact_kind"] == "runtime_library" and runtime["runtime_loadable"] is True
+    assert import_library["artifact_kind"] == "import_library" and import_library["runtime_loadable"] is False
+
+
+def test_single_nvidia_gpu_vram_disagreement_preserves_both_sources(monkeypatch):
+    monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: "nvidia-smi.exe" if name == "nvidia-smi" else None)
+    def runner(args, timeout):
+        if any(item.startswith("--query-gpu") for item in args):
+            return result("NVIDIA RTX 3050, GPU-1, 00000000:01:00.0, 616.56, 6144, 8.6")
+        return result("KMD Version: 616.56 CUDA UMD Version: 13.4")
+    wmi = 4293918720
+    report = detect_gpu_compute([{"Name": "NVIDIA RTX 3050", "AdapterRAM": wmi}], env={}, python_executable="python.exe", runner=runner)
+    contradiction = next(item for item in report["contradictions"] if item["code"] == "GPU_VRAM_SOURCE_DISAGREEMENT")
+    assert report["gpus"][0]["dedicated_vram_bytes"] == wmi
+    assert report["nvidia_tooling_gpus"][0]["dedicated_vram_bytes"] == 6442450944
+    assert {item["source"] for item in contradiction["observations"]} == {"Win32_VideoController.AdapterRAM", "nvidia-smi memory.total"}
+
+
+def test_dual_gpu_windows_inventory_does_not_suppress_nvidia_vram_reconciliation(monkeypatch):
+    monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: "nvidia-smi.exe" if name == "nvidia-smi" else None)
+    def runner(args, timeout):
+        return result("NVIDIA RTX 3050, GPU-1, 00000000:01:00.0, 616.56, 6144, 8.6") if any(item.startswith("--query-gpu") for item in args) else result("KMD Version: 616.56 CUDA UMD Version: 13.4")
+    hardware = [{"Name": "AMD Radeon Graphics", "AdapterRAM": 512 * 1024**2}, {"Name": "NVIDIA RTX 3050", "AdapterRAM": 4293918720}]
+    report = detect_gpu_compute(hardware, env={}, python_executable="python.exe", runner=runner)
+    assert len(report["gpus"]) == 2
+    assert len(report["nvidia_tooling_gpus"]) == 1
+    assert "GPU_VRAM_SOURCE_DISAGREEMENT" in {item["code"] for item in report["contradictions"]}
+
+
+def test_cuda_host_compiler_context_is_recoverable_not_permanent_failure(monkeypatch):
+    monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: "nvcc.exe" if name == "nvcc" else None)
+    msvc = {"provider_installed": True, "current_resolution": {"resolved": False}, "developer_environment_entry_point": {"available": True}, "recoverable_context": "Visual Studio x64 Developer Environment"}
+    report = detect_gpu_compute([], env={}, python_executable="python.exe", msvc=msvc, runner=lambda args, timeout: result("{}"))
+    finding = next(item for item in report["contradictions"] if item["code"] == "CUDA_HOST_COMPILER_CONTEXT_UNRESOLVED")
+    assert finding["automatic_activation"] is False
+    assert finding["recoverable_context"] == "Visual Studio x64 Developer Environment"
+
+
+def test_cuda_context_finding_requires_observed_developer_entry_point(monkeypatch):
+    monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: "nvcc.exe" if name == "nvcc" else None)
+    msvc = {"provider_installed": True, "current_resolution": {"resolved": False}, "developer_environment_entry_point": {"available": False}, "recoverable_context": None}
+    report = detect_gpu_compute([], env={}, python_executable="python.exe", msvc=msvc, runner=lambda args, timeout: result("{}"))
+    assert "CUDA_HOST_COMPILER_CONTEXT_UNRESOLVED" not in {item["code"] for item in report["contradictions"]}
+
+
+def test_tensorrt_provider_is_deduplicated_across_environment_and_path(tmp_path, monkeypatch):
+    root = tmp_path / "TensorRT-11.2.1.2"
+    (root / "bin").mkdir(parents=True)
+    (root / "bin" / "nvinfer_11.dll").write_bytes(b"")
+    monkeypatch.setattr("arx.machine.gpu_compute.shutil.which", lambda name: None)
+    report = detect_gpu_compute([], env={"PATH": str(root / "bin"), "TENSORRT_ROOT": str(root), "NVIDIA_AI_ROOT": str(tmp_path / "absent")}, python_executable="python.exe", runner=lambda args, timeout: result("{}"))
+    assert len(report["tensorrt"]["native_providers"]) == 1
+    assert set(report["tensorrt"]["native_providers"][0]["sources"]) == {"PATH entry", "environment:TENSORRT_ROOT"}

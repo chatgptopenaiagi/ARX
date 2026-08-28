@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Callable, Iterable
 
 from arx.core.models import Evidence, EvidenceKind, utc_now
+from arx.core.subprocess import run_bounded
 
 MAX_OUTPUT = 64 * 1024
 PROBE_TIMEOUT = 8
@@ -38,21 +39,12 @@ def load_gpu_knowledge() -> dict:
 
 def _run(args: list[str], timeout: int = PROBE_TIMEOUT) -> dict:
     try:
-        result = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-            shell=False,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-        )
+        result = run_bounded(args, timeout=timeout, limit=MAX_OUTPUT, runner=subprocess.run)
         return {
-            "ok": result.returncode == 0,
-            "exit_code": result.returncode,
-            "stdout": result.stdout[:MAX_OUTPUT],
-            "stderr": result.stderr[:MAX_OUTPUT],
+            "ok": result["returncode"] == 0,
+            "exit_code": result["returncode"],
+            "stdout": result["stdout"],
+            "stderr": result["stderr"],
             "error": None,
         }
     except subprocess.TimeoutExpired:
@@ -119,7 +111,7 @@ def disk_preflight(free_bytes: int | None, *, download_bytes: int | None = None,
 
 
 def _version_from_path(path: Path) -> str | None:
-    match = re.search(r"[\\/]v(\d+\.\d+)(?:[\\/]|$)", str(path), re.I)
+    match = re.search(r"(?:[\\/]v|TensorRT-)(\d+\.\d+(?:\.\d+){0,2})(?:[\\/]|$)", str(path), re.I)
     return match.group(1) if match else None
 
 
@@ -143,7 +135,7 @@ def _toolkit_roots(env: dict[str, str], program_files: str | None) -> list[tuple
 
 def _libraries(root: Path, names: Iterable[str]) -> list[dict]:
     results = []
-    for folder in (root / "bin", root / "lib" / "x64"):
+    for folder in (root / "bin", root / "lib" / "x64", root / "lib"):
         if not folder.is_dir():
             continue
         try:
@@ -153,8 +145,64 @@ def _libraries(root: Path, names: Iterable[str]) -> list[dict]:
         for name in names:
             match = next((item for item in entries if item.is_file() and item.name.lower().startswith(name) and item.suffix.lower() in {".dll", ".lib"}), None)
             if match:
-                results.append({"component": name, "path": str(match), "version": _version_from_path(match), "architecture": "x64", "scope": "global-toolkit"})
+                runtime = match.suffix.lower() == ".dll"
+                results.append({"component": name, "path": str(match), "version": _version_from_path(match), "architecture": "x64", "scope": "global-toolkit", "artifact_kind": "runtime_library" if runtime else "import_library", "runtime_loadable": runtime, "development_link_role": not runtime})
     return results
+
+
+def _tensorrt_roots(env: dict[str, str]) -> list[tuple[Path, list[str]]]:
+    candidates: list[tuple[Path, str]] = []
+    for key in ("TENSORRT_ROOT", "TENSORRT_HOME", "TRT_ROOT"):
+        if env.get(key):
+            candidates.append((Path(env[key]), f"environment:{key}"))
+    path_value = env.get("PATH", "")
+    separator = ";" if ";" in path_value else os.pathsep
+    for entry in path_value.split(separator):
+        if entry and "tensorrt" in entry.casefold():
+            path = Path(entry)
+            candidates.append((path.parent if path.name.casefold() in {"bin", "lib"} else path, "PATH entry"))
+    known = Path(env.get("NVIDIA_AI_ROOT", r"C:\NVIDIA-AI"))
+    if known.is_dir():
+        try:
+            candidates.extend((item, "bounded NVIDIA-AI root") for item in list(known.iterdir())[:64] if item.is_dir() and item.name.casefold().startswith("tensorrt-"))
+        except OSError:
+            pass
+    unique: dict[str, tuple[Path, list[str]]] = {}
+    for root, source in candidates:
+        key = str(root.resolve(strict=False)).casefold()
+        if key not in unique:
+            unique[key] = (root.resolve(strict=False), [source])
+        elif source not in unique[key][1]:
+            unique[key][1].append(source)
+    return list(unique.values())[:16]
+
+
+def _standalone_tensorrt(env: dict[str, str]) -> dict:
+    runtime: list[dict] = []
+    imports: list[dict] = []
+    providers: list[dict] = []
+    for root, sources in _tensorrt_roots(env):
+        artifacts = _libraries(root, ("nvinfer", "nvonnxparser"))
+        if not artifacts:
+            continue
+        version = _version_from_path(root)
+        providers.append({"root": str(root), "version": version, "version_source": "installation_directory_name" if version else "unknown", "sources": sources, "resolution": "resolved" if any(str(root / "bin").casefold() == item.casefold() for item in env.get("PATH", "").split(";")) else "available", "compatibility": "unknown", "evidence": [_evidence(EvidenceKind.OBSERVED, ", ".join(sources), {"root": str(root), "version": version}, "bounded TensorRT provider discovery")]})
+        runtime.extend(item for item in artifacts if item["runtime_loadable"])
+        imports.extend(item for item in artifacts if item["development_link_role"])
+    return {"native_providers": providers, "runtime_libraries": runtime, "import_libraries": imports}
+
+
+def _select_framework_python(explicit: str | None, providers: list[dict] | None) -> str | None:
+    frozen_self = bool(getattr(sys, "frozen", False))
+    if explicit and not (frozen_self and Path(explicit).resolve(strict=False) == Path(sys.executable).resolve(strict=False)):
+        return explicit
+    for provider in providers or []:
+        path = provider.get("path")
+        if provider.get("healthy") is True and path and "windowsapps" not in str(path).casefold():
+            return str(path)
+    if not frozen_self and sys.executable and Path(sys.executable).name.casefold().startswith("python"):
+        return sys.executable
+    return None
 
 
 def _framework_probe(python: str, runner: Callable[[list[str], int], dict]) -> dict:
@@ -182,6 +230,7 @@ print(json.dumps(r,separators=(",",":")))'''
     except json.JSONDecodeError:
         return {"probe_status": "unknown", "error": "malformed output", "evidence": [_evidence(EvidenceKind.UNKNOWN, python, "malformed output", "fixed isolated framework probe", .4)]}
     parsed["probe_status"] = "observed"
+    parsed["tested_python_provider"] = python
     parsed["evidence"] = [_evidence(EvidenceKind.OBSERVED, python, "framework inventory returned", "fixed isolated framework probe")]
     pytorch = parsed.get("pytorch")
     if pytorch:
@@ -189,6 +238,12 @@ print(json.dumps(r,separators=(",",":")))'''
         pytorch["initialization_status"] = "pass" if pytorch.get("cuda_available") else "fail"
         pytorch["architecture_status"] = _pytorch_architecture_status(pytorch)
         pytorch["vram_feasibility"] = {"state": "unknown", "reason": "No project workload VRAM requirement was observed"}
+    else:
+        parsed["pytorch"] = {"installed": False, "probe_status": "absent_in_tested_provider", "python_provider": python}
+    if "onnxruntime" not in parsed:
+        parsed["onnxruntime"] = {"installed": False, "probe_status": "absent_in_tested_provider", "python_provider": python}
+    if "tensorrt_python" not in parsed:
+        parsed["tensorrt_python"] = {"installed": False, "probe_status": "absent_in_tested_provider", "python_provider": python}
     return parsed
 
 
@@ -204,7 +259,7 @@ def _pytorch_architecture_status(pytorch: dict) -> dict:
     return {"state": "red" if unsupported else "green", "reason": f"Compiled architecture list {'excludes ' + ', '.join(sorted(unsupported)) if unsupported else 'explicitly includes detected devices'}"}
 
 
-def detect_gpu_compute(windows_gpus: object, *, env: dict[str, str] | None = None, runner: Callable[[list[str], int], dict] = _run, python_executable: str | None = None) -> dict:
+def detect_gpu_compute(windows_gpus: object, *, env: dict[str, str] | None = None, runner: Callable[[list[str], int], dict] = _run, python_executable: str | None = None, python_providers: list[dict] | None = None, msvc: dict | None = None) -> dict:
     env = dict(os.environ if env is None else env)
     smi = shutil.which("nvidia-smi")
     nvcc = shutil.which("nvcc")
@@ -238,12 +293,14 @@ def detect_gpu_compute(windows_gpus: object, *, env: dict[str, str] | None = Non
             result = runner([str(nvcc_path), "--version"], PROBE_TIMEOUT)
             version = parse_nvcc_version(result["stdout"] + result["stderr"]) or version
             health = "healthy" if result["ok"] else "probe_failed"
-        toolkit_map[key] = {"version": version, "root": str(root), "nvcc_path": str(nvcc_path) if nvcc_path.is_file() else None, "health": health, "source": source, "selected_by_cuda_path": str(root).casefold() == str(env.get("CUDA_PATH", "")).casefold(), "resolved": bool(nvcc and Path(nvcc).resolve(strict=False) == nvcc_path.resolve(strict=False)), "runtime_libraries": _libraries(root, CUDA_LIBRARY_NAMES), "evidence": [_evidence(EvidenceKind.OBSERVED, source, str(root), "bounded environment/known-directory discovery")]}
+        libraries = _libraries(root, CUDA_LIBRARY_NAMES)
+        toolkit_map[key] = {"version": version, "root": str(root), "nvcc_path": str(nvcc_path) if nvcc_path.is_file() else None, "health": health, "source": source, "selected_by_cuda_path": str(root).casefold() == str(env.get("CUDA_PATH", "")).casefold(), "resolved": bool(nvcc and Path(nvcc).resolve(strict=False) == nvcc_path.resolve(strict=False)), "runtime_libraries": [item for item in libraries if item["runtime_loadable"]], "import_libraries": [item for item in libraries if item["development_link_role"]], "component_inventory": libraries, "evidence": [_evidence(EvidenceKind.OBSERVED, source, str(root), "bounded environment/known-directory discovery")]}
     toolkits = list(toolkit_map.values())
-    cudnn = [item for toolkit in toolkits for item in _libraries(Path(toolkit["root"]), ("cudnn",))]
-    tensorrt = [item for toolkit in toolkits for item in _libraries(Path(toolkit["root"]), ("nvinfer", "nvonnxparser"))]
-    python = python_executable or sys.executable
-    frameworks = _framework_probe(python, runner)
+    cudnn_inventory = [item for toolkit in toolkits for item in _libraries(Path(toolkit["root"]), ("cudnn",))]
+    toolkit_tensorrt = [item for toolkit in toolkits for item in _libraries(Path(toolkit["root"]), ("nvinfer", "nvonnxparser"))]
+    standalone_tensorrt = _standalone_tensorrt(env)
+    python = _select_framework_python(python_executable, python_providers)
+    frameworks = _framework_probe(python, runner) if python else {"probe_status": "not_tested", "reason": "no usable Python provider resolved for framework probe", "tested_python_provider": None, "pytorch": {"installed": None, "probe_status": "not_tested"}, "onnxruntime": {"installed": None, "probe_status": "not_tested"}, "tensorrt_python": {"installed": None, "probe_status": "not_tested"}, "evidence": [_evidence(EvidenceKind.UNKNOWN, "Python provider inventory", "not tested", "framework probe provider selection", 1.0, "No healthy real Python provider resolved")]}
 
     contradictions = []
     windows_nvidia = any("nvidia" in str(item.get("name", "")).casefold() for item in hardware)
@@ -258,6 +315,22 @@ def detect_gpu_compute(windows_gpus: object, *, env: dict[str, str] | None = Non
     pytorch = frameworks.get("pytorch") or {}
     if pytorch.get("compiled_cuda") and pytorch.get("cuda_available") is False:
         contradictions.append({"code": "pytorch_cuda_build_unavailable", "state": "yellow", "reason": "PyTorch has a CUDA build but CUDA backend initialization failed"})
+    windows_nvidia_gpus = [item for item in hardware if "nvidia" in str(item.get("name", "")).casefold()]
+    if len(windows_nvidia_gpus) == 1 and len(nvidia_gpus) == 1:
+        windows_nvidia_gpu = windows_nvidia_gpus[0]
+        windows_vram = windows_nvidia_gpu.get("dedicated_vram_bytes")
+        nvidia_vram = nvidia_gpus[0].get("dedicated_vram_bytes")
+        if isinstance(windows_vram, int) and isinstance(nvidia_vram, int) and abs(windows_vram - nvidia_vram) >= 256 * 1024**2:
+            contradictions.append({"code": "GPU_VRAM_SOURCE_DISAGREEMENT", "state": "yellow", "subject": nvidia_gpus[0].get("uuid") or nvidia_gpus[0].get("name"), "observations": [{"source": "Win32_VideoController.AdapterRAM", "value_bytes": windows_vram}, {"source": "nvidia-smi memory.total", "value_bytes": nvidia_vram}], "difference_bytes": abs(windows_vram - nvidia_vram), "interpretation": "WMI AdapterRAM can be limited or unreliable for modern adapters; healthy NVIDIA tooling is preferred for NVIDIA operational reporting", "remaining_uncertainty": "Single-device correlation lacks a shared PCI identifier from WMI"})
+    msvc = msvc or {}
+    entry_available = msvc.get("developer_environment_entry_point", {}).get("available")
+    if nvcc and msvc.get("provider_installed") and not msvc.get("current_resolution", {}).get("resolved") and entry_available:
+        contradictions.append({"code": "CUDA_HOST_COMPILER_CONTEXT_UNRESOLVED", "state": "yellow", "reason": "CUDA Toolkit resolves, but cl.exe does not resolve in the current process; a supported Visual Studio developer environment entry point is available", "recoverable_context": msvc.get("recoverable_context"), "automatic_activation": False})
+
+    cuda_runtime_libraries = [item for toolkit in toolkits for item in toolkit["runtime_libraries"]]
+    cuda_import_libraries = [item for toolkit in toolkits for item in toolkit["import_libraries"]]
+    trt_runtime = [item for item in toolkit_tensorrt if item["runtime_loadable"]] + standalone_tensorrt["runtime_libraries"]
+    trt_imports = [item for item in toolkit_tensorrt if item["development_link_role"]] + standalone_tensorrt["import_libraries"]
 
     return {
         "schema_version": "1.0",
@@ -270,11 +343,13 @@ def detect_gpu_compute(windows_gpus: object, *, env: dict[str, str] | None = Non
         "nvidia_driver": driver,
         "cuda_driver_capability": {"version": driver["cuda_driver_capability"], "meaning": "maximum CUDA API/runtime compatibility level advertised by the NVIDIA driver; not an installed Toolkit", "evidence_refs": ["nvidia_driver.evidence"] if driver["cuda_driver_capability"] else []},
         "cuda_toolkits": toolkits,
-        "cuda_runtimes": [item for toolkit in toolkits for item in toolkit["runtime_libraries"]],
-        "cudnn": {"providers": cudnn, "status": "present" if cudnn else "unknown"},
-        "tensorrt": {"providers": tensorrt, "python": frameworks.get("tensorrt_python"), "status": "present" if tensorrt or frameworks.get("tensorrt_python") else "unknown", "compatibility": "unknown"},
+        "cuda_runtimes": cuda_runtime_libraries,
+        "cuda_import_libraries": cuda_import_libraries,
+        "cudnn": {"runtime_providers": [item for item in cudnn_inventory if item["runtime_loadable"]], "import_libraries": [item for item in cudnn_inventory if item["development_link_role"]], "status": "present" if cudnn_inventory else "unknown"},
+        "tensorrt": {**standalone_tensorrt, "runtime_libraries": trt_runtime, "import_libraries": trt_imports, "python": frameworks.get("tensorrt_python"), "status": "present" if trt_runtime or trt_imports or (frameworks.get("tensorrt_python") or {}).get("installed") else "unknown", "compatibility": "unknown"},
         "frameworks": frameworks,
-        "resolution": {"nvidia_smi": smi, "nvcc": nvcc, "cuda_path": env.get("CUDA_PATH"), "python": python},
+        "resolution": {"nvidia_smi": smi, "nvcc": nvcc, "cuda_path": env.get("CUDA_PATH"), "python": python, "framework_probe": "not_tested" if not python else "executed"},
+        "msvc_context": msvc,
         "contradictions": contradictions,
         "dimensions": {"presence": "green" if hardware or nvidia_gpus else "unknown", "health": "green" if driver["nvidia_smi"]["execution_health"] == "healthy" else "unknown", "resolution": "green" if nvcc else "unknown", "compatibility": "unknown", "project_relevance": "unknown", "resource_feasibility": "unknown", "verification_level": "observed_and_inferred" if smi else "unknown"},
     }
