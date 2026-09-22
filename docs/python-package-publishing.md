@@ -1,6 +1,6 @@
 # Python package publishing
 
-ARX publishes the Python distribution as `arx-prescanner`. Application version `3.0.0rc1` is a PEP 440 pre-release and is independent from ARX report schemas `0.1` and `0.2`.
+ARX publishes the Python distribution as `arx-prescanner`. The current featured application version `4.0.0b6` is a PEP 440 Beta pre-release and is independent from ARX report schemas `0.1` and `0.2`.
 
 The Python package requires Python 3.10 or newer and installs two console entry points:
 

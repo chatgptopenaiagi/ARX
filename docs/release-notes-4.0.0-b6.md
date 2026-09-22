@@ -8,7 +8,7 @@ Windows file/product version: `4.0.0.6`
 
 Reserved Git tag: `v4.0.0-b6`
 
-Release channel: Beta / GitHub prerelease; not ARX 4 stable
+Release channel: Beta / GitHub Latest (featured public download); not ARX 4 stable
 
 ARX 4.0.0 Beta 6 adds the first vendor-neutral Agent DNA foundation and hardens GPU and Windows execution-context evidence using findings from real bounded workstation scans. This Beta remains read-only and evidence-first. It does not claim universal GPU compatibility, autonomous remediation, or stable-release readiness.
 

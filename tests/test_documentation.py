@@ -82,7 +82,7 @@ def test_readme_features_beta6_and_preserves_historical_arx3_material():
 
     for phrase in (
         "# ARX 4.0.0 Beta 6",
-        "Current Featured ARX Release - Beta / GitHub prerelease",
+        "Current Featured ARX Release - Beta / GitHub Latest",
         "publicly available for evaluation and development feedback",
         "https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6",
         "Historical ARX 3 RC installation reference",

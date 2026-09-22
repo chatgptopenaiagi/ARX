@@ -1,10 +1,22 @@
 # ARX 4.0.0 Beta 6
 
-> **Current Featured ARX Release - Beta / GitHub prerelease**
+> **Current Featured ARX Release - Beta / GitHub Latest**
 
-[View ARX 4.0.0 Beta 6 Release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6)
+**[Download ARX 4.0.0 Beta 6 for Windows x64](https://github.com/chatgptopenaiagi/ARX/releases/download/v4.0.0-b6/ARX-Desktop-Setup-win-x64-v4.0.0-b6.exe)**
 
-ARX 4.0.0 Beta 6 is the current ARX 4 GitHub Beta prerelease. It is publicly available for evaluation and development feedback and is not ARX 4 stable.
+Primary download: `ARX-Desktop-Setup-win-x64-v4.0.0-b6.exe` (Windows 10/11 x64).
+
+- [Portable Windows ZIP](https://github.com/chatgptopenaiagi/ARX/releases/download/v4.0.0-b6/ARX-Desktop-win-x64-v4.0.0-b6.zip) — secondary option; extract the complete folder.
+- [Complete GitHub release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6)
+- [Release notes and limitations](docs/release-notes-4.0.0-b6.md) · [SHA-256 manifest](https://github.com/chatgptopenaiagi/ARX/releases/download/v4.0.0-b6/SHA256SUMS.txt) · [Installer information](packaging/INSTALLER.md)
+
+**Beta release — not ARX 4 stable.** ARX 4.0.0 Beta 6 is publicly available for evaluation and development feedback. GitHub Latest identifies the featured download, not stable-release readiness. The Windows binaries remain unsigned; integrity hashes do not constitute code signing.
+
+Installer SHA-256:
+
+```text
+20d4808cf3096135718d6f9d16f5bd32e156aeb9e0936db89a2f2be8b86240e1
+```
 
 Package version: `4.0.0b6` · Artifact version: `4.0.0-b6` · Windows version: `4.0.0.6` · Git tag: `v4.0.0-b6`
 
@@ -178,7 +190,7 @@ ARX 4 Beta can be built in two forms:
 - a portable x64 folder and versioned ZIP containing `ARX.exe` and its private `_internal` runtime;
 - an optional Inno Setup installer with a stable application identity, x64 Program Files installation, Start Menu and uninstall entries, an optional desktop shortcut, and SHA-256 checksums.
 
-Generated release artifacts stay under the ignored `release/` directory and are not committed. Current RC builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md).
+Generated release artifacts stay under the ignored `release/` directory and are not committed. Beta 6 builds are unsigned and use the executable's version resources rather than a custom signed project icon. See the [installer documentation](packaging/INSTALLER.md).
 
 ## Optional advisory and safe research
 
