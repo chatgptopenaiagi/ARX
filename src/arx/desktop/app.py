@@ -595,7 +595,7 @@ class ARXDesktopApp(tk.Tk):
         for iid, label, status, version, path, health, evidence in compute_rows:
             self.machine_tree.insert("", "end", iid=iid, values=(label, status.upper(), version, path, health, evidence), tags=(status,))
         for index, item in enumerate(machine.get("python_installations", [])):
-            health = item.get("health_status") or (
+            health = "alias" if item.get("detection_status") == "ALIAS" else item.get("health_status") or (
                 "healthy" if item.get("healthy") else "unhealthy" if item.get("healthy") is False else "unknown"
             )
             status = "ready" if health == "healthy" else "blocked" if health == "unhealthy" else "unknown"

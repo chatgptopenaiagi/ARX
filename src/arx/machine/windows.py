@@ -26,11 +26,12 @@ def probe(name, spec, timeout=5):
 def _known_tool_path(name):
     """Resolve selected Windows tools that installers intentionally omit from PATH."""
     candidates=[]
-    if name=="msbuild":
+    if name in {"msbuild", "cmake", "ninja"}:
         installer=Path(os.environ.get("ProgramFiles(x86)",r"C:\Program Files (x86)"))/"Microsoft Visual Studio"/"Installer"/"vswhere.exe"
         if installer.is_file():
             try:
-                p=subprocess.run([str(installer),"-latest","-products","*","-requires","Microsoft.Component.MSBuild","-find",r"MSBuild\**\Bin\MSBuild.exe"],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
+                relative={"msbuild":r"MSBuild\**\Bin\MSBuild.exe", "cmake":r"Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe", "ninja":r"Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe"}[name]
+                p=subprocess.run([str(installer),"-products","*","-sort","-find",relative],capture_output=True,text=True,timeout=5,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
                 candidates.extend(line.strip() for line in p.stdout.splitlines())
             except (OSError,subprocess.TimeoutExpired): pass
     roots={
@@ -42,6 +43,8 @@ def _known_tool_path(name):
     suffix={"adb":r"platform-tools\adb.exe","cuda":r"bin\nvcc.exe","java":r"bin\java.exe","javac":r"bin\javac.exe"}
     for root in roots.get(name,[]):
         if root:candidates.append(str(Path(root)/suffix[name]))
+    if name=="adb" and os.environ.get("LOCALAPPDATA"):
+        candidates.append(str(Path(os.environ["LOCALAPPDATA"])/"Android"/"Sdk"/"platform-tools"/"adb.exe"))
     if name in {"java","javac"}:
         program_files=Path(os.environ.get("ProgramFiles",r"C:\Program Files"))
         candidates.extend((str(program_files/"Android"/"Android Studio"/folder/"bin"/f"{name}.exe") for folder in ("jbr","jre")))
@@ -65,15 +68,31 @@ def _python_candidates():
     unique={str(Path(item).resolve(strict=False)).lower():str(Path(item).resolve(strict=False)) for item in candidates if item}
     return list(unique.values())
 
+def _is_app_execution_alias(path):
+    """Identify Windows-managed AppExecLink files without launching the Store."""
+    try:
+        return getattr(Path(path).lstat(), "st_reparse_tag", None) == 0x8000001B
+    except OSError:
+        return False
+
+
 def discover_python_installations(timeout=8):
-    """Inventory each registered/command-visible Python and test core runtime imports."""
-    script="import ctypes,json,platform,ssl,struct,sys;print(json.dumps({'version':platform.python_version(),'architecture':platform.machine(),'architecture_bits':str(struct.calcsize('P')*8)+'-bit','ssl':ssl.OPENSSL_VERSION,'executable':sys.executable}))"
+    """Inventory providers and test isolated core imports, as the framework probe does.
+
+    Failure is scoped to isolated invocation; it does not prove that every
+    externally configured execution context is unusable.
+    """
+    script="import ctypes,json,platform,ssl,struct,sys;print(json.dumps({'version':platform.python_version(),'architecture':platform.machine(),'architecture_bits':str(struct.calcsize('P')*8)+'-bit','ssl':ssl.OPENSSL_VERSION,'executable':sys.executable,'initialization':{'prefix':sys.prefix,'base_prefix':sys.base_prefix,'path':sys.path,'isolated':sys.flags.isolated,'ignore_environment':sys.flags.ignore_environment}}))"
     records=[]
     for path in _python_candidates():
         try:exists=Path(path).exists()
         except OSError:exists=True
+        if _is_app_execution_alias(path):
+            reason="Windows App Execution Alias (AppExecLink); not a standalone Python runtime"
+            records.append({"path":path,"exists":exists,"version":None,"architecture":None,"architecture_bits":None,"healthy":None,"health_status":"unknown","detection_status":"ALIAS","health_reason":reason,"health_probe":"AppExecLink reparse-tag inspection; alias not executed","ssl":None,"exit_code":None,"error":None,"evidence":[Evidence(EvidenceKind.OBSERVED,path,"ALIAS","Windows reparse tag 0x8000001B",1.0,reason)]})
+            continue
         try:
-            p=subprocess.run([path,"-c",script],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
+            p=subprocess.run([path,"-I","-c",script],capture_output=True,text=True,timeout=timeout,shell=False,creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
             if p.returncode != 0:
                 reason=(p.stderr or p.stdout).strip()[:500] or f"probe exited {p.returncode}"
                 records.append({"path":path,"exists":exists,"version":None,"architecture":None,"architecture_bits":None,"healthy":False,"health_status":"unhealthy","health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":None,"exit_code":p.returncode,"error":reason,"evidence":[Evidence(EvidenceKind.OBSERVED,path,"unhealthy","fixed Python core import probe",.9,reason)]})
@@ -88,6 +107,7 @@ def discover_python_installations(timeout=8):
             reason=None if healthy else "fixed probe returned incomplete runtime details"
             status="healthy" if healthy else "degraded"
             records.append({"path":path,"exists":exists,"version":details.get("version"),"architecture":details.get("architecture"),"architecture_bits":details.get("architecture_bits"),"healthy":healthy,"health_status":status,"health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":details.get("ssl"),"exit_code":p.returncode,"error":reason,"evidence":[Evidence(EvidenceKind.OBSERVED if healthy else EvidenceKind.UNKNOWN,path,status,"fixed Python core import probe",1.0 if healthy else .6,reason)]})
+            records[-1].update(initialization=details.get("initialization"), startup_stderr=p.stderr[:2000], health_probe="isolated (-I) startup, version, architecture, import sys/ssl/ctypes")
         except PermissionError as exc:
             reason=f"permission/access failure: {type(exc).__name__}"
             records.append({"path":path,"exists":exists,"version":None,"architecture":None,"architecture_bits":None,"healthy":None,"health_status":"unknown","health_reason":reason,"health_probe":"start, version, architecture, import sys/ssl/ctypes","ssl":None,"exit_code":None,"error":reason,"evidence":[Evidence(EvidenceKind.UNKNOWN,path,"unknown","fixed Python core import probe",.5,reason)]})

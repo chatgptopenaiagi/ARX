@@ -265,6 +265,10 @@ def detect_gpu_compute(windows_gpus: object, *, env: dict[str, str] | None = Non
     nvcc = shutil.which("nvcc")
     gpus = windows_gpus if isinstance(windows_gpus, list) else [windows_gpus] if windows_gpus else []
     hardware = [{"name": item.get("Name"), "pnp_device_id": item.get("PNPDeviceID"), "dedicated_vram_bytes": item.get("AdapterRAM"), "windows_driver_version": item.get("DriverVersion"), "video_processor": item.get("VideoProcessor"), "visible_to_windows": True, "compute_capability": None, "evidence": [_evidence(EvidenceKind.OBSERVED, "Win32_VideoController", item.get("Name"), "bounded CIM query")]} for item in gpus if isinstance(item, dict)]
+    for item in hardware:
+        item["wmi_adapter_ram_bytes"] = item["dedicated_vram_bytes"]
+        item["dedicated_vram_source"] = "Win32_VideoController.AdapterRAM (uint32; may truncate or misreport modern VRAM)"
+        item["operational_vram"] = {"bytes": None, "source": None, "status": "unknown"}
 
     driver = {"installed": bool(smi), "nvidia_smi": {"available": bool(smi), "resolved_path": smi, "execution_health": "not_found" if not smi else "unknown"}, "version": None, "cuda_driver_capability": None, "nvml_available": None, "evidence": []}
     nvidia_gpus: list[dict] = []
@@ -320,6 +324,8 @@ def detect_gpu_compute(windows_gpus: object, *, env: dict[str, str] | None = Non
         windows_nvidia_gpu = windows_nvidia_gpus[0]
         windows_vram = windows_nvidia_gpu.get("dedicated_vram_bytes")
         nvidia_vram = nvidia_gpus[0].get("dedicated_vram_bytes")
+        if isinstance(nvidia_vram, int):
+            windows_nvidia_gpu["operational_vram"] = {"bytes": nvidia_vram, "source": "nvidia-smi memory.total", "status": "observed", "correlation": "single NVIDIA GPU in both inventories; shared PCI identifier not verified"}
         if isinstance(windows_vram, int) and isinstance(nvidia_vram, int) and abs(windows_vram - nvidia_vram) >= 256 * 1024**2:
             contradictions.append({"code": "GPU_VRAM_SOURCE_DISAGREEMENT", "state": "yellow", "subject": nvidia_gpus[0].get("uuid") or nvidia_gpus[0].get("name"), "observations": [{"source": "Win32_VideoController.AdapterRAM", "value_bytes": windows_vram}, {"source": "nvidia-smi memory.total", "value_bytes": nvidia_vram}], "difference_bytes": abs(windows_vram - nvidia_vram), "interpretation": "WMI AdapterRAM can be limited or unreliable for modern adapters; healthy NVIDIA tooling is preferred for NVIDIA operational reporting", "remaining_uncertainty": "Single-device correlation lacks a shared PCI identifier from WMI"})
     msvc = msvc or {}
