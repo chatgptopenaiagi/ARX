@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(4, 0, 0, 7),
-    prodvers=(4, 0, 0, 7),
+    filevers=(4, 0, 1, 1),
+    prodvers=(4, 0, 1, 1),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -14,13 +14,13 @@ VSVersionInfo(
       StringTable(
         '040904B0',
         [StringStruct('CompanyName', 'ARX Project'),
-         StringStruct('FileDescription', 'ARX 4.0.0 Beta 7 Project-Aware Compatibility Intelligence'),
-         StringStruct('FileVersion', '4.0.0b7'),
+         StringStruct('FileDescription', 'ARX 4.0.1 Beta 1 Project-Aware Compatibility Intelligence'),
+         StringStruct('FileVersion', '4.0.1b1'),
          StringStruct('InternalName', 'ARX'),
          StringStruct('LegalCopyright', 'Copyright (c) ARX contributors'),
          StringStruct('OriginalFilename', 'ARX.exe'),
          StringStruct('ProductName', 'ARX 4'),
-         StringStruct('ProductVersion', '4.0.0b7')])
+         StringStruct('ProductVersion', '4.0.1b1')])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]

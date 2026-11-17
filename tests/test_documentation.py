@@ -77,13 +77,13 @@ def test_external_boundary_document_preserves_three_separate_trust_domains():
     assert "does not enable PyPI publishing" in security
 
 
-def test_readme_features_beta7_and_preserves_historical_arx3_material():
+def test_readme_features_patch_prerelease_and_preserves_historical_arx3_material():
     readme = _read("README.md")
 
     for phrase in (
-        "# ARX 4.0.0 Beta 7",
+        "# ARX 4.0.1 Beta 1",
         "Current Featured ARX Release",
-        "https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-beta.7",
+        "https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.1-beta.1",
         "Historical ARX 3 RC installation reference",
         "Project-Aware Compatibility Intelligence",
         "## Why ARX is different",

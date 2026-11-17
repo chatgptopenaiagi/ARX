@@ -16,14 +16,17 @@ VERSION_INFO = (ROOT / "packaging" / "windows-version-info.txt").read_text(encod
 POWERSHELL = shutil.which("pwsh") or shutil.which("powershell")
 
 
-def test_installer_has_stable_upgrade_and_x64_identity():
+def test_installer_has_separate_version_registration_and_x64_identity():
     app_id = re.search(r"^AppId=(.+)$", INSTALLER, re.MULTILINE)
 
     assert app_id
-    assert app_id.group(1) == "{{1BC9E705-070A-42B4-9378-45E2DD7C416A}"
+    assert app_id.group(1) == "ARX-{#MyArtifactVersion}"
     assert "ArchitecturesAllowed=x64compatible" in INSTALLER
     assert "ArchitecturesInstallIn64BitMode=x64compatible" in INSTALLER
-    assert "DefaultDirName={autopf}\\ARX" in INSTALLER
+    assert "DefaultDirName={autopf}\\ARX-{#MyArtifactVersion}" in INSTALLER
+    assert "UsePreviousAppDir=no" in INSTALLER
+    assert "UsePreviousGroup=no" in INSTALLER
+    assert "CloseApplications=no" in INSTALLER
 
 
 def test_installer_uses_real_license_and_complete_windows_entries():
@@ -35,21 +38,21 @@ def test_installer_uses_real_license_and_complete_windows_entries():
     assert 'Description: "Launch ARX"; Flags: nowait postinstall skipifsilent' in INSTALLER
 
 
-def test_beta7_version_and_artifact_identity_are_consistent():
-    assert '#define MyAppVersion "4.0.0b7"' in INSTALLER
-    assert '#define MyAppFileVersion "4.0.0.7"' in INSTALLER
-    assert '#define MyArtifactVersion "4.0.0-beta.7"' in INSTALLER
-    assert '#define MyAppDisplayName "ARX 4.0.0 Beta 7"' in INSTALLER
+def test_patch_prerelease_version_and_artifact_identity_are_consistent():
+    assert '#define MyAppVersion "4.0.1b1"' in INSTALLER
+    assert '#define MyAppFileVersion "4.0.1.1"' in INSTALLER
+    assert '#define MyArtifactVersion "4.0.1-beta.1"' in INSTALLER
+    assert '#define MyAppDisplayName "ARX 4.0.1 Beta 1"' in INSTALLER
     assert "VersionInfoVersion={#MyAppFileVersion}" in INSTALLER
     assert "VersionInfoProductVersion={#MyAppFileVersion}" in INSTALLER
-    assert "OutputBaseFilename=ARX-Desktop-Setup-win-x64-v{#MyArtifactVersion}" in INSTALLER
-    assert "[string]$Version = '4.0.0b7'" in BUILD_SCRIPT
-    assert "ARX-Desktop-Setup-win-x64-v$ArtifactVersion.exe" in BUILD_SCRIPT
-    assert "[string]$Version = '4.0.0b7'" in PACKAGE_SCRIPT
+    assert "OutputBaseFilename=ARX-{#MyArtifactVersion}-Setup-Windows-x64" in INSTALLER
+    assert "[string]$Version = '4.0.1b1'" in BUILD_SCRIPT
+    assert 'ARX-$ArtifactVersion-Setup-Windows-x64' in BUILD_SCRIPT
+    assert "[string]$Version = '4.0.1b1'" in PACKAGE_SCRIPT
     assert "ARX-Desktop-win-x64-v$ArtifactVersion.zip" in PACKAGE_SCRIPT
     assert "StringStruct('ProductName', 'ARX 4')" in VERSION_INFO
-    assert "StringStruct('ProductVersion', '4.0.0b7')" in VERSION_INFO
-    assert "filevers=(4, 0, 0, 7)" in VERSION_INFO
+    assert "StringStruct('ProductVersion', '4.0.1b1')" in VERSION_INFO
+    assert "filevers=(4, 0, 1, 1)" in VERSION_INFO
 
 
 @pytest.mark.parametrize(
@@ -62,6 +65,7 @@ def test_beta7_version_and_artifact_identity_are_consistent():
         ("4.0.0b5", "4.0.0-b5", "4.0.0.5"),
         ("4.0.0b6", "4.0.0-b6", "4.0.0.6"),
         ("4.0.0b7", "4.0.0-beta.7", "4.0.0.7"),
+        ("4.0.1b1", "4.0.1-beta.1", "4.0.1.1"),
     ],
 )
 def test_release_version_normalization(package_version, artifact_version, file_version):

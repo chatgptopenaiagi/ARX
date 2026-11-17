@@ -1,6 +1,7 @@
 param(
-    [string]$Version = '4.0.0b7',
-    [string]$IsccPath
+    [string]$Version = '4.0.1b1',
+    [string]$IsccPath,
+    [string]$ReleaseRoot = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -9,11 +10,13 @@ $ReleaseVersion = ConvertTo-ArxReleaseVersion -Version $Version
 $FileVersion = $ReleaseVersion.FileVersion
 $ArtifactVersion = $ReleaseVersion.ArtifactVersion
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$ReleaseRoot = Join-Path $ProjectRoot 'release'
+if (-not $ReleaseRoot) { $ReleaseRoot = Join-Path $ProjectRoot 'release' }
+$ReleaseRoot = [IO.Path]::GetFullPath($ReleaseRoot)
 $PortableRoot = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
 $Executable = Join-Path $PortableRoot 'ARX.exe'
 $InstallerScript = Join-Path $ProjectRoot 'packaging\arx-desktop.iss'
-$Installer = Join-Path $ReleaseRoot "ARX-Desktop-Setup-win-x64-v$ArtifactVersion.exe"
+$InstallerName = "ARX-$ArtifactVersion-Setup-Windows-x64"
+$Installer = Join-Path $ReleaseRoot "$InstallerName.exe"
 $ChecksumFile = Join-Path $ReleaseRoot "SHA256SUMS-v$ArtifactVersion.txt"
 
 $ReleaseFullPath = [IO.Path]::GetFullPath($ReleaseRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
@@ -26,6 +29,9 @@ if (-not (Test-Path -LiteralPath $Executable -PathType Leaf)) {
 }
 if (-not (Test-Path -LiteralPath (Join-Path $PortableRoot '_internal') -PathType Container)) {
     throw 'The portable desktop build is incomplete: _internal is missing.'
+}
+if ((Get-Item -LiteralPath $Executable).VersionInfo.ProductVersion -ne $Version) {
+    throw 'The portable executable version does not match the requested installer version.'
 }
 
 if ($IsccPath) {
@@ -46,7 +52,7 @@ if (-not $Compiler) {
     throw 'Inno Setup 6 or 7 compiler (ISCC.exe) was not found. Install Inno Setup or pass -IsccPath.'
 }
 
-& $Compiler "/DMyAppVersion=$Version" "/DMyAppFileVersion=$FileVersion" "/DMyArtifactVersion=$ArtifactVersion" "/DMyAppProductName=$($ReleaseVersion.ProductName)" "/DMyAppDisplayName=$($ReleaseVersion.DisplayName)" $InstallerScript
+& $Compiler "/O$ReleaseRoot" "/F$InstallerName" "/DMyAppSourceDir=$PortableRoot" "/DMyAppVersion=$Version" "/DMyAppFileVersion=$FileVersion" "/DMyArtifactVersion=$ArtifactVersion" "/DMyAppProductName=$($ReleaseVersion.ProductName)" "/DMyAppDisplayName=$($ReleaseVersion.DisplayName)" $InstallerScript
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup failed with exit code $LASTEXITCODE."
 }
@@ -57,7 +63,7 @@ if (-not (Test-Path -LiteralPath $Installer -PathType Leaf)) {
 $InstallerHash = (Get-FileHash -LiteralPath $Installer -Algorithm SHA256).Hash.ToLowerInvariant()
 $ChecksumLine = "$InstallerHash  $(Split-Path -Leaf $Installer)"
 $ExistingLines = if (Test-Path -LiteralPath $ChecksumFile -PathType Leaf) {
-    Get-Content -LiteralPath $ChecksumFile | Where-Object { $_ -notmatch '  ARX-Desktop-Setup-win-x64-' }
+    Get-Content -LiteralPath $ChecksumFile | Where-Object { -not $_.EndsWith("  $InstallerName.exe") }
 } else {
     @()
 }

@@ -1,5 +1,5 @@
 param(
-    [string]$Version = '4.0.0b7',
+    [string]$Version = '4.0.1b1',
     [string]$ReleaseRoot = ''
 )
 
@@ -12,7 +12,7 @@ if (-not $ReleaseRoot) { $ReleaseRoot = Join-Path $ProjectRoot 'release' }
 $ReleaseRoot = [IO.Path]::GetFullPath($ReleaseRoot)
 $DesktopDirectory = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
 $Executable = Join-Path $DesktopDirectory 'ARX.exe'
-$ArchiveName = if ($Version -eq '4.0.0b7') { 'ARX-4.0.0-beta.7-Windows-x64.zip' } else { "ARX-Desktop-win-x64-v$ArtifactVersion.zip" }
+$ArchiveName = if ($Version -in @('4.0.0b7','4.0.1b1')) { "ARX-$ArtifactVersion-Windows-x64.zip" } else { "ARX-Desktop-win-x64-v$ArtifactVersion.zip" }
 $Archive = Join-Path $ReleaseRoot $ArchiveName
 $ChecksumFile = Join-Path $ReleaseRoot "SHA256SUMS-v$ArtifactVersion.txt"
 

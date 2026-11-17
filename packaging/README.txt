@@ -1,6 +1,6 @@
 ARX 4
-ARX 4.0.0 Beta 7 | AI Compute Edition
-Package version 4.0.0b7
+ARX 4.0.1 Beta 1 | AI Compute Edition
+Package version 4.0.1b1
 
 PURPOSE
 ARX is a read-only project-aware compatibility and resolution engine. It scans
@@ -17,8 +17,11 @@ Extract the complete folder, then double-click ARX.exe. Keep the _internal
 folder beside ARX.exe; it contains the standalone Python/Tk runtime.
 
 PORTABLE DISTRIBUTION
-This release is ARX-4.0.0-beta.7-Windows-x64.zip. No installer is included and
-the existing installed ARX application is not replaced. The executable is
+The portable package is ARX-4.0.1-beta.1-Windows-x64.zip. A separate
+ARX-4.0.1-beta.1-Setup-Windows-x64.exe installs the same payload with its own
+Start Menu group and Windows uninstall entry. It uses a new empty directory
+and preserves earlier ARX installations. In-place upgrades are not offered;
+uninstall this version explicitly before reinstalling it. The executable is
 unsigned; verify the published SHA-256 checksum before running it.
 
 AI COMPUTE

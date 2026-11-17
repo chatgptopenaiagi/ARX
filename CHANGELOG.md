@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.0.1b1 - 2026-11-17
+- Package the verified Beta 7 AI Compute application with a side-by-side Windows installer and Python wheel.
+- Give the installer a version-specific application ID, destination and Start Menu group.
+- Refuse occupied destination folders and an already registered copy of this version; preserve earlier ARX installations.
+- Include the complete portable payload, licenses and normal uninstall registration without bundling AI frameworks.
+- Keep v4.0.0-beta.7 and its existing ZIP/checksum assets unchanged; source changes are released under v4.0.1-beta.1.
+
 ## 4.0.0b7 - 2026-11-17
 - Publish ARX 4.0.0-beta.7 | AI Compute Edition as a portable Windows x64 prerelease.
 - Add bounded multi-environment Python, PyTorch, CUDA, cuDNN, GPU, ONNX Runtime and TensorRT discovery.
