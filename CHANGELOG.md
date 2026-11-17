@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.0.0b7 - 2026-11-17
+- Publish ARX 4.0.0-beta.7 | AI Compute Edition as a portable Windows x64 prerelease.
+- Add bounded multi-environment Python, PyTorch, CUDA, cuDNN, GPU, ONNX Runtime and TensorRT discovery.
+- Add isolated functional verification, six short CPU/GPU benchmarks, SHA-256 verified preservation and seven evidence reports.
+- Add an AI Compute tab with environment selection, manual verification, benchmarks and preservation destination selection.
+- Preserve the Mission 20 implementation and existing inspection, compatibility, project and export features.
+- Keep AI frameworks external to the portable application; do not bundle workstation packages or preservation snapshots.
+
 ## 4.0.0b6 - 2026-08-28
 - Add the vendor-neutral Agent DNA foundation with contextual capability dimensions, scoped evidence, dependency graphs, policy authorization, calibration, contradictions, interventions, snapshot transitions, and safe Phase 0 import/validation/summary commands.
 - Preserve permission versus authorization and machine-provider presence versus execution-context resolution as independent facts.

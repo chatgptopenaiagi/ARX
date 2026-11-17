@@ -1,15 +1,17 @@
 param(
     [string]$PythonExecutable = 'python',
-    [string]$Version = '4.0.0b6'
+    [string]$Version = '4.0.0b7',
+    [string]$ReleaseRoot = ''
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'versioning.ps1')
 $ReleaseVersion = ConvertTo-ArxReleaseVersion -Version $Version
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$ReleaseRoot = Join-Path $ProjectRoot 'release'
+if (-not $ReleaseRoot) { $ReleaseRoot = Join-Path $ProjectRoot 'release' }
+$ReleaseRoot = [IO.Path]::GetFullPath($ReleaseRoot)
 $Output = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
-$Work = Join-Path $ProjectRoot 'build\desktop'
+$Work = Join-Path $ReleaseRoot 'build-desktop'
 $Entry = Join-Path $ProjectRoot 'packaging\arx_desktop_entry.py'
 $VersionInfoTemplate = Join-Path $ProjectRoot 'packaging\windows-version-info.txt'
 
@@ -47,6 +49,7 @@ if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCOD
 
 Move-Item -LiteralPath (Join-Path $ReleaseRoot 'ARX') -Destination $Output
 Copy-Item -LiteralPath (Join-Path $ProjectRoot 'packaging\README.txt') -Destination (Join-Path $Output 'README.txt')
+Copy-Item -LiteralPath (Join-Path $ProjectRoot 'LICENSE') -Destination (Join-Path $Output 'LICENSE.txt')
 
 if (-not (Test-Path -LiteralPath (Join-Path $Output 'ARX.exe') -PathType Leaf)) {
     throw 'PyInstaller did not produce ARX.exe.'

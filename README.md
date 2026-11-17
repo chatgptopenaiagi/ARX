@@ -1,12 +1,12 @@
-# ARX 4.0.0 Beta 6
+# ARX 4.0.0 Beta 7 | AI Compute Edition
 
 > **Current Featured ARX Release Candidate - Beta / GitHub prerelease**
 
-[View ARX 4.0.0 Beta 6 Release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6)
+[View ARX 4.0.0 Beta 7 Release](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-beta.7)
 
-ARX 4.0.0 Beta 6 is a Beta release candidate and is not ARX 4 stable. Its GitHub prerelease will be published only after packaged acceptance succeeds.
+ARX 4.0.0 Beta 7 is the AI Compute Edition prerelease. It discovers existing AI environments, verifies GPU computation and preserves selected package files without replacing working software.
 
-Package version: `4.0.0b6` · Artifact version: `4.0.0-b6` · Windows version: `4.0.0.6`
+Package version: `4.0.0b7` · Artifact version: `4.0.0-beta.7` · Windows version: `4.0.0.7`
 
 [![ARX CI](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/chatgptopenaiagi/ARX/actions/workflows/codeql.yml)
@@ -18,7 +18,7 @@ Package version: `4.0.0b6` · Artifact version: `4.0.0-b6` · Windows version: `
 
 ARX correlates what a machine provides with what a selected software target or project requires. It resolves the active execution context, preserves the evidence behind every decision, reports readiness as GREEN, YELLOW, or RED, and proposes the shortest trusted path to GREEN without changing the workstation.
 
-The current frozen release candidate is **ARX 4.0.0 Beta 6** (reserved tag `v4.0.0-b6`). The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
+The portable Windows x64 package is **[ARX-4.0.0-beta.7-Windows-x64.zip](https://github.com/chatgptopenaiagi/ARX/releases/download/v4.0.0-beta.7/ARX-4.0.0-beta.7-Windows-x64.zip)**. Extract the complete folder and launch `ARX.exe`; keep `_internal` beside it. The deterministic engine and local inspection workflows remain fully usable without an AI provider or network connection.
 
 > ARX is a read-only compatibility intelligence tool. It is not a malware scanner, does not guarantee that arbitrary software will run, and is not an autonomous repair bot.
 
@@ -98,7 +98,7 @@ GREEN is deliberately scoped. The current Python readiness vertical verifies int
 
 ## Historical ARX 3 RC installation reference
 
-The instructions in this section are retained for historical ARX 3 RC users. They do not describe the current release candidate; use the [ARX 4.0.0 Beta 6 release page](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-b6) after publication for its artifacts.
+The instructions in this section are retained for historical ARX 3 RC users. They do not describe the current release candidate; use the [ARX 4.0.0 Beta 7 release page](https://github.com/chatgptopenaiagi/ARX/releases/tag/v4.0.0-beta.7) after publication for its artifacts.
 
 ARX `3.0.0rc1` was a pre-release. The Python package and the Windows installer contain the same ARX engine but serve different installation workflows.
 
@@ -221,7 +221,7 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 
 | Document | Purpose |
 |---|---|
-| [ARX 4.0.0 Beta 6 release notes](docs/release-notes-4.0.0-b6.md) | Agent DNA foundation, execution-context intelligence, GPU hardening, security, and limitations |
+| [ARX 4.0.0 Beta 7 release notes](docs/release-notes-4.0.0-beta.7.md) | Agent DNA foundation, execution-context intelligence, GPU hardening, security, and limitations |
 | [ARX 3.0 RC1 release notes](docs/release-notes-3.0.0-rc1.md) | Changes since ARX 2, compatibility, verification, and RC limitations |
 | [Architecture](docs/architecture.md) | Canonical domain, evidence boundaries, path identity, UI lifecycle, and packaging decisions |
 | [Layered GPU and CUDA intelligence](docs/gpu-compute-intelligence.md) | Driver, Toolkit, runtime, framework, resolution, compatibility, and resource semantics |

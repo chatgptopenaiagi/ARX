@@ -1,5 +1,6 @@
 param(
-    [string]$Version = '4.0.0b6'
+    [string]$Version = '4.0.0b7',
+    [string]$ReleaseRoot = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -7,10 +8,12 @@ $ErrorActionPreference = 'Stop'
 $ReleaseVersion = ConvertTo-ArxReleaseVersion -Version $Version
 $ArtifactVersion = $ReleaseVersion.ArtifactVersion
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$ReleaseRoot = Join-Path $ProjectRoot 'release'
+if (-not $ReleaseRoot) { $ReleaseRoot = Join-Path $ProjectRoot 'release' }
+$ReleaseRoot = [IO.Path]::GetFullPath($ReleaseRoot)
 $DesktopDirectory = Join-Path $ReleaseRoot 'ARX-Desktop-win-x64'
 $Executable = Join-Path $DesktopDirectory 'ARX.exe'
-$Archive = Join-Path $ReleaseRoot "ARX-Desktop-win-x64-v$ArtifactVersion.zip"
+$ArchiveName = if ($Version -eq '4.0.0b7') { 'ARX-4.0.0-beta.7-Windows-x64.zip' } else { "ARX-Desktop-win-x64-v$ArtifactVersion.zip" }
+$Archive = Join-Path $ReleaseRoot $ArchiveName
 $ChecksumFile = Join-Path $ReleaseRoot "SHA256SUMS-v$ArtifactVersion.txt"
 
 $ReleaseFullPath = [IO.Path]::GetFullPath($ReleaseRoot).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar

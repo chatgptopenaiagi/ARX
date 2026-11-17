@@ -1,6 +1,6 @@
 ARX 4
-ARX 4.0.0 Beta 6
-Package version 4.0.0b6
+ARX 4.0.0 Beta 7 | AI Compute Edition
+Package version 4.0.0b7
 
 PURPOSE
 ARX is a read-only project-aware compatibility and resolution engine. It scans
@@ -9,19 +9,27 @@ compares requirements, and explains a GREEN/YELLOW/RED decision and advisory
 path to GREEN. ARX is not a malware scanner and does not certify software as safe.
 
 SUPPORTED OPERATING SYSTEM
-Windows 10/11 x64. This experimental build has been validated on Windows 10
-x64. Windows Server and ARM64 have not been validated.
+Windows x64. This prerelease is validated on Windows 11 x64. This release has
+not been independently validated on Windows 10, Windows Server or ARM64.
 
 START
 Extract the complete folder, then double-click ARX.exe. Keep the _internal
 folder beside ARX.exe; it contains the standalone Python/Tk runtime.
 
-INSTALLER DISTRIBUTION
-When ARX is distributed as ARX-Desktop-Setup-win-x64-v4.0.0-b6.exe, the installer provides
-Start Menu and uninstall entries, offers an optional desktop shortcut, and can
-launch ARX after an interactive install. The portable extracted-folder workflow
-remains supported. Installer builds are currently unsigned; verify the published
-SHA-256 checksum before installation.
+PORTABLE DISTRIBUTION
+This release is ARX-4.0.0-beta.7-Windows-x64.zip. No installer is included and
+the existing installed ARX application is not replaced. The executable is
+unsigned; verify the published SHA-256 checksum before running it.
+
+AI COMPUTE
+Open AI Compute, choose Discover environments, select an interpreter, then use
+Verify selected or Benchmark selected. Results come from your local environment;
+no successful result is preloaded. GPU verification needs an existing compatible
+Python/PyTorch environment and GPU driver. These frameworks are not bundled.
+Preserve selected copies package files and matching cached wheels to a unique
+snapshot in the chosen destination and verifies their hashes. It does not move
+or remove source files. Package copies are not independently portable; follow
+the snapshot restoration instructions. Actual restoration was not tested.
 
 READ-ONLY MODEL
 Normal scanning does not install software, change PATH, edit the registry, or
@@ -50,7 +58,8 @@ available evidence and uncertainty; they are not malware verdicts or guarantees
 that an installer will succeed.
 
 PRIVACY
-Reports redact the current user-profile path and allowlist environment data.
+Core reports redact the current user-profile path and allowlist environment data.
+AI Compute evidence retains local installation paths needed for restoration.
 ARX does not collect passwords, tokens, cookies, private keys, Wi-Fi secrets,
 or credential-manager contents. Review reports before sharing them.
 

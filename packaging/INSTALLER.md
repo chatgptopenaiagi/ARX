@@ -8,14 +8,16 @@ Build the validated portable application first, then compile the installer:
 
 ```powershell
 python -m pip install -e .[build]
-.\scripts\build-desktop.ps1 -Version 4.0.0b6
-.\scripts\package-desktop-release.ps1 -Version 4.0.0b6
-.\scripts\build-installer.ps1 -Version 4.0.0b6
+.\scripts\build-desktop.ps1 -Version 4.0.0b7
+.\scripts\package-desktop-release.ps1 -Version 4.0.0b7
+.\scripts\build-installer.ps1 -Version 4.0.0b7
 ```
 
-The release scripts accept PEP 440 package versions `X.Y.Z`, `X.Y.ZrcN`, and `X.Y.ZbN`. Stable versions retain `X.Y.Z` artifact names and use the Windows numeric version `X.Y.Z.0`; RC and Beta package versions become `X.Y.Z-rcN` and `X.Y.Z-bN` in artifact names and use `X.Y.Z.N` for Windows file/product metadata. For example, `4.0.0b6` produces `ARX-Desktop-Setup-win-x64-v4.0.0-b6.exe` with Windows version `4.0.0.6`.
+The release scripts accept PEP 440 package versions `X.Y.Z`, `X.Y.ZrcN`, and `X.Y.ZbN`. Stable versions retain `X.Y.Z` artifact names and use the Windows numeric version `X.Y.Z.0`; RC and Beta package versions become `X.Y.Z-rcN` and `X.Y.Z-bN` in artifact names and use `X.Y.Z.N` for Windows file/product metadata. For example, `4.0.0b7` produces `ARX-Desktop-Setup-win-x64-v4.0.0-beta.7.exe` with Windows version `4.0.0.7`.
 
-The Beta 6 outputs are `ARX-Desktop-win-x64-v4.0.0-b6.zip`, `ARX-Desktop-Setup-win-x64-v4.0.0-b6.exe`, and `SHA256SUMS-v4.0.0-b6.txt`. `build-installer.ps1` locates `ISCC.exe` from `PATH` or standard per-user and Program Files locations for Inno Setup 7 and 6. Use `-IsccPath` for another installation. Output remains under `release/`; generated binaries and checksums are not committed.
+Beta 7 explicitly uses the public tag `v4.0.0-beta.7` and portable archive `ARX-4.0.0-beta.7-Windows-x64.zip`, with `SHA256SUMS-v4.0.0-beta.7.txt`. Historical tag mappings remain unchanged. Its public release is portable only; no installer is published. To preserve prior build outputs, pass a new directory through `-ReleaseRoot` to both `build-desktop.ps1` and `package-desktop-release.ps1`. Generated binaries and checksums are not committed.
+
+The optional `build-installer.ps1` locates `ISCC.exe` from `PATH` or standard per-user and Program Files locations for Inno Setup 7 and 6. Use `-IsccPath` for another installation. This optional installer workflow is separate from Beta 7 portable release acceptance.
 
 The installer has a stable application identifier for in-place upgrades, installs in 64-bit Program Files, displays the repository's actual MIT license, creates Start Menu launch/uninstall entries, offers an unchecked desktop-shortcut task, registers uninstall metadata, and offers to launch ARX when an interactive installation finishes. Silent installs do not launch ARX.
 

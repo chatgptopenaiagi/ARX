@@ -21,7 +21,8 @@ function ConvertTo-ArxReleaseVersion {
     [pscustomobject]@{
         PackageVersion   = $Version
         BaseVersion      = $baseVersion
-        ArtifactVersion  = if ($kind) { "$baseVersion-$kind$number" } else { $baseVersion }
+        # Beta 7 adopts the explicitly selected public tag; historical tags stay unchanged.
+        ArtifactVersion  = if ($Version -eq '4.0.0b7') { '4.0.0-beta.7' } elseif ($kind) { "$baseVersion-$kind$number" } else { $baseVersion }
         FileVersion      = "$baseVersion.$number"
         ProductName      = "ARX $($match.Groups['major'].Value)"
         DisplayName      = "ARX $baseVersion$(if ($stage) { " $stage" })"

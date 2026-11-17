@@ -165,27 +165,37 @@ class AIComputePanel(ttk.Frame):
         set_text(self.details,text)
 
 
-def ai_ui_smoke_test(interpreter, inventory, output, timeout=150):
-    """Exercise the actual tab's manual verification route, including frozen builds."""
+def ai_ui_smoke_test(interpreter, inventory, output, timeout=360):
+    """Exercise the actual tab; inventory '-' runs fresh GUI discovery first."""
     from .app import ARXDesktopApp
     from arx.ai_compute.engine import save
     app=ARXDesktopApp();app.withdraw()
     try:
         panel=app.ai_compute
-        panel.accept_inventory(panel.read_saved(inventory))
+        deadline=time.monotonic()+timeout;ticks=0
+        def wait_for_worker():
+            nonlocal ticks
+            while app._started is not None:
+                app.update();ticks+=1
+                if time.monotonic()>deadline: raise TimeoutError("AI GUI verification deadline exceeded")
+                time.sleep(.02)
+            app.update()
+        if inventory == "-":
+            panel.scan()
+            wait_for_worker()
+        else:
+            panel.accept_inventory(panel.read_saved(inventory))
         index=next(i for i,e in enumerate(panel.report["environments"]) if Path(e["executable"]).resolve()==Path(interpreter).resolve() and not e.get("user_site"))
         panel.selector.current(index);app.tabs.select(panel);panel.render()
         panel.run_verification(True)
-        deadline=time.monotonic()+timeout;ticks=0
-        while app._started is not None:
-            app.update();ticks+=1
-            if time.monotonic()>deadline: raise TimeoutError("AI GUI verification deadline exceeded")
-            time.sleep(.02)
-        app.update()
+        wait_for_worker()
         env=panel.selected()
         result=next(r for r in panel.report["verification"] if r["environment_id"]==env["id"])
         text=panel.details.get("1.0","end")
-        record={"health":result["health"],"selected_interpreter":env["executable"],"summary":text,"ui_events_processed":ticks,
+        from arx import RELEASE_NAME, __version__
+        record={"app_version":__version__,"release_name":RELEASE_NAME,"window_title":app.title(),
+                "fresh_discovery":inventory=="-","environments":panel.report["environments"],
+                "health":result["health"],"selected_interpreter":env["executable"],"summary":text,"ui_events_processed":ticks,
                 "tabs":[app.tabs.tab(t,"text") for t in app.tabs.tabs()],"display_matches_result":result["health"] in text and result.get("torch",{}).get("version", "UNAVAILABLE") in text,
                 "verification":result,"existing_ui_controls_present":hasattr(app,"machine_tree") and hasattr(app,"project_tree") and hasattr(app,"check_tree")}
         save(output,record)
