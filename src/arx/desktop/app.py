@@ -142,6 +142,9 @@ class ARXDesktopApp(tk.Tk):
         self._compatibility_tab()
         self._evidence_tab()
         self._project_tab()
+        from .ai_compute import AIComputePanel
+        self.ai_compute = AIComputePanel(self.tabs, self)
+        self.tabs.add(self.ai_compute, text="AI Compute")
 
     def _build_menu(self) -> None:
         menu = tk.Menu(self, tearoff=False)
@@ -1246,9 +1249,12 @@ class ARXDesktopApp(tk.Tk):
         super().destroy()
 
 
-def run() -> None:
+def run(ai_report=None) -> None:
     enable_windows_dpi_awareness()
     app = ARXDesktopApp()
+    if ai_report:
+        app.ai_compute.accept_inventory(app.ai_compute.read_saved(ai_report))
+        app.tabs.select(app.ai_compute)
     app.mainloop()
 
 

@@ -69,6 +69,8 @@ def parser():
     )
     root.add_argument("-o", "--output", type=Path)
     subcommands = root.add_subparsers(dest="command", required=True)
+    from arx.ai_compute.__main__ import configure as configure_ai
+    configure_ai(subcommands.add_parser("ai-compute", help="discover, verify, benchmark and preserve AI environments"))
     for name in ("quick", "deep"):
         subcommands.add_parser(name)
     codex = subcommands.add_parser("codex")
@@ -208,6 +210,9 @@ def preflight_text(report, *, resolution_only=False):
 
 def main(argv=None):
     args = parser().parse_args(argv)
+    if args.command == "ai-compute":
+        from arx.ai_compute.__main__ import run_cli
+        return run_cli(args)
     try:
         if args.command == "agent":
             baseline = load_experimental_baseline(args.baseline)

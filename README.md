@@ -237,6 +237,15 @@ The Resolution Planner only recommends actions. Normal analysis does not install
 
 Historical release notes and frozen contracts remain available under `docs/` and `schemas/`.
 
+## AI Compute
+
+The **AI Compute** desktop tab discovers existing Python/Conda/virtual
+environments and offers explicit verification, bounded benchmarks and verified
+preservation copies. It distinguishes the system CUDA Toolkit from a framework's
+bundled runtime and verifies cuDNN with a real convolution. Existing installations
+are not replaced or updated. See [AI Compute usage and restoration](docs/ai-compute.md)
+for the GUI, `arx ai-compute` CLI, report states and verification limits.
+
 ## Development, CI, and CodeQL
 
 ```powershell

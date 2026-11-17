@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GUI_MODULES = (
+    "tests/test_ai_compute_desktop.py",
     "tests/test_desktop.py",
     "tests/test_desktop_advisory.py",
     "tests/test_desktop_ux.py",
